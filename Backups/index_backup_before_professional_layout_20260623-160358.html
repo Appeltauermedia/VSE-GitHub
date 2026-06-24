@@ -44,8 +44,9 @@ Was wurde bewusst nicht veraendert?
 <!-- ===== HTML / Anwendungslayout ===== -->
 <body>
 <div id="app">
-    <!-- Globale Projektaktionen und Szenenmenues -->
-<header aria-hidden="true"></header>
+    <!-- Kopfzeile und globale Projektaktionen -->
+<header><div>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</div><small>Visualizer · Screens · Greenscreen · IPM · Partikeleffekte · Licht · Nebel · Audio · Scene · Gruppierung</small></header>
+    <!-- Linke Werkzeugpalette -->
 <aside>
     <details class="fold">
       <summary>Projekt</summary>
@@ -71,6 +72,7 @@ Was wurde bewusst nicht veraendert?
             <p class="mini">Der rote Kreis, das Stop-Quadrat und die Zeit liegen als HTML-Bedienoverlay über dem WebGL-Canvas und werden nicht in die Aufnahme gerendert.</p>
             <p class="mini" id="recordStatus">Bereit. Aufnahme erfolgt lokal aus dem WebGL-Canvas inklusive aktiver Audioquelle als WebM-Datei.</p>
           </div>
+          <p style="color:#a9bad1;font-size:13px;line-height:1.45">Objekte werden jetzt direkt unter der Arbeitsfläche angeboten. Die linke Spalte bleibt administrativ. Objekt-Schaltflächen auf die Fläche ziehen, danach anklicken, verschieben und rechts einstellen.<br><br><b>Scene:</b> Hintergrundbild und globale Bühnenparameter liegen oben im einklappbaren Scene-Menü.<br><br><b>Layer-Regel:</b> Negative Layer liegen hinter dem Hintergrund und dienen für atmosphärische Backlights. Hintergrundbild = Layer 0. Normale Werkbank-Objekte liegen ab Layer 1 darüber.<br><br><b>Audio:</b> Die Werkbank besitzt einen eigenen Audioanalyser im einklappbaren Audio-Menü. Objekte reagieren über ihre Musiksensitivität.<br><br><b>Laser:</b> Kein eigener Objekttyp mehr. Die Checkbox „Laser“ hält den Lichtemitter gebündelt und sperrt die musikgesteuerte Winkelöffnung.<br><br><b>Visualizer:</b> Erste Visualizer-Rubrik mit logarithmischem Frequenzbalkenvisualizer im Vintage-Grün-Gelb-Rot-Stil. Der Frequenzbereich deckt 20 Hz bis 20 kHz ab. Der gewählte Reaktionsbereich eines ausgewählten Objektes wird im Visualizer blau markiert; die Musikempfindlichkeit ist jetzt die Reaktionsschwelle und erscheint als horizontaler blauer Strich.<br><br><b>Screens:</b> Screens sind frei positionierbare Bühnenflächen mit eigener Größe, Transparenz, LED-Raster und Audio-Reaktion.<br><br><b>Image-to-Particle:</b> IPM besitzt jetzt eine eigene Menürubrik und ist kein Partikelemitter. Das geladene Bild wird als WebGL/GPU-Partikelbild dargestellt und musikalisch verformt.<br><br><b>Partikeleffekte:</b> Ein Universal-Partikelmodul erzeugt Feuerfontänen, Funken, Explosionen, Flitter, Konfetti, Asche, Staub, Schnee, Schockwellen und Sternenflug.<br><br><b>Regler:</b> Alle Objekt-Regler besitzen jetzt ein Zahlenfeld und können per Slider oder händischer Eingabe gesetzt werden.<br><br><b>WYSIWYG:</b> Die Werkbank zeigt die Zielbühne im gewählten Bildschirmformat. Objektpositionen und Objektgrößen werden relativ zur virtuellen Hintergrund-/Bühnenfläche berechnet. Vollbild und menüloser Modus vergrößern nur dieselbe Bühne.<br><br><b>Export/Import:</b> .scene speichert alle Parameter und eingebettete Bilder. Videos und Musik werden bewusst nicht eingebettet.</p>
         </div>
       </div>
     </details>
@@ -178,6 +180,46 @@ Was wurde bewusst nicht veraendert?
     </details>
 
     <details class="fold">
+      <summary>Audio</summary>
+      <div class="foldBody">
+        <div class="panel">
+          <button id="micBtn" type="button">Mikrofon starten</button>
+          <button id="sysBtn" type="button">Systemsound / Tab-Audio starten</button>
+          <label>Audiodatei laden</label><input id="audioFile" type="file" accept="audio/*">
+          <label>Audio-Ordner auswählen</label><input id="audioFolder" type="file" accept="audio/*" multiple webkitdirectory directory>
+          <div class="audioFolderRow"><button id="audioPrevBtn" type="button" disabled>◀ Vorheriger</button><button id="audioNextBtn" type="button" disabled>Nächster ▶</button></div>
+          <div id="audioPlaylist"><div class="mini">Kein Audio-Ordner geladen.</div></div>
+          <div class="audioDeck">
+            <div class="audioDeckTitle" id="audioFileName">Keine Audiodatei geladen</div>
+            <div class="audioControls">
+              <button id="audioPlayPauseBtn" type="button" disabled>▶ Play</button>
+              <button id="audioRestartBtn" type="button" disabled>⟲ Zurücksetzen</button>
+            </div>
+            <div class="audioSeekRow">
+              <span id="audioCurrentTime">0:00</span>
+              <input id="audioSeek" type="range" min="0" max="1000" step="1" value="0" disabled>
+              <span id="audioDuration">0:00</span>
+            </div>
+            <div class="audioVolumeRow">
+              <span>Lautstärke</span>
+              <input id="audioVolume" type="range" min="0" max="1" step="0.01" value="1">
+              <span id="audioVolumeValue">100%</span>
+            </div>
+          </div>
+          <audio id="audioPlayer" controls preload="metadata"></audio>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input id="audioMonitor" type="checkbox"> Audio mithören <span class="mini">(nur Audiodatei, Systemsound bleibt analyse-only)</span></label>
+          <button class="red" id="stopAudioBtn" type="button">Audio stoppen</button>
+          <label>Master-Sensitivität: <span id="audioSensValue">1.00</span></label><input id="audioSensitivity" type="range" min="0" max="3" step="0.01" value="1">
+          <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
+          <div class="tinyLabel">Frequenzbalken-Analyzer</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
+          <label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input id="audioShowBpm" type="checkbox"> BPM anzeigen</label>
+          <div id="bpmDisplay" class="mini" style="display:none;margin-top:4px;font-size:16px;color:#e8f4ff"><b>BPM:</b> <span id="bpmValue">--</span></div>
+          <p class="mini" id="audioStatus">Audio aus. Analyse-only ist Standard: Mikrofon und Systemsound werden nicht über die VSE ausgegeben. Audiodateien können optional mitgehört werden.</p>
+        </div>
+      </div>
+    </details>
+
+    <details class="fold" style="margin-top:14px">
       <summary>Object Manager</summary>
       <div class="foldBody">
         <div class="panel">
@@ -230,7 +272,6 @@ Was wurde bewusst nicht veraendert?
     <div class="panel" id="bgCaptureParams">
       <h3>Ausschnitt</h3>
       <label>Ausschnittform</label><select id="bgCaptureShape"><option value="rect">Rechteck</option><option value="circle">Kreis / Ellipse</option><option value="path">Freier Pfad</option></select>
-      <label>Ausschnittquelle</label><select id="bgCaptureSource"><option value="background">Nur Hintergrund</option><option value="stage">Bühne mit Objekten</option></select>
       <label><input id="bgCaptureRemoveFromBackground" type="checkbox"> Ausschnitt aus Hintergrund entfernen</label>
       <button id="bgCaptureCreateAssetBtn" type="button">Als Asset erstellen</button>
       <p class="mini" id="bgToImageAssetStatus">Hintergrundbereich-Capture bereit.</p>
@@ -701,48 +742,6 @@ Was wurde bewusst nicht veraendert?
       </div>
       <button id="dupBtn" type="button">Duplizieren</button><button class="red" id="delBtn" type="button">Objekt löschen</button>
     </div>
-    <section id="audioDock" aria-label="Audio Player und Analyzer">
-      <button id="audioDockToggle" class="audioDockHeader" type="button" aria-expanded="true" aria-controls="audioDockBody" title="Audio ein- oder ausklappen">
-        <span>Audio</span>
-        <span id="audioDockToggleIcon" aria-hidden="true">▾</span>
-      </button>
-      <div id="audioDockBody" class="panel">
-        <div class="audioDeck">
-          <div class="audioDeckTitle" id="audioFileName">Keine Audiodatei geladen</div>
-          <div class="audioControls">
-            <button id="audioPlayPauseBtn" type="button" disabled title="Play/Pause">▶</button>
-            <button id="audioRestartBtn" type="button" disabled title="Zurücksetzen">⟲</button>
-          </div>
-          <div class="audioSeekRow">
-            <span id="audioCurrentTime">0:00</span>
-            <input id="audioSeek" type="range" min="0" max="1000" step="1" value="0" disabled>
-            <span id="audioDuration">0:00</span>
-          </div>
-          <div class="audioVolumeRow">
-            <span>Volume</span>
-            <input id="audioVolume" type="range" min="0" max="1" step="0.01" value="1">
-            <span id="audioVolumeValue">100%</span>
-          </div>
-        </div>
-        <audio id="audioPlayer" controls preload="metadata"></audio>
-        <label>Master-Input: <span id="audioSensValue">1.00</span></label><input id="audioSensitivity" type="range" min="0" max="3" step="0.01" value="1">
-        <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
-        <div class="tinyLabel">Reaktionsfrequenz</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
-        <div class="audioFolderRow"><button id="audioPrevBtn" type="button" disabled title="Vorheriger Track">◀</button><button id="audioNextBtn" type="button" disabled title="Nächster Track">▶</button></div>
-        <button class="red" id="stopAudioBtn" type="button">Stop</button>
-        <label class="audioInline"><input id="audioMonitor" type="checkbox"> Audio mithören</label>
-        <label class="audioInline"><input id="audioShowBpm" type="checkbox"> BPM</label>
-        <div id="bpmDisplay" class="mini" style="display:none;margin-top:4px;font-size:16px;color:#e8f4ff"><b>BPM:</b> <span id="bpmValue">--</span></div>
-        <p class="mini" id="audioStatus">Audio aus.</p>
-        <div class="audioDockSources">
-          <button id="micBtn" type="button" title="Mikrofon starten">Mic</button>
-          <button id="sysBtn" type="button" title="Systemsound / Tab-Audio starten">System</button>
-        </div>
-        <label>Audiodatei laden</label><input id="audioFile" type="file" accept="audio/*">
-        <label>Audio-Ordner auswählen</label><input id="audioFolder" type="file" accept="audio/*" multiple webkitdirectory directory>
-        <div id="audioPlaylist"><div class="mini">Kein Audio-Ordner geladen.</div></div>
-      </div>
-    </section>
   </aside>
 </div>
 <button id="showMenusBtn" type="button">Menüs anzeigen</button>
@@ -767,7 +766,6 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/09-import-export-und-asset-wiederherstellung.js"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=webcam-guard-2"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js"></script>
-<script src="src/app/12-audio-dock-toggle.js"></script>
 <script src="src/main.js"></script>
 </body>
 </html>

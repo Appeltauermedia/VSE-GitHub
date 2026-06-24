@@ -239,86 +239,48 @@ function restoreBgCaptureUndo(){
   bgCaptureUndo=null;
   return true;
 }
-function drawCurrentStageCaptureToCanvas(target,rectCss){
-  const r=canvas.getBoundingClientRect();
-  const px=Math.max(0,rectCss.x/r.width*canvas.width);
-  const py=Math.max(0,rectCss.y/r.height*canvas.height);
-  const pw=Math.max(1,rectCss.w/r.width*canvas.width);
-  const ph=Math.max(1,rectCss.h/r.height*canvas.height);
-  target.width=Math.max(1,Math.round(pw));
-  target.height=Math.max(1,Math.round(ph));
-  const ctx=target.getContext('2d');
-  ctx.clearRect(0,0,target.width,target.height);
-  if(typeof updateVseFrame==='function'&&typeof renderNormalFrame==='function'){
-    const wasGrid=scene.showGrid;
-    scene.showGrid=false;
-    try{
-      const ordered=updateVseFrame();
-      renderNormalFrame(ordered);
-    }finally{
-      scene.showGrid=wasGrid;
-    }
-  }
-  ctx.drawImage(canvas,px,py,pw,ph,0,0,target.width,target.height);
-}
-function maskCaptureCanvas(target,shape,rectCss){
-  const assetPts=(rectCss.points||[]).map(p=>({x:(p.x-rectCss.x)/Math.max(1,rectCss.w)*target.width,y:(p.y-rectCss.y)/Math.max(1,rectCss.h)*target.height}));
-  const ctx=target.getContext('2d');
-  if(shape==='path'){
-    applyFreehandAlphaMask(target,assetPts,false);
-  }else{
-    ctx.globalCompositeOperation='destination-in';
-    traceBgCaptureMaskPath(ctx,shape,0,0,target.width,target.height,assetPts);
-    ctx.fill();
-    ctx.globalCompositeOperation='source-over';
-  }
-}
 async function createImageAssetFromBackgroundRect(rectCss){
   if(!rectCss||rectCss.w<4||rectCss.h<4)return;
   const data=background.imageData||bgImageData;
+  if(!data){alert('Es ist kein Hintergrundbild geladen.');return;}
   const shape=rectCss.shape||'rect';
-  const source=getBgCaptureSource();
   const removeFromBackground=getBgCaptureRemoveFromBackground();
-  if(source==='background'&&!data){alert('Es ist kein Hintergrundbild geladen.');return;}
-  if(removeFromBackground&&!data){alert('Zum Entfernen aus dem Hintergrund muss ein Hintergrundbild geladen sein.');return;}
   const previousBg={background:{...background},bgImageData:bgImageData,bgImageSize:[...bgImageSize]};
   const r=canvas.getBoundingClientRect();
   const sx=rectCss.x/r.width*stageState.w;
   const sy=rectCss.y/r.height*stageState.h;
   const sw=rectCss.w/r.width*stageState.w;
   const sh=rectCss.h/r.height*stageState.h;
-  const displayScale=Math.max(0.0001,stageScale());
-  const assetStageW=rectCss.w/displayScale;
-  const assetStageH=rectCss.h/displayScale;
+  const img=await loadHtmlImage(data);
   const off=document.createElement('canvas');
-  let img=null,d=null;
-  if(source==='stage'){
-    drawCurrentStageCaptureToCanvas(off,rectCss);
+  off.width=Math.max(1,Math.round(sw));
+  off.height=Math.max(1,Math.round(sh));
+  const ctx=off.getContext('2d');
+  ctx.clearRect(0,0,off.width,off.height);
+  const d=getBackgroundDrawRectStage(img.naturalWidth||img.width,img.naturalHeight||img.height);
+  ctx.drawImage(img,d.dx-sx,d.dy-sy,d.dw,d.dh);
+  const assetPts=(rectCss.points||[]).map(p=>({x:(p.x-rectCss.x)/Math.max(1,rectCss.w)*off.width,y:(p.y-rectCss.y)/Math.max(1,rectCss.h)*off.height}));
+  if(shape==='path'){
+    applyFreehandAlphaMask(off,assetPts,false);
   }else{
-    img=await loadHtmlImage(data);
-    off.width=Math.max(1,Math.round(sw));
-    off.height=Math.max(1,Math.round(sh));
-    const ctx=off.getContext('2d');
-    ctx.clearRect(0,0,off.width,off.height);
-    d=getBackgroundDrawRectStage(img.naturalWidth||img.width,img.naturalHeight||img.height);
-    ctx.drawImage(img,d.dx-sx,d.dy-sy,d.dw,d.dh);
+    ctx.globalCompositeOperation='destination-in';
+    traceBgCaptureMaskPath(ctx,shape,0,0,off.width,off.height,assetPts);
+    ctx.fill();
+    ctx.globalCompositeOperation='source-over';
   }
-  maskCaptureCanvas(off,shape,rectCss);
   const outData=off.toDataURL('image/png');
   const o=newObj('imageAsset',(rectCss.x+rectCss.w*0.5)/r.width*100,(rectCss.y+rectCss.h*0.5)/r.height*100);
   const suffix=shape==='circle'?'Kreis':shape==='path'?'Pfad':'Ausschnitt';
-  o.name=(source==='stage'?'Buehne_':'Hintergrund_')+suffix+'_'+id;
-  o.imageAssetWidth=assetStageW;
-  o.imageAssetHeight=assetStageH;
+  o.name='Hintergrund_'+suffix+'_'+id;
+  o.imageAssetWidth=sw;
+  o.imageAssetHeight=sh;
   o.imageAssetKeepAspect=true;
   o.imageAssetOpacity=1;
   o.layer=1;
   o._imageAssetSized=true;
   objects.push(o);
-  loadImageAssetFromData(o,outData,(source==='stage'?'Buehne_':'Hintergrund_')+suffix+'.png');
+  loadImageAssetFromData(o,outData,'Hintergrund_'+suffix+'.png');
   if(removeFromBackground){
-    if(!img)img=await loadHtmlImage(data);
-    if(!d)d=getBackgroundDrawRectStage(img.naturalWidth||img.width,img.naturalHeight||img.height);
     const bgCanvas=document.createElement('canvas');
     bgCanvas.width=Math.max(1,Math.round(d.sw));
     bgCanvas.height=Math.max(1,Math.round(d.sh));
@@ -348,8 +310,7 @@ async function createImageAssetFromBackgroundRect(rectCss){
   updateObjectManager();
   if(bgToImageAssetStatus){
     const action=removeFromBackground?' und im Hintergrund transparent entfernt':'';
-    const sourceLabel=source==='stage'?'Bühnenausschnitt mit Objekten':'Hintergrund-Ausschnitt';
-    bgToImageAssetStatus.textContent=sourceLabel+' als ImageAsset erzeugt'+action+'.';
+    bgToImageAssetStatus.textContent=(shape==='circle'?'Kreis-/Ellipsen-Ausschnitt':shape==='path'?'Freier Pfad':'Ausschnitt')+' als ImageAsset erzeugt'+action+'.';
   }
 }
 function clampImageAssetAngularVelocity(o){

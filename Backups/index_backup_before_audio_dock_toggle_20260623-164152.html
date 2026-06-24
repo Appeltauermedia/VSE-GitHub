@@ -230,7 +230,6 @@ Was wurde bewusst nicht veraendert?
     <div class="panel" id="bgCaptureParams">
       <h3>Ausschnitt</h3>
       <label>Ausschnittform</label><select id="bgCaptureShape"><option value="rect">Rechteck</option><option value="circle">Kreis / Ellipse</option><option value="path">Freier Pfad</option></select>
-      <label>Ausschnittquelle</label><select id="bgCaptureSource"><option value="background">Nur Hintergrund</option><option value="stage">Bühne mit Objekten</option></select>
       <label><input id="bgCaptureRemoveFromBackground" type="checkbox"> Ausschnitt aus Hintergrund entfernen</label>
       <button id="bgCaptureCreateAssetBtn" type="button">Als Asset erstellen</button>
       <p class="mini" id="bgToImageAssetStatus">Hintergrundbereich-Capture bereit.</p>
@@ -702,11 +701,8 @@ Was wurde bewusst nicht veraendert?
       <button id="dupBtn" type="button">Duplizieren</button><button class="red" id="delBtn" type="button">Objekt löschen</button>
     </div>
     <section id="audioDock" aria-label="Audio Player und Analyzer">
-      <button id="audioDockToggle" class="audioDockHeader" type="button" aria-expanded="true" aria-controls="audioDockBody" title="Audio ein- oder ausklappen">
-        <span>Audio</span>
-        <span id="audioDockToggleIcon" aria-hidden="true">▾</span>
-      </button>
-      <div id="audioDockBody" class="panel">
+      <h3>Audio</h3>
+      <div class="panel">
         <div class="audioDeck">
           <div class="audioDeckTitle" id="audioFileName">Keine Audiodatei geladen</div>
           <div class="audioControls">
@@ -767,7 +763,6 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/09-import-export-und-asset-wiederherstellung.js"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=webcam-guard-2"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js"></script>
-<script src="src/app/12-audio-dock-toggle.js"></script>
 <script src="src/main.js"></script>
 </body>
 </html>

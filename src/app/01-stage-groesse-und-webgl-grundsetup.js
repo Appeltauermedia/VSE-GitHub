@@ -5,7 +5,8 @@ function getStageAvailableSize(){
   const r=wrap.getBoundingClientRect();
   const palette=document.getElementById('objectPalette');
   const timeline=document.getElementById('timelineDock');
-  const paletteH=palette&&palette.offsetParent!==null?palette.getBoundingClientRect().height:0;
+  const paletteIsRail=palette&&getComputedStyle(palette).position==='fixed';
+  const paletteH=palette&&palette.offsetParent!==null&&!paletteIsRail?palette.getBoundingClientRect().height:0;
   const timelineH=timeline&&timeline.offsetParent!==null?timeline.getBoundingClientRect().height:0;
   const rowGaps=(paletteH>0?10:0)+(timelineH>0?10:0);
   return {w:Math.max(100,r.width-40),h:Math.max(100,r.height-20-paletteH-timelineH-rowGaps)};

@@ -1080,12 +1080,14 @@ bgFile.addEventListener('change',()=>{const f=bgFile.files&&bgFile.files[0];if(!
 clearBgBtn.onclick=()=>{background.imageName=null;background.imageData=null;bgImageData=null;if(bgTex){gl.deleteTexture(bgTex);bgTex=null;}bgImageSize=[0,0];bgFile.value='';};
 function bgCaptureShapeLabel(){const s=getBgCaptureShape();return s==='circle'?'Kreis / Ellipse':s==='path'?'Freier Pfad':'Rechteck';}
 if(bgCaptureShape)bgCaptureShape.addEventListener('change',()=>{if(bgToImageAssetStatus)bgToImageAssetStatus.textContent='Ausschnittform: '+bgCaptureShapeLabel()+'.';});
+if(bgCaptureSource)bgCaptureSource.addEventListener('change',()=>{if(bgToImageAssetStatus)bgToImageAssetStatus.textContent=getBgCaptureSource()==='stage'?'Ausschnittquelle: Bühne mit Objekten.':'Ausschnittquelle: Nur Hintergrund.';});
 function toggleBgCaptureMode(){
   bgCaptureMode=!bgCaptureMode;
   bgCaptureDrag=null;
   if(bgToImageAssetStatus){
     const mode=getBgCaptureRemoveFromBackground()?'Ausschneiden mit transparentem Loch':'Kopieren ohne Hintergrundänderung';
-    bgToImageAssetStatus.textContent=bgCaptureMode?('Capture aktiv: '+bgCaptureShapeLabel()+' markieren. '+mode+'.'):'Capture deaktiviert.';
+    const source=getBgCaptureSource()==='stage'?'Bühne mit Objekten':'Nur Hintergrund';
+    bgToImageAssetStatus.textContent=bgCaptureMode?('Capture aktiv: '+bgCaptureShapeLabel()+' markieren. '+source+'. '+mode+'.'):'Capture deaktiviert.';
   }
   setBgCaptureButtonState(bgCaptureMode);
   if(selectionBox)selectionBox.style.display='none';
