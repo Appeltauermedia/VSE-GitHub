@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260624-audio-sticky-front">
+<link rel="stylesheet" href="src/styles/main.css?v=20260624-audio-menu-order">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260624-scene-dot"></script>
@@ -707,6 +707,13 @@ Was wurde bewusst nicht veraendert?
         <span id="audioDockToggleIcon" aria-hidden="true">▾</span>
       </button>
       <div id="audioDockBody" class="panel">
+        <div class="audioDockSources">
+          <button id="micBtn" type="button" title="Mikrofon starten">Mic</button>
+          <button id="sysBtn" type="button" title="Systemsound / Tab-Audio starten">System</button>
+        </div>
+        <label>Audiodatei laden</label><input id="audioFile" type="file" accept="audio/*">
+        <label>Audio-Ordner auswählen</label><input id="audioFolder" type="file" accept="audio/*" multiple webkitdirectory directory>
+        <div id="audioPlaylist"><div class="mini">Kein Audio-Ordner geladen.</div></div>
         <div class="audioDeck">
           <div class="audioDeckTitle" id="audioFileName">Keine Audiodatei geladen</div>
           <div class="audioControls">
@@ -725,22 +732,15 @@ Was wurde bewusst nicht veraendert?
           </div>
         </div>
         <audio id="audioPlayer" controls preload="metadata"></audio>
-        <label>Master-Input: <span id="audioSensValue">1.00</span></label><input id="audioSensitivity" type="range" min="0" max="3" step="0.01" value="1">
-        <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
-        <div class="tinyLabel">Reaktionsfrequenz</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
         <div class="audioFolderRow"><button id="audioPrevBtn" type="button" disabled title="Vorheriger Track">◀</button><button id="audioNextBtn" type="button" disabled title="Nächster Track">▶</button></div>
         <button class="red" id="stopAudioBtn" type="button">Stop</button>
         <label class="audioInline"><input id="audioMonitor" type="checkbox"> Audio mithören</label>
         <label class="audioInline"><input id="audioShowBpm" type="checkbox"> BPM</label>
         <div id="bpmDisplay" class="mini" style="display:none;margin-top:4px;font-size:16px;color:#e8f4ff"><b>BPM:</b> <span id="bpmValue">--</span></div>
         <p class="mini" id="audioStatus">Audio aus.</p>
-        <div class="audioDockSources">
-          <button id="micBtn" type="button" title="Mikrofon starten">Mic</button>
-          <button id="sysBtn" type="button" title="Systemsound / Tab-Audio starten">System</button>
-        </div>
-        <label>Audiodatei laden</label><input id="audioFile" type="file" accept="audio/*">
-        <label>Audio-Ordner auswählen</label><input id="audioFolder" type="file" accept="audio/*" multiple webkitdirectory directory>
-        <div id="audioPlaylist"><div class="mini">Kein Audio-Ordner geladen.</div></div>
+        <label>Master-Input: <span id="audioSensValue">1.00</span></label><input id="audioSensitivity" type="range" min="0" max="3" step="0.01" value="1">
+        <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
+        <div class="tinyLabel">Reaktionsfrequenz</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
       </div>
     </section>
   </aside>

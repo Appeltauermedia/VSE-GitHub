@@ -499,7 +499,7 @@ input[type=range],
   padding:9px;
 }
 #audioDock .audioFreqAnalyzer{
-  height:50px;
+  height:75px;
 }
 #audioDock .audioControls{
   grid-template-columns:42px 42px;
