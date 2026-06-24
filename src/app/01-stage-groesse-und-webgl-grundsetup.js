@@ -19,4 +19,4 @@ function applyStageViewSize(){
   document.documentElement.style.setProperty('--stage-view-w',Math.max(1,Math.round(baseW*scale))+'px');
   document.documentElement.style.setProperty('--stage-view-h',Math.max(1,Math.round(baseH*scale))+'px');
 }
-function resize(){applyStageViewSize();canvas.width=Math.floor(canvas.clientWidth*DPR);canvas.height=Math.floor(canvas.clientHeight*DPR);gl.viewport(0,0,canvas.width,canvas.height);if(typeof positionRecordingHud==='function')positionRecordingHud();} window.addEventListener('resize',resize); requestAnimationFrame(resize);
+function resize(){applyStageViewSize();canvas.width=Math.floor(canvas.clientWidth*DPR);canvas.height=Math.floor(canvas.clientHeight*DPR);gl.viewport(0,0,canvas.width,canvas.height);if(typeof positionRecordingHud==='function')positionRecordingHud();if(typeof positionStageHudControls==='function')positionStageHudControls();} window.addEventListener('resize',resize); requestAnimationFrame(resize);

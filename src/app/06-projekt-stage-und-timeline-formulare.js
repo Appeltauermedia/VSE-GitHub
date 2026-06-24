@@ -66,6 +66,7 @@ if(vrScreenSegments)vrScreenSegments.addEventListener('change',()=>{
 });
 if(hideMenusBtn)hideMenusBtn.onclick=()=>setMenuMode(true);
 if(showMenusBtn)showMenusBtn.onclick=()=>setMenuMode(false);
+if(sceneViewBtn)sceneViewBtn.addEventListener('click',()=>setMenuMode(true));
 function isTypingTarget(el){
   if(!el)return false;
   const tag=(el.tagName||'').toLowerCase();

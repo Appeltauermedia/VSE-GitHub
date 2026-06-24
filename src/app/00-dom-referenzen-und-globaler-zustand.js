@@ -38,6 +38,7 @@ const timelineMediaSeek=document.getElementById('timelineMediaSeek');
 const timelineMediaName=document.getElementById('timelineMediaName');
 const hideMenusBtn=document.getElementById('hideMenusBtn');
 const showMenusBtn=document.getElementById('showMenusBtn');
+const sceneViewBtn=document.getElementById('sceneViewBtn');
 const vrViewerBtn=document.getElementById('vrViewerBtn');
 const vrStatus=document.getElementById('vrStatus');
 const vrSceneScale=document.getElementById('vrSceneScale');

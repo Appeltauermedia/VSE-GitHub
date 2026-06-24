@@ -20,26 +20,26 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260624-pages-refresh">
-<script src="src/core/stage.js?v=20260624-pages-refresh"></script>
-<script src="src/core/webgl.js?v=20260624-pages-refresh"></script>
-<script src="src/modules/wind.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/particles.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/fog.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/water.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/background.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/mandala.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/pointGlow.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/screen.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/greenscreen.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/greenscreenShadow.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/imageAsset.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/visualizer.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/beam.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/vrPlane.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/shape.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/shadow.js?v=20260624-pages-refresh"></script>
-<script src="src/render/shaders/ipm.js?v=20260624-pages-refresh"></script>
+<link rel="stylesheet" href="src/styles/main.css?v=20260624-scene-dot">
+<script src="src/core/stage.js?v=20260624-scene-dot"></script>
+<script src="src/core/webgl.js?v=20260624-scene-dot"></script>
+<script src="src/modules/wind.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/particles.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/fog.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/water.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/background.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/mandala.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/pointGlow.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/screen.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/greenscreen.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/greenscreenShadow.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/imageAsset.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/visualizer.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/beam.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/vrPlane.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/shape.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/shadow.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/ipm.js?v=20260624-scene-dot"></script>
 </head>
 <!-- ===== HTML / Anwendungslayout ===== -->
 <body>
@@ -746,29 +746,30 @@ Was wurde bewusst nicht veraendert?
   </aside>
 </div>
 <button id="showMenusBtn" type="button">Menüs anzeigen</button>
+<button id="sceneViewBtn" class="stageHudDot stageHudDotBlue" type="button" title="Scene ohne Menüs anzeigen" aria-label="Scene ohne Menüs anzeigen"></button>
 <div id="recordHudOverlay" aria-label="Recording Overlay">
   <button id="recordHudStartBtn" class="recRound" type="button" title="Recording starten"></button>
   <button id="recordHudStopBtn" class="stopSquare" type="button" title="Recording stoppen"></button>
   <div id="recordHudTime" class="recTime">00:00</div>
 </div>
 <!-- ===== JavaScript / Applikationslogik ===== -->
-<script src="src/io/sceneIO.js?v=20260624-pages-refresh"></script>
-<script src="src/app/00a-hoisted-functions.js?v=20260624-pages-refresh"></script>
-<script src="src/app/00b-menu-structure.js?v=20260624-pages-refresh"></script>
-<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260624-pages-refresh"></script>
-<script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260624-pages-refresh"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260624-pages-refresh"></script>
-<script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260624-pages-refresh"></script>
-<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260624-pages-refresh"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260624-pages-refresh"></script>
-<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260624-pages-refresh"></script>
-<script src="src/app/07-audio-playlist-und-analyzer.js?v=20260624-pages-refresh"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260624-pages-refresh"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260624-pages-refresh"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260624-pages-refresh"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260624-pages-refresh"></script>
-<script src="src/app/12-audio-dock-toggle.js?v=20260624-pages-refresh"></script>
-<script src="src/main.js?v=20260624-pages-refresh"></script>
+<script src="src/io/sceneIO.js?v=20260624-scene-dot"></script>
+<script src="src/app/00a-hoisted-functions.js?v=20260624-scene-dot"></script>
+<script src="src/app/00b-menu-structure.js?v=20260624-scene-dot"></script>
+<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260624-scene-dot"></script>
+<script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260624-scene-dot"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260624-scene-dot"></script>
+<script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260624-scene-dot"></script>
+<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260624-scene-dot"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260624-scene-dot"></script>
+<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260624-scene-dot"></script>
+<script src="src/app/07-audio-playlist-und-analyzer.js?v=20260624-scene-dot"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260624-scene-dot"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260624-scene-dot"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260624-scene-dot"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260624-scene-dot"></script>
+<script src="src/app/12-audio-dock-toggle.js?v=20260624-scene-dot"></script>
+<script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>
 

@@ -133,6 +133,11 @@
   #recordHudOverlay .stopSquare.isVisible{display:block}
   #recordHudOverlay .recTime{min-width:48px;padding:4px 6px;border-radius:7px;background:rgba(4,8,14,.72);border:1px solid rgba(170,190,220,.25);color:#eef6ff;font-size:10px;font-weight:800;font-variant-numeric:tabular-nums;text-align:center;letter-spacing:.04em;backdrop-filter:blur(4px);display:none}
   #recordHudOverlay .recTime.isVisible{display:block}
+  .stageHudDot{position:fixed;right:auto;bottom:auto;z-index:80;width:16px;height:16px;border-radius:50%;cursor:pointer;padding:0;transition:opacity .16s ease,transform .16s ease,filter .16s ease;pointer-events:auto;user-select:none}
+  .stageHudDot.isHidden{display:none}
+  body.menuless #sceneViewBtn{display:none}
+  .stageHudDot:hover{opacity:1!important;transform:scale(1.08);filter:brightness(1.25)}
+  .stageHudDotBlue{border:1px solid rgba(126,202,255,.78);background:radial-gradient(circle at 35% 35%,#8bd8ff,#158cff 62%,#00438d);box-shadow:0 0 9px rgba(20,132,255,.5)}
   @keyframes recPulse{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.35)}}
 
 /* Professional anthracite workspace layout */

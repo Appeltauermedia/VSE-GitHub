@@ -282,6 +282,14 @@ function positionRecordingHud(){
   recordHudOverlay.style.left=Math.round(r.right-ow-margin)+'px';
   recordHudOverlay.style.top=Math.round(r.bottom-oh-margin)+'px';
 }
+function positionStageHudControls(){
+  if(!sceneViewBtn||!canvas)return;
+  const r=canvas.getBoundingClientRect();
+  const margin=10;
+  const size=sceneViewBtn.offsetWidth||16;
+  sceneViewBtn.style.left=Math.round(r.right-size-margin)+'px';
+  sceneViewBtn.style.top=Math.round(r.top+margin)+'px';
+}
 function updateRecordingHud(){
   const running=!!(recorder&&recorder.state==='recording');
   const visible=recordOverlayVisible?recordOverlayVisible.checked:true;
@@ -289,8 +297,13 @@ function updateRecordingHud(){
     recordHudOverlay.classList.toggle('isHidden',!visible);
     recordHudOverlay.style.opacity=String(recordOverlayOpacity?recordOverlayOpacity.value:.82);
   }
+  if(sceneViewBtn){
+    sceneViewBtn.style.opacity=String(recordOverlayOpacity?recordOverlayOpacity.value:.82);
+    sceneViewBtn.classList.toggle('isHidden',document.body.classList.contains('menuless'));
+  }
   if(recordOverlayOpacityValue&&recordOverlayOpacity)recordOverlayOpacityValue.textContent=Number(recordOverlayOpacity.value).toFixed(2);
   positionRecordingHud();
+  positionStageHudControls();
   if(recordHudStartBtn){
     recordHudStartBtn.classList.toggle('isRecording',running);
     recordHudStartBtn.style.display=running?'none':'block';
