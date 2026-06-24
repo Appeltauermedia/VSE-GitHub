@@ -147,6 +147,7 @@
   --chrome-top:44px;
   --tool-rail:56px;
   --right-panel:340px;
+  --audio-analyzer-dock-h:210px;
   --bg:#111315;
   --panel:#181b1e;
   --panel-2:#1f2327;
@@ -242,7 +243,7 @@ header{display:none}
   color:var(--text);
 }
 body.audioDockCollapsed #right{
-  padding-bottom:76px;
+  padding-bottom:calc(var(--audio-analyzer-dock-h) + 76px);
 }
 #stageWrap{
   grid-column:2;
@@ -407,7 +408,7 @@ input[type=range],
 #audioDock{
   position:fixed;
   right:0;
-  bottom:0;
+  bottom:var(--audio-analyzer-dock-h);
   z-index:65;
   width:var(--right-panel);
   max-height:420px;
@@ -418,6 +419,20 @@ input[type=range],
   border-left:1px solid var(--line);
   background:#171a1d;
   box-shadow:0 -18px 34px rgba(0,0,0,.30);
+}
+#audioAnalyzerDock{
+  position:fixed;
+  right:0;
+  bottom:0;
+  z-index:66;
+  width:var(--right-panel);
+  height:var(--audio-analyzer-dock-h);
+  margin:0;
+  padding:10px 12px 12px;
+  border-top:1px solid var(--line);
+  border-left:1px solid var(--line);
+  background:#171a1d;
+  box-shadow:0 -10px 24px rgba(0,0,0,.24);
 }
 #audioDock.isCollapsed{
   max-height:44px;
@@ -516,6 +531,18 @@ input[type=range],
 }
 #audioDock #audioStatus{
   margin-bottom:0;
+}
+#audioAnalyzerDock label{
+  margin:0 0 4px;
+}
+#audioAnalyzerDock input{
+  padding:7px 8px;
+}
+#audioAnalyzerDock .tinyLabel{
+  margin-top:7px;
+}
+#audioAnalyzerDock .audioFreqAnalyzer{
+  height:75px;
 }
 .panel>p.mini:not([id]),
 .panel>div.mini:not([id]){

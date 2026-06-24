@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260624-audio-menu-order">
+<link rel="stylesheet" href="src/styles/main.css?v=20260624-analyzer-dock">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260624-scene-dot"></script>
@@ -738,10 +738,12 @@ Was wurde bewusst nicht veraendert?
         <label class="audioInline"><input id="audioShowBpm" type="checkbox"> BPM</label>
         <div id="bpmDisplay" class="mini" style="display:none;margin-top:4px;font-size:16px;color:#e8f4ff"><b>BPM:</b> <span id="bpmValue">--</span></div>
         <p class="mini" id="audioStatus">Audio aus.</p>
-        <label>Master-Input: <span id="audioSensValue">1.00</span></label><input id="audioSensitivity" type="range" min="0" max="3" step="0.01" value="1">
-        <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
-        <div class="tinyLabel">Reaktionsfrequenz</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
       </div>
+    </section>
+    <section id="audioAnalyzerDock" aria-label="Frequenzbalken-Analyzer">
+      <label>Master-Input: <span id="audioSensValue">1.00</span></label><input id="audioSensitivity" type="range" min="0" max="3" step="0.01" value="1">
+      <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
+      <div class="tinyLabel">Reaktionsfrequenz</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
     </section>
   </aside>
 </div>
