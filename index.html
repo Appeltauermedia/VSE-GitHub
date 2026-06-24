@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260624-phosphor-icons">
+<link rel="stylesheet" href="src/styles/main.css?v=20260624-icon-color">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260624-scene-dot"></script>
@@ -55,6 +55,11 @@ Was wurde bewusst nicht veraendert?
           <input id="importFile" type="file" accept=".scene,.json,application/json" style="display:none">
           <button class="green" id="exportBtn" type="button">Scene exportieren (.scene)</button>
           <button class="red" id="clearBtn" type="button">Arbeitsfläche leeren</button>
+          <div class="panel" style="margin-top:12px">
+            <h3>Objekt-Icons</h3>
+            <label>Icon-Farbe</label><input id="objectIconColor" type="color" value="#eef6ff">
+            <button id="resetObjectIconColorBtn" type="button">Icon-Farbe zurücksetzen</button>
+          </div>
           <div class="panel" style="margin-top:12px">
             <h3>Recording</h3>
             <div class="row">
@@ -767,10 +772,10 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260624-scene-dot"></script>
 <script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260624-scene-dot"></script>
 <script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260624-scene-dot"></script>
-<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260624-scene-dot"></script>
+<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260624-icon-color"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260624-scene-dot"></script>
 <script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260624-scene-dot"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260624-scene-dot"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260624-icon-color"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260624-scene-dot"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260624-scene-dot"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260624-scene-dot"></script>

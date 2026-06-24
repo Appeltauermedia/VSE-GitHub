@@ -34,6 +34,35 @@ function setMenuMode(hidden){
   document.body.classList.toggle('menuless',scene.uiHidden);
   requestAnimationFrame(resize);
 }
+function normalizeHexColor(value,fallback='#eef6ff'){
+  const raw=String(value||'').trim();
+  if(/^#[0-9a-f]{6}$/i.test(raw))return raw.toLowerCase();
+  if(/^#[0-9a-f]{3}$/i.test(raw))return ('#'+raw.slice(1).split('').map(c=>c+c).join('')).toLowerCase();
+  return fallback;
+}
+function prepareObjectIconMasks(){
+  document.querySelectorAll('#objectPalette .ico img').forEach(img=>{
+    const wrap=img.parentElement;
+    if(!wrap)return;
+    wrap.classList.add('iconMask');
+    wrap.style.setProperty('--icon-mask','url("'+img.getAttribute('src')+'")');
+  });
+}
+function syncObjectIconColor(){
+  prepareObjectIconMasks();
+  scene.objectIconColor=normalizeHexColor(scene.objectIconColor);
+  document.documentElement.style.setProperty('--object-icon-color',scene.objectIconColor);
+  if(objectIconColor)objectIconColor.value=scene.objectIconColor;
+}
+if(objectIconColor)objectIconColor.addEventListener('input',()=>{
+  scene.objectIconColor=normalizeHexColor(objectIconColor.value);
+  syncObjectIconColor();
+});
+if(resetObjectIconColorBtn)resetObjectIconColorBtn.addEventListener('click',()=>{
+  scene.objectIconColor='#eef6ff';
+  syncObjectIconColor();
+});
+syncObjectIconColor();
 function syncVrViewerUi(){
   scene.vrSceneScale=Math.max(0.5,Math.min(2.5,Number(scene.vrSceneScale??1)));
   scene.vrSceneDistance=Math.max(1.2,Math.min(6,Number(scene.vrSceneDistance??3)));

@@ -466,7 +466,7 @@ function purgeImageParticleObjects(){
 if(importFile)importFile.addEventListener('change',()=>{
   const f=importFile.files&&importFile.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{try{importProjectData(JSON.parse(r.result));}catch(err){alert('Import fehlgeschlagen: '+err.message);}};
+  r.onload=()=>{try{importProjectData(JSON.parse(r.result));if(typeof syncObjectIconColor==='function')syncObjectIconColor();}catch(err){alert('Import fehlgeschlagen: '+err.message);}};
   r.readAsText(f); importFile.value='';
 });
 
