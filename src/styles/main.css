@@ -13,6 +13,7 @@
   #objectPalette .tool{position:relative;width:auto;min-width:84px;max-width:132px;margin:0;padding:7px 9px;border-radius:11px;text-align:center;cursor:grab;box-shadow:0 5px 13px rgba(0,0,0,.18);background:linear-gradient(#172236,#101723)}
   #objectPalette .tool b{font-size:12px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
   #objectPalette .tool b .ico{font-size:16px;line-height:1;margin-right:4px;vertical-align:-1px}
+  #objectPalette .tool b .ico img{width:16px;height:16px;display:inline-block;vertical-align:-3px;filter:invert(96%) sepia(8%) saturate(1077%) hue-rotate(181deg) brightness(103%) contrast(103%)}
   #objectPalette .tool b .txt{vertical-align:middle}
   #objectPalette .tool small{display:none;position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:230px;max-width:70vw;padding:8px 9px;border:1px solid rgba(117,223,255,.35);border-radius:10px;background:rgba(6,10,18,.96);color:#cfe0f8;font-size:11px;line-height:1.28;text-align:left;box-shadow:0 10px 28px rgba(0,0,0,.45);pointer-events:none;z-index:80}
   #objectPalette .tool:hover small{display:block}
@@ -319,6 +320,14 @@ body.audioDockCollapsed #right{
   margin:0;
   font-size:18px;
   line-height:1;
+}
+#objectPalette .tool b .ico img,
+#objectPalette button.paletteCut b .ico img,
+#objectPalette button.paletteTrigger b .ico img{
+  width:18px;
+  height:18px;
+  margin:0;
+  vertical-align:middle;
 }
 #objectPalette .tool b .txt{display:none}
 #objectPalette .tool small{
