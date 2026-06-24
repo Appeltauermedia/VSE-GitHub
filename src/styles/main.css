@@ -12,10 +12,9 @@
   #objectPalette{position:relative;z-index:35;width:calc(100% + 40px);max-width:none;margin:0 -20px;display:flex;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;padding:8px 10px;border:1px solid rgba(38,50,71,.92);border-radius:14px;background:rgba(10,16,26,.86);box-shadow:0 10px 28px rgba(0,0,0,.30);backdrop-filter:blur(6px);justify-self:stretch}
   #objectPalette .tool{position:relative;width:auto;min-width:84px;max-width:132px;margin:0;padding:7px 9px;border-radius:11px;text-align:center;cursor:grab;box-shadow:0 5px 13px rgba(0,0,0,.18);background:linear-gradient(#172236,#101723)}
   #objectPalette .tool b{font-size:12px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-  #objectPalette .tool b .ico{font-size:16px;line-height:1;margin-right:4px;vertical-align:-1px}
-  #objectPalette .tool b .ico img{width:16px;height:16px;display:inline-block;vertical-align:-3px;filter:var(--object-icon-filter, invert(96%) sepia(8%) saturate(1077%) hue-rotate(181deg) brightness(103%) contrast(103%))}
-  #objectPalette .tool b .ico.iconMask{width:16px;height:16px;display:inline-block;background:var(--object-icon-color);-webkit-mask:var(--icon-mask) center/contain no-repeat;mask:var(--icon-mask) center/contain no-repeat;vertical-align:-3px}
-  #objectPalette .tool b .ico.iconMask img{display:none}
+  #objectPalette .tool b .ico{width:16px;height:16px;display:inline-block;color:var(--object-icon-color);line-height:1;margin-right:4px;vertical-align:-3px}
+  #objectPalette .tool b .ico svg{width:100%;height:100%;display:block}
+  #objectPalette .tool b .ico svg :not([fill="none"]){fill:currentColor}
   #objectPalette .tool b .txt{vertical-align:middle}
   #objectPalette .tool small{display:none;position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:230px;max-width:70vw;padding:8px 9px;border:1px solid rgba(117,223,255,.35);border-radius:10px;background:rgba(6,10,18,.96);color:#cfe0f8;font-size:11px;line-height:1.28;text-align:left;box-shadow:0 10px 28px rgba(0,0,0,.45);pointer-events:none;z-index:80}
   #objectPalette .tool:hover small{display:block}
@@ -316,28 +315,32 @@ body.audioDockCollapsed #right{
   text-align:center;
   overflow:visible;
 }
-#objectPalette .tool b .ico,
+#objectPalette .tool b .ico{
+  width:18px;
+  height:18px;
+  display:inline-block;
+  color:var(--object-icon-color);
+  margin:0;
+  line-height:1;
+  vertical-align:middle;
+}
 #objectPalette button.paletteCut b,
 #objectPalette button.paletteTrigger b{
   margin:0;
   font-size:18px;
   line-height:1;
 }
-#objectPalette .tool b .ico img,
-#objectPalette button.paletteCut b .ico img,
-#objectPalette button.paletteTrigger b .ico img{
-  width:18px;
-  height:18px;
-  margin:0;
-  vertical-align:middle;
+#objectPalette .tool b .ico svg,
+#objectPalette button.paletteCut b .ico svg,
+#objectPalette button.paletteTrigger b .ico svg{
+  width:100%;
+  height:100%;
+  display:block;
 }
-#objectPalette .tool b .ico.iconMask,
-#objectPalette button.paletteCut b .ico.iconMask,
-#objectPalette button.paletteTrigger b .ico.iconMask{
-  width:18px;
-  height:18px;
-  margin:0;
-  vertical-align:middle;
+#objectPalette .tool b .ico svg :not([fill="none"]),
+#objectPalette button.paletteCut b .ico svg :not([fill="none"]),
+#objectPalette button.paletteTrigger b .ico svg :not([fill="none"]){
+  fill:currentColor;
 }
 #objectPalette .tool b .txt{display:none}
 #objectPalette .tool small{

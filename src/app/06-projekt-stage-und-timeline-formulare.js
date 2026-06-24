@@ -40,16 +40,7 @@ function normalizeHexColor(value,fallback='#eef6ff'){
   if(/^#[0-9a-f]{3}$/i.test(raw))return ('#'+raw.slice(1).split('').map(c=>c+c).join('')).toLowerCase();
   return fallback;
 }
-function prepareObjectIconMasks(){
-  document.querySelectorAll('#objectPalette .ico img').forEach(img=>{
-    const wrap=img.parentElement;
-    if(!wrap)return;
-    wrap.classList.add('iconMask');
-    wrap.style.setProperty('--icon-mask','url("'+img.getAttribute('src')+'")');
-  });
-}
 function syncObjectIconColor(){
-  prepareObjectIconMasks();
   scene.objectIconColor=normalizeHexColor(scene.objectIconColor);
   document.documentElement.style.setProperty('--object-icon-color',scene.objectIconColor);
   if(objectIconColor)objectIconColor.value=scene.objectIconColor;
