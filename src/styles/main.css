@@ -535,6 +535,16 @@ input[type=range],
 #audioAnalyzerDock label{
   margin:0 0 4px;
 }
+.audioAnalyzerTop{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+#audioAnalyzerDock .audioInline{
+  margin:0 0 4px;
+  white-space:nowrap;
+}
 #audioAnalyzerDock input{
   padding:7px 8px;
 }
