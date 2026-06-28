@@ -34,7 +34,7 @@ function particleWindFactor(o){
   if(['snow','rain','confetti','glitter'].includes(m))return scene.windApplyToWeatherParticles!==false?1.15:0;
   return 0.75;
 }
-function supportsWindObject(o){return !!(o&&(['fog','particle','imageAsset','waterSurface','waterFlowOverlay','screen','greenscreen'].includes(o.type)));}
+function supportsWindObject(o){return !!(o&&(['fog','cloud','particle','imageAsset','waterSurface','waterFlowOverlay','screen','greenscreen'].includes(o.type)));}
 function windForObject(o,kind){
   const z={cssX:0,cssY:0,percentX:0,percentY:0,strength:0,turbCss:0,turbulenceAmount:0,gust:0,enabled:false};
   if(!o||o.windAffected===false)return z;
@@ -42,6 +42,7 @@ function windForObject(o,kind){
   if(!w.enabled||w.strength<=0)return z;
   let allowed=false, factor=1;
   if(kind==='fog'||o.type==='fog'){allowed=scene.windApplyToFog!==false; factor=1.15;}
+  else if(kind==='cloud'||o.type==='cloud'){allowed=true; factor=1;}
   else if(kind==='particle'||o.type==='particle'){allowed=scene.windApplyToParticles!==false; factor=particleWindFactor(o);}
   else if(kind==='physicsAsset'||o.type==='imageAsset'){allowed=scene.windApplyToPhysicsAssets!==false&&!!o.imageAssetPhysicsEnabled; factor=1/Math.sqrt(Math.max(.1,Number(o.imageAssetMass||1)));}
   else if(kind==='water'||isWaterObject(o)){allowed=scene.windApplyToWater!==false; factor=.9;}

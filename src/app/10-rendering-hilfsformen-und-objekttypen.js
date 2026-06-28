@@ -28,6 +28,12 @@ function drawPointGlow(o){
   gl.uniform2f(pointGlowLoc.pixelRes,canvas.width,canvas.height);
   gl.uniform2f(pointGlowLoc.cssRes,cw,ch);
   gl.uniform2f(pointGlowLoc.originCss,objCssX(o),objCssY(o));
+  gl.uniform1f(pointGlowLoc.rot,effectiveRotation(o)*Math.PI/180);
+  const pointEmitterShape=o.type==='light'?(o.lightEmitterShape||'point'):'point';
+  gl.uniform1i(pointGlowLoc.emitterShape,pointEmitterShape==='rectangle'?2:pointEmitterShape==='line'?1:0);
+  gl.uniform1i(pointGlowLoc.rectangleMode,o.lightRectangleEmission==='inward'?1:o.lightRectangleEmission==='solid'?2:0);
+  gl.uniform1f(pointGlowLoc.emitterLength,pointEmitterShape==='line'?su(o.lightEmitterLength??240):0);
+  gl.uniform2f(pointGlowLoc.emitterSize,su(o.lightEmitterWidth??480),su(o.lightEmitterHeight??270));
   gl.uniform1f(pointGlowLoc.radius,Math.max(4*stageScale(),Number(o.size||44)*0.34*stageScale()));
   gl.uniform1f(pointGlowLoc.glow,la.glow);
   gl.uniform1f(pointGlowLoc.opacity,o.opacity??0.85);
@@ -49,6 +55,7 @@ function fogAudio(o){
   let amount=1;
   let glow=o.fogGlow??0.15;
   let angle=o.fogAngle??80;
+  let startWidth=Math.max(0,Number(o.fogStartWidth??80));
   let rot=Number(o.rotation||0);
   let driftX=0.22;
   let driftY=-0.10;
@@ -77,7 +84,7 @@ function fogAudio(o){
   }
 
   const calcRange=Math.max(40, Math.min(2200, lifetime*(55+dynamics*95)*(0.75+motionSpeed*0.22)));
-  return {amount,driftX,driftY,glow,angle,rot,motionSpeed,turbulence,gravity,calcRange};
+  return {amount,driftX,driftY,glow,angle,startWidth,rot,motionSpeed,turbulence,gravity,calcRange};
 }
 function drawFog(o){
   const cw=canvas.clientWidth, ch=canvas.clientHeight;
@@ -95,6 +102,7 @@ function drawFog(o){
   gl.uniform1f(fogLoc.rot,fa.rot*Math.PI/180);
   gl.uniform1f(fogLoc.range,su(fa.calcRange)*(1+wind.strength*0.045));
   gl.uniform1f(fogLoc.angle,fa.angle);
+  gl.uniform1f(fogLoc.startWidth,su(fa.startWidth));
   gl.uniform1f(fogLoc.amount,fa.amount*(o.intensity??1)*(1+wind.gust*0.08));
   gl.uniform1f(fogLoc.opacity,o.fogOpacity??0.35);
   gl.uniform1f(fogLoc.softness,o.fogSoftness??0.75);
@@ -187,6 +195,23 @@ function loadGreenscreenVideo(o,file){
   video.src=url;
   attachGreenscreenVideoElement(o,video,tex,'video',file.name);
 }
+async function refreshGreenscreenWebcamDevices(preferredId){
+  if(!greenscreenWebcamDevice||typeof navigator==='undefined'||!navigator.mediaDevices||typeof navigator.mediaDevices.enumerateDevices!=='function')return;
+  const previous=preferredId!==undefined?preferredId:greenscreenWebcamDevice.value;
+  try{
+    const devices=(await navigator.mediaDevices.enumerateDevices()).filter(device=>device.kind==='videoinput');
+    greenscreenWebcamDevice.innerHTML='';
+    const defaultOption=document.createElement('option');
+    defaultOption.value='';defaultOption.textContent='Standard-Webcam';greenscreenWebcamDevice.appendChild(defaultOption);
+    devices.forEach((device,index)=>{
+      const option=document.createElement('option');
+      option.value=device.deviceId;
+      option.textContent=device.label||('Webcam '+(index+1));
+      greenscreenWebcamDevice.appendChild(option);
+    });
+    if([...greenscreenWebcamDevice.options].some(option=>option.value===previous))greenscreenWebcamDevice.value=previous;
+  }catch(error){console.warn('Webcam-Liste konnte nicht gelesen werden.',error);}
+}
 async function startGreenscreenWebcam(o){
   if(!o||o.type!=='greenscreen')return;
   if(typeof navigator==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
@@ -197,13 +222,24 @@ async function startGreenscreenWebcam(o){
   }
   try{
     releaseGreenscreenMedia(o);
-    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+    const selectedDeviceId=(greenscreenWebcamDevice&&greenscreenWebcamDevice.value)||o.greenscreenDeviceId||'';
+    const videoConstraints=selectedDeviceId?{deviceId:{exact:selectedDeviceId}}:true;
+    const stream=await navigator.mediaDevices.getUserMedia({video:videoConstraints,audio:false});
+    const track=stream.getVideoTracks()[0];
+    if(!track)throw new Error('Keine aktive Videospur verfügbar.');
+    o.greenscreenDeviceId=track.getSettings().deviceId||selectedDeviceId;
+    await refreshGreenscreenWebcamDevices(o.greenscreenDeviceId);
     const tex=initTexture();
     const video=document.createElement('video');
     video.srcObject=stream;
     o.greenscreenStream=stream;
-    attachGreenscreenVideoElement(o,video,tex,'webcam','Webcam');
+    attachGreenscreenVideoElement(o,video,tex,'webcam',track.label||'Webcam');
+    if(greenscreenInfo&&selected===o)greenscreenInfo.textContent='Webcam aktiv: '+(track.label||'ausgewählte Kamera');
   }catch(err){alert('Webcam konnte nicht gestartet werden: '+err.message);}
+}
+if(typeof navigator!=='undefined'&&navigator.mediaDevices){
+  refreshGreenscreenWebcamDevices();
+  if(typeof navigator.mediaDevices.addEventListener==='function')navigator.mediaDevices.addEventListener('devicechange',()=>refreshGreenscreenWebcamDevices(selected&&selected.type==='greenscreen'?selected.greenscreenDeviceId:undefined));
 }
 
 function clearScreenPlaylist(o){
@@ -280,7 +316,7 @@ function loadScreenMedia(o,file,type,fromPlaylist=false){
     exportReader.readAsDataURL(file);
   }
   o.screenMediaFit='cover';
-  o.screenFlipX=o.screenFlipX??true;
+  o.screenFlipX=o.screenFlipX??false;
   o.screenFlipY=o.screenFlipY??false;
   o.screenVideoAudio=o.screenVideoAudio??true;
   o.screenVideoVolume=o.screenVideoVolume??1;
@@ -922,8 +958,30 @@ function clearScreenTextBackgroundImage(o){
   if(screenTextBgInfo)screenTextBgInfo.textContent='Kein Texthintergrund-Bild geladen.';
 }
 
+function wrapScreenCanvasText(ctx,text,maxWidth){
+  const lines=[];
+  for(const paragraph of String(text??'').replace(/\r/g,'').split('\n')){
+    if(paragraph===''){lines.push('');continue;}
+    const words=paragraph.split(/\s+/);
+    let line='';
+    for(const word of words){
+      const candidate=line?line+' '+word:word;
+      if(!line||ctx.measureText(candidate).width<=maxWidth){line=candidate;continue;}
+      lines.push(line);line='';
+      if(ctx.measureText(word).width<=maxWidth){line=word;continue;}
+      let part='';
+      for(const char of word){
+        if(part&&ctx.measureText(part+char).width>maxWidth){lines.push(part);part=char;}else part+=char;
+      }
+      line=part;
+    }
+    lines.push(line);
+  }
+  return lines.length?lines:[''];
+}
+
 function ensureScreenTextTexture(o){
-  if(!o||o.type!=='screen')return null;
+  if(!o||!['screen','text'].includes(o.type))return null;
   if(!o.screenTextCanvas){
     o.screenTextCanvas=document.createElement('canvas');
     o.screenTextCanvas.width=1024;
@@ -935,12 +993,23 @@ function ensureScreenTextTexture(o){
     o.screenTextDirty=true;
   }
   const canvas2=o.screenTextCanvas;
+  const screenAspect=Math.max(.1,Number(o.screenWidth||260)/Math.max(1,Number(o.screenHeight||120)));
+  const desiredTextWidth=Math.max(128,Math.min(2048,Math.round(canvas2.height*screenAspect)));
+  if(canvas2.width!==desiredTextWidth){
+    canvas2.width=desiredTextWidth;
+    o.screenTextDirty=true;
+  }
   const ctx=canvas2.getContext('2d');
   const textSource=String(o.screenTextSource||'custom');
   const text=String(textSource==='songTitle'?(audioTitleState.title||titleFromFileName(audioTitleState.fileName||'')):(o.screenText??''));
   const fontSize=Math.max(8,Math.min(240,Number(o.screenTextSize??48)));
   const fontFamily=String(o.screenTextFont||'Arial');
   const color=String(o.screenTextColor||'#ffffff');
+  const bold=o.screenTextBold!==false;
+  const italic=!!o.screenTextItalic;
+  const underline=!!o.screenTextUnderline;
+  const textAlign=['left','right'].includes(o.screenTextAlign)?o.screenTextAlign:'center';
+  const lineHeight=Math.max(.8,Math.min(2.5,Number(o.screenTextLineHeight??1.2)));
   const mode=String(o.screenTextMode||'static');
   const speed=Math.max(0,Number(o.screenTextSpeed??80));
   const bgMode=String(o.screenTextBgMode||'transparent');
@@ -974,24 +1043,46 @@ function ensureScreenTextTexture(o){
       ctx.restore();
     }
   }
-  ctx.font=`700 ${fontSize}px ${fontFamily}`;
+  ctx.font=`${italic?'italic ':''}${bold?'700':'400'} ${fontSize}px ${fontFamily}`;
   ctx.textBaseline='middle';
   ctx.fillStyle=color;
   ctx.shadowColor='rgba(0,0,0,0.55)';
   ctx.shadowBlur=Math.max(2,fontSize*0.10);
   ctx.shadowOffsetX=Math.max(1,fontSize*0.035);
   ctx.shadowOffsetY=Math.max(1,fontSize*0.035);
-  const metrics=ctx.measureText(text||' ');
+  const marqueeText=(text||' ').replace(/\s*\n\s*/g,'   ');
+  const metrics=ctx.measureText(marqueeText);
   const tw=Math.max(1,metrics.width);
-  let x=canvas2.width/2;
   if(mode==='marquee'){
     const cycle=canvas2.width+tw+80;
-    x=canvas2.width - ((now*speed)%cycle);
+    const x=canvas2.width-((now*speed)%cycle);
+    ctx.textAlign='left';
+    ctx.fillText(marqueeText,x,canvas2.height/2);
+    if(underline){
+      const y=canvas2.height/2+fontSize*.48;
+      ctx.fillRect(x,y,tw,Math.max(1,fontSize*.055));
+    }
   }else{
-    ctx.textAlign='center';
+    const padding=Math.max(24,fontSize*.65);
+    const lines=wrapScreenCanvasText(ctx,text||' ',canvas2.width-padding*2);
+    const lineStep=fontSize*lineHeight;
+    const firstY=canvas2.height/2-(lines.length-1)*lineStep/2;
+    ctx.textAlign='left';
+    lines.forEach((line,index)=>{
+      const y=firstY+index*lineStep;
+      const renderedLine=line||' ';
+      const width=Math.max(1,ctx.measureText(renderedLine).width);
+      const left=textAlign==='left'
+        ? padding
+        : textAlign==='right'
+          ? canvas2.width-padding-width
+          : (canvas2.width-width)/2;
+      ctx.fillText(renderedLine,left,y);
+      if(underline){
+        ctx.fillRect(left,y+fontSize*.48,width,Math.max(1,fontSize*.055));
+      }
+    });
   }
-  ctx.textAlign=(mode==='marquee')?'left':'center';
-  ctx.fillText(text||' ',x,canvas2.height/2);
 
   gl.bindTexture(gl.TEXTURE_2D,o.screenTextTexture);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
@@ -1030,7 +1121,7 @@ function drawScreen(o){
   gl.uniform1i(screenLoc.mode,screenModeId(o.screenMode));
   gl.uniform1f(screenLoc.selected,isSelected(o)?1:0);
   const useEngine=(o.screenMode==='engine');
-  const useText=(o.screenMode==='text');
+  const useText=(o.type==='text'||o.screenMode==='text');
   const useMp3Cover=(o.screenMode==='mp3cover');
   const textTex=useText?ensureScreenTextTexture(o):null;
   const coverTex=(useMp3Cover&&audioCoverState.found)?audioCoverState.texture:null;
@@ -1047,14 +1138,14 @@ function drawScreen(o){
   gl.bindTexture(gl.TEXTURE_2D,useEngine?engineTex:(useText?textTex:(useMp3Cover?(coverTex||initTexture._fallback||(initTexture._fallback=initTexture())):(hasMedia?o.screenTexture:initTexture._fallback||(initTexture._fallback=initTexture())))));
   gl.uniform1i(screenLoc.media,0);
   gl.uniform1i(screenLoc.useMedia,hasMedia?1:0);
-  gl.uniform1f(screenLoc.mediaAspect,useEngine?(Number(o.screenEngineW||640)/Math.max(1,Number(o.screenEngineH||360))):(useText?4:(useMp3Cover?(audioCoverState.aspect||1):getScreenMediaAspect(o)))); 
+  gl.uniform1f(screenLoc.mediaAspect,useEngine?(Number(o.screenEngineW||640)/Math.max(1,Number(o.screenEngineH||360))):(useText?(Number(o.screenTextCanvas&&o.screenTextCanvas.width||1024)/Math.max(1,Number(o.screenTextCanvas&&o.screenTextCanvas.height||256))):(useMp3Cover?(audioCoverState.aspect||1):getScreenMediaAspect(o))));
   gl.uniform1i(screenLoc.useEngine,useEngine?1:0);
   const cropX=su(o.screenEngineX??0), cropY=su(o.screenEngineY??0), cropW=su(o.screenEngineW??640), cropH=su(o.screenEngineH??360);
   gl.uniform4f(screenLoc.engineCropCss,cropX,cropY,cropW,cropH);
-  gl.uniform1i(screenLoc.mediaFit,mediaFitId(o.screenMediaFit||'cover'));
+  gl.uniform1i(screenLoc.mediaFit,useText?2:mediaFitId(o.screenMediaFit||'cover'));
   gl.uniform1i(screenLoc.flipX,o.screenFlipX?1:0);
   gl.uniform1i(screenLoc.flipY,o.screenFlipY?1:0);
-  const frameMode=o.screenFrameMode||'visible';
+  const frameMode=o.type==='text'?'hidden':(o.screenFrameMode||'visible');
   const frameVisible=(frameMode==='visible'||(frameMode==='editor'&&!scene.uiHidden))?1:0;
   gl.uniform1f(screenLoc.frameVisible,frameVisible);
   gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
@@ -1115,6 +1206,7 @@ function drawGreenscreen(o){
   gl.bindTexture(gl.TEXTURE_2D,o.greenscreenTexture||initTexture._fallback||(initTexture._fallback=initTexture()));
   gl.uniform1i(greenscreenLoc.video,0);
   gl.uniform1i(greenscreenLoc.hasVideo,(o.greenscreenTexture&&o.greenscreenMediaElement&&o.greenscreenMediaElement.readyState>=2)?1:0);
+  gl.uniform1i(greenscreenLoc.chromaKeyEnabled,o.greenscreenChromaKeyEnabled!==false?1:0);
   gl.uniform1f(greenscreenLoc.tolerance,Number(o.greenscreenTolerance??.32));
   gl.uniform1f(greenscreenLoc.softness,Number(o.greenscreenSoftness??.12));
   gl.uniform1f(greenscreenLoc.edgeTrim,Number(o.greenscreenEdgeTrim??0));
@@ -1160,8 +1252,18 @@ function drawBeam(o){
   gl.uniform2f(beamLoc.originCss,objCssX(o),objCssY(o));
   gl.uniform1f(beamLoc.rot,effectiveRotation(o)*Math.PI/180);
   gl.uniform1f(beamLoc.range,su(o.range||260));
+  const beamEmitterShape=o.type==='light'?(o.lightEmitterShape||'point'):'point';
+  gl.uniform1i(beamLoc.emitterShape,beamEmitterShape==='rectangle'?2:beamEmitterShape==='line'?1:0);
+  gl.uniform1i(beamLoc.rectangleMode,o.lightRectangleEmission==='inward'?1:o.lightRectangleEmission==='solid'?2:0);
+  gl.uniform1f(beamLoc.emitterLength,beamEmitterShape==='line'?su(o.lightEmitterLength??240):0);
+  gl.uniform2f(beamLoc.emitterSize,su(o.lightEmitterWidth??480),su(o.lightEmitterHeight??270));
   const ambiBoost=(ambilightState.active&&ambilightState.strength>1)?(1+(ambilightState.strength-1)*0.85):1;
   gl.uniform1f(beamLoc.angle,la.angle);gl.uniform1f(beamLoc.soft,o.softness??.55);gl.uniform1f(beamLoc.intensity,la.intensity*(isSelected(o)?1.12:1)*ambiBoost);gl.uniform3f(beamLoc.color,c[0],c[1],c[2]);gl.blendFunc(gl.ONE,gl.ONE);gl.drawArrays(gl.TRIANGLES,0,6);
+}
+
+function drawLightEmitter(o){
+  drawBeam(o);
+  if(!((o.lightEmitterShape||'point')==='rectangle'&&o.lightRectangleEmission==='solid'))drawPointGlow(o);
 }
 
 function drawFogSource(o){
@@ -1827,7 +1929,7 @@ function splitByBackgroundLayer(ordered){
     front: ordered.filter(e=>Number(e.o.layer??1)>=1)
   };
 }
-function renderObject(o){if(o&&o._timelineHidden)return;if(o&&supportsShadow(o))drawObjectShadow(o);if(o.type==='audioSource'){drawAudioSource(o);}if(o.type==='screen'){drawScreen(o);}if(o.type==='imageAsset'){drawImageAsset(o);}if(o.type==='waterSurface'||o.type==='waterFlowOverlay'){drawWaterObject(o);}if(o.type==='mandalaVisualizer'){drawMandalaVisualizer(o);}if(o.type==='visualizer'){drawVisualizer(o);}if(o.type==='light'){drawBeam(o);drawPointGlow(o);}if(o.type==='lightbar'){drawLightbar(o);}if(o.type==='movinghead'){drawMovingHead(o);}if(o.type==='fog'){drawFog(o);drawFogSource(o);}if(o.type==='particle'){drawParticle(o);}if(o.type==='imageParticle'){drawIpm(o);}if(o.type==='greenscreen'){drawGreenscreenShadow(o);drawGreenscreen(o);}if(o.type!=='lightbar'&&o.type!=='visualizer'&&o.type!=='movinghead'&&o.type!=='imageAsset'&&o.type!=='audioSource'&&o.type!=='waterSurface'&&o.type!=='waterFlowOverlay'&&o.type!=='mandalaVisualizer')drawBody(o);}
+function renderObject(o){if(o&&o._timelineHidden)return;if(o&&supportsShadow(o))drawObjectShadow(o);if(o.type==='audioSource'){drawAudioSource(o);}if(o.type==='screen'||o.type==='text'){drawScreen(o);}if(o.type==='imageAsset'){drawImageAsset(o);}if(o.type==='waterSurface'||o.type==='waterFlowOverlay'){drawWaterObject(o);}if(o.type==='mandalaVisualizer'){drawMandalaVisualizer(o);}if(o.type==='visualizer'){drawVisualizer(o);}if(o.type==='cloud'&&typeof drawCloud==='function'){drawCloud(o);}if(o.type==='light'){drawLightEmitter(o);}if(o.type==='lightbar'){drawLightbar(o);}if(o.type==='movinghead'){drawMovingHead(o);}if(o.type==='fog'){drawFog(o);drawFogSource(o);}if(o.type==='particle'){drawParticle(o);}if(o.type==='imageParticle'){drawIpm(o);}if(o.type==='greenscreen'){drawGreenscreenShadow(o);drawGreenscreen(o);}if(o.type!=='cloud'&&o.type!=='text'&&o.type!=='lightbar'&&o.type!=='visualizer'&&o.type!=='movinghead'&&o.type!=='imageAsset'&&o.type!=='audioSource'&&o.type!=='waterSurface'&&o.type!=='waterFlowOverlay'&&o.type!=='mandalaVisualizer')drawBody(o);}
 function renderFinalSceneBase(ordered){
   gl.clearColor(.02,.028,.048,1);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -1838,6 +1940,22 @@ function renderFinalSceneBase(ordered){
   drawBackgroundDim(); // Scene-Abdunkelung nutzt die aktivierten Ziele.
   if(scene.showGrid) drawGrid(); // Arbeitsgitter liegt visuell auf Layer 0, wird aber nicht exportiert. Hintergrundbild ist konzeptionell Layer 0.
   renderOrderedObjects(split.front);
+}
+
+function drawSelectedReferenceMarkers(){
+  if(document.body.classList.contains('menuless'))return;
+  const markerPoints=circlePoints(28);
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
+  for(const o of objects){
+    if(!o||!isSelected(o))continue;
+    const pos=[objCssX(o),objCssY(o)];
+    // Dunkle Außenkante und heller Mittelpunkt bleiben auf jedem Hintergrund
+    // sowie bei vollständig transparenten Objekten eindeutig sichtbar.
+    drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.015,0.025,0.045,0.96],pos,0,7);
+    drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.20,0.72,1.00,1.00],pos,0,4.5);
+    drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.96,0.99,1.00,1.00],pos,0,1.65);
+  }
 }
 function mandalaAudioEnergy(){
   if(!audioState.enabled)return 0;
@@ -2050,6 +2168,9 @@ function renderNormalFrame(ordered){
     gl.viewport(0,0,canvas.width,canvas.height);
     renderFinalSceneBase(ordered);
   }
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  gl.viewport(0,0,canvas.width,canvas.height);
+  drawSelectedReferenceMarkers();
 }
 function vrFrame(time,frame){
   if(!vrState.active||!vrState.session)return;

@@ -105,9 +105,18 @@
     ['pIntensity','pOpacity','pGlow','pScreenBrightness','pScreenOpacity','pScreenScanlines','pImageAssetOpacity','pGreenscreenOpacity','pWaterOpacity','pVisualizerOpacity','pMandalaObjOpacity','pLife'].forEach(id=>moveField(appearance,id));
     insertAfter(source,appearance);
 
-    const reaction=makePanel('Sekundär - Audio / Reaktion','',false);
-    ['pScreenAudio','pMusic','pThresholdBelow','pAudioFreqLog'].forEach(id=>moveField(reaction,id));
-    moveBlock(reaction,'#audioFreqRow');
+    const reaction=makePanel('Musikreaktion - Frequenz und Threshold','',true);
+    moveField(reaction,'pScreenAudio');
+    moveField(reaction,'pMusic');
+    const thresholdBelow=el('pThresholdBelow');
+    const thresholdLabel=thresholdBelow&&thresholdBelow.parentElement;
+    const thresholdHint=thresholdLabel&&thresholdLabel.nextElementSibling;
+    moveField(reaction,'pThresholdBelow');
+    if(thresholdHint&&thresholdHint.classList.contains('mini'))moveNode(reaction,thresholdHint);
+    const audioFreqRow=el('audioFreqRow');
+    const audioFreqHint=audioFreqRow&&audioFreqRow.nextElementSibling;
+    moveField(reaction,'pAudioFreqLog');
+    if(audioFreqHint&&audioFreqHint.classList.contains('mini'))moveNode(reaction,audioFreqHint);
     insertAfter(appearance,reaction);
 
     const tertiary=makePanel('Tertiär - Gruppen und Spezialfunktionen','',false);
@@ -124,7 +133,7 @@
       'pScreenImageFile','pScreenVideoFile','pScreenMediaFolder','pScreenCaptureBtn','screenMediaInfo',
       'pImageAssetFile','pImageAssetClearBtn','pImageAssetExportPngBtn','imageAssetInfo',
       'pParticleImageFile','clearParticleImageBtn','particleImageInfo',
-      'pGreenscreenVideoFile','pGreenscreenWebcamBtn','pGreenscreenStopBtn','greenscreenInfo',
+      'pGreenscreenVideoFile','pGreenscreenWebcamDevice','pGreenscreenWebcamBtn','pGreenscreenStopBtn','greenscreenInfo',
       'pAudioSourceFile','pAudioSourceUrl','pAudioSourceLoadUrlBtn','audioSourceInfo','pAudioSourcePlayBtn','pAudioSourcePauseBtn'
     ].forEach(id=>{
       if(id.endsWith('Info')||id==='screenMediaInfo'||id==='greenscreenInfo'||id==='audioSourceInfo'||id==='particleImageInfo'||id==='imageAssetInfo')moveText(panel,id);
@@ -135,7 +144,8 @@
 
   function moveObjectDimensions(panel){
     [
-      'pScreenWidth','pScreenHeight',
+      'pScreenWidth','pScreenHeight','pScreenKeepAspect',
+      'pLightEmitterShape','pLightRectangleEmission','pLightEmitterLength','pLightEmitterWidth','pLightEmitterHeight','pLightEmitterKeepAspect',
       'pImageAssetWidth','pImageAssetHeight','pImageAssetKeepAspect',
       'pGreenscreenWidth','pGreenscreenHeight','pGreenscreenKeepAspect','pGreenscreenSwapAspect',
       'pWaterWidth','pWaterHeight','pWaterShape',

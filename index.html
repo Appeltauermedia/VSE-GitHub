@@ -20,29 +20,30 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260624-icon-color-inline">
+<link rel="stylesheet" href="src/styles/main.css?v=20260628-cloud-object-3">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
-<script src="src/modules/wind.js?v=20260624-scene-dot"></script>
+<script src="src/modules/wind.js?v=20260628-cloud-object"></script>
 <script src="src/render/shaders/particles.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/fog.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/fog.js?v=20260627-fog-gravity-wisps"></script>
+<script src="src/render/shaders/cloud.js?v=20260628-cloud-particles-2"></script>
 <script src="src/render/shaders/water.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/background.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/mandala.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/pointGlow.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/pointGlow.js?v=20260627-rectangle-emission-modes"></script>
 <script src="src/render/shaders/screen.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/greenscreen.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/greenscreen.js?v=20260628-chroma-toggle-2"></script>
 <script src="src/render/shaders/greenscreenShadow.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/imageAsset.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/visualizer.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/beam.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/beam.js?v=20260627-rectangle-emission-modes"></script>
 <script src="src/render/shaders/vrPlane.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/shape.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/shadow.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/ipm.js?v=20260624-scene-dot"></script>
 </head>
 <!-- ===== HTML / Anwendungslayout ===== -->
-<body>
+<body class="rightPanelCollapsed">
 <div id="app">
     <!-- Globale Projektaktionen und Szenenmenues -->
 <header aria-hidden="true"></header>
@@ -203,7 +204,9 @@ Was wurde bewusst nicht veraendert?
       <div class="tool" draggable="true" data-type="lightbar"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><line x1="176" y1="80" x2="240" y2="80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="176" x2="240" y2="176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="128" x2="240" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><path d="M88,200a72,72,0,0,1-72-72.55C16.3,87.75,49.2,56,88.9,56H128a8,8,0,0,1,8,8V192a8,8,0,0,1-8,8Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Lightbar</span></b><small>Mehrere gekoppelte Lichtemitter auf einer Linie.</small></div>
       <div class="tool" draggable="true" data-type="movinghead"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><line x1="128" y1="232" x2="128" y2="200" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><circle cx="128" cy="128" r="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="128" y1="24" x2="128" y2="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="24" y1="128" x2="56" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="232" y1="128" x2="200" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><circle cx="128" cy="128" r="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Moving Head</span></b><small>Schwenkbarer Kopf mit Pan/Tilt, Beam und Musikreaktion.</small></div>
       <div class="tool" draggable="true" data-type="fog"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><line x1="120" y1="196" x2="72" y2="196" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="184" y1="196" x2="160" y2="196" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="160" y1="232" x2="104" y2="232" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><path d="M92,96a64,64,0,1,1,64,64H76A40,40,0,1,1,93.15,83.85" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Nebel</span></b><small>Weicher Nebel mit Ausstoß, Drift, Gravitation und Wabern.</small></div>
+      <div class="tool" draggable="true" data-type="cloud" title="Ziehen oder doppelklicken, um eine Wolke zu erstellen"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M72 192h120a40 40 0 0 0 4-79.8A72 72 0 0 0 58.5 91.6 52 52 0 0 0 72 192Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Wolke</span></b><small>Prozedurale WebGL-Wolke mit Presets, Wind und Audio-Reaktion.</small></div>
       <div class="tool" draggable="true" data-type="screen"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><polygon points="156 120 116 92 116 148 156 120" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><rect x="32" y="48" width="192" height="144" rx="16" transform="translate(256 240) rotate(180)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="160" y1="228" x2="96" y2="228" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Screen</span></b><small>LED-Fläche für Farbe, Bild, Video, Text, Playlists und MP3-Cover.</small></div>
+      <div class="tool" draggable="true" data-type="text"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><line x1="48" y1="56" x2="208" y2="56" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="24"/><line x1="128" y1="56" x2="128" y2="208" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="24"/><line x1="80" y1="208" x2="176" y2="208" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="24"/></svg></span><span class="txt">Text</span></b><small>Rich-Text-Objekt mit Umbruch sowie transparentem, farbigem oder Bild-Hintergrund.</small></div>
       <button id="bgToImageAssetBtn" class="tool paletteAction paletteCut" type="button" aria-label="Hintergrundbereich als ImageAsset ausschneiden" title="Hintergrundbereich als Asset"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><circle cx="60" cy="76" r="28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><circle cx="60" cy="180" r="28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="136" y1="128" x2="83.11" y2="164.19" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="232" y1="193.68" x2="83.11" y2="91.81" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="232" y1="62.32" x2="171.42" y2="103.77" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span></b><small>Hintergrundbereich als Asset: Rechteck direkt auf der Arbeitsfläche markieren. Der gewählte Hintergrundbereich wird als normales ImageAsset erzeugt.</small></button>
       <button id="particleTriggerBtn" class="tool paletteAction paletteTrigger" type="button" aria-label="Ausgewählten Partikeleffekt triggern" title="Partikeleffekt triggern" disabled><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M72,39.88V216.12a8,8,0,0,0,12.15,6.69l144.08-88.12a7.82,7.82,0,0,0,0-13.38L84.15,33.19A8,8,0,0,0,72,39.88Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span></b><small>Startet den ausgewählten Partikeleffekt einmalig, wenn er auf Musik-Trigger / Einmalstoß steht.</small></button>
       <div class="tool" draggable="true" data-type="imageAsset"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><rect x="40" y="40" width="176" height="176" rx="8" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><circle cx="96" cy="96" r="20"/><path d="M56.69,216,166.34,106.34a8,8,0,0,1,11.32,0L216,144.69" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">ImageAsset</span></b><small>Lokale PNG/JPG/WebP als eigenständiges Szenenobjekt mit optionaler Physik.</small></div>
@@ -217,22 +220,48 @@ Was wurde bewusst nicht veraendert?
       <div class="tool" draggable="true" data-type="particle" data-particle-mode="free"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M84.27,171.73l-55.09-20.3a7.92,7.92,0,0,1,0-14.86l55.09-20.3,20.3-55.09a7.92,7.92,0,0,1,14.86,0l20.3,55.09,55.09,20.3a7.92,7.92,0,0,1,0,14.86l-55.09,20.3-20.3,55.09a7.92,7.92,0,0,1-14.86,0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="16" x2="176" y2="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="224" y1="72" x2="224" y2="104" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="152" y1="40" x2="200" y2="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="208" y1="88" x2="240" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Partikel</span></b><small>Universelles Partikelobjekt. Der genaue Effekt wird nach dem Platzieren rechts im Objektmenü ausgewählt.</small></div>
     </div>
     <div id="timelineDock" aria-label="Timeline">
-      <div class="timelineTop"><span><b>Timeline</b> · Objekt-Events</span><span class="timelineTime"><span id="timelineCurrentTime">00:00</span> / <span id="timelineTotalTime">03:00</span></span></div>
-      <div id="timelineMediaControls" class="timelineMediaRow" title="Mediensteuerung für aktuelles Audio oder Video">
+      <div class="timelineTop"><span><b>Timeline</b> · Drei-Spur-Editor</span><span class="timelineTime"><span id="timelineCurrentTime">00:00</span> / <span id="timelineTotalTime">03:00</span></span></div>
+      <div id="timelineMediaControls" class="timelineMediaRow" title="Master-Steuerung für alle Timeline-Spuren">
         <button id="timelineMediaPlayBtn" class="timelineMediaBtn" type="button" title="Play/Pause">▶</button>
         <button id="timelineMediaStopBtn" class="timelineMediaBtn redMini" type="button" title="Stop">■</button>
         <button id="timelineMediaBackBtn" class="timelineMediaBtn" type="button" title="5 Sekunden zurück">‹</button>
         <button id="timelineMediaForwardBtn" class="timelineMediaBtn" type="button" title="5 Sekunden vor">›</button>
-        <input id="timelineMediaSeek" type="range" min="0" max="1000" step="1" value="0" title="Medium direkt steuern">
-        <span id="timelineMediaName" class="timelineMediaTitle">Kein Medium</span>
+        <input id="timelineMediaSeek" type="range" min="0" max="180000" step="10" value="0" title="Timeline-Zeit steuern">
+        <span id="timelineMediaName" class="timelineMediaTitle">Master-Zeit</span>
       </div>
-      <div id="timelineBar"><div id="timelineTicks"></div><div id="timelineEvents"></div><div id="timelinePlayhead"></div></div>
+      <div class="timelineTracks">
+        <div class="timelineTrack timelineTrackAudio">
+          <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddAudioBtn" class="timelineAddBtn" type="button" title="Audiodatei hinzufügen" aria-label="Audiodatei hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Audio</b></div><span id="timelineAudioName">Kein Audio</span></div>
+          <div id="timelineAudioBar" class="timelineLane"><div class="timelineTicks"></div><div id="timelineAudioClips" class="timelineClips"></div><div id="timelineAudioPlayhead" class="timelineLanePlayhead"></div></div>
+        </div>
+        <div class="timelineTrack timelineTrackMedia">
+          <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddMediaBtn" class="timelineAddBtn" type="button" title="Bild, Video oder Scene hinzufügen" aria-label="Bild, Video oder Scene hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Medien</b></div><span>Screen · Video / Bild / Scene</span></div>
+          <div id="timelineScreenMediaBar" class="timelineLane"><div class="timelineTicks"></div><div id="timelineScreenMediaClips" class="timelineClips"></div><div id="timelineScreenMediaPlayhead" class="timelineLanePlayhead"></div></div>
+        </div>
+        <div class="timelineTrack timelineTrackObjects">
+          <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddObjectBtn" class="timelineAddBtn" type="button" title="Objekt-Event an aktueller Position vorbereiten" aria-label="Objekt-Event hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Objekte</b></div><span>Events / Parameter</span></div>
+          <div id="timelineBar" class="timelineLane"><div id="timelineTicks" class="timelineTicks"></div><div id="timelineEvents" class="timelineClips"></div><div id="timelinePlayhead" class="timelineLanePlayhead"></div></div>
+        </div>
+      </div>
+      <input id="timelineAudioFileInput" class="timelineHiddenFile" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.webm">
+      <input id="timelineMediaFileInput" class="timelineHiddenFile" type="file" accept="image/*,video/*,.scene,.json,.object">
     </div>
   </main>
+  <button id="rightPanelToggle" type="button" aria-controls="right" aria-expanded="true" title="Parametermenü einklappen">
+    <svg viewBox="0 0 256 256" aria-hidden="true">
+      <line x1="128" y1="80" x2="232" y2="80"></line>
+      <line x1="24" y1="80" x2="72" y2="80"></line>
+      <circle cx="100" cy="80" r="28"></circle>
+      <line x1="184" y1="176" x2="232" y2="176"></line>
+      <line x1="24" y1="176" x2="128" y2="176"></line>
+      <circle cx="156" cy="176" r="28"></circle>
+    </svg>
+    <span class="srOnly">Parametermenü ein- oder ausklappen</span>
+  </button>
     <!-- Rechte Eigenschaften- und Projektleiste -->
 <aside id="right">
     <h3>Objektparameter</h3>
-    <div class="panel" id="bgCaptureParams">
+    <div class="panel" id="bgCaptureParams" style="display:none">
       <h3>Ausschnitt</h3>
       <label>Ausschnittform</label><select id="bgCaptureShape"><option value="rect">Rechteck</option><option value="circle">Kreis / Ellipse</option><option value="path">Freier Pfad</option></select>
       <label>Ausschnittquelle</label><select id="bgCaptureSource"><option value="background">Nur Hintergrund</option><option value="stage">Bühne mit Objekten</option></select>
@@ -244,10 +273,10 @@ Was wurde bewusst nicht veraendert?
     <div id="timelineParams">
       <h3>Timeline</h3>
       <div class="panel">
-        <p class="mini">Die Timeline liegt fest am unteren Rand des Workspaces. Die rote Linie folgt der aktuellen Audio-/Videozeit. Klicke in die Timeline, um die Event-Position zu setzen.</p>
+        <p class="mini">Die Timeline läuft mit einer eigenen Master-Zeit und funktioniert auch ohne Audio. Audio, Screen-Medien und Objekt-Events besitzen getrennte Spuren.</p>
         <label style="display:none">Timeline-Breite: <span id="timelineWidthValue">100%</span></label><input id="timelineWidth" type="range" min="40" max="100" step="1" value="100" style="display:none">
         <label>Dauer: <span id="timelineDurationValue">03:00</span></label><input id="timelineDuration" type="range" min="5" max="1800" step="1" value="180">
-        <button id="timelineUseMediaDurationBtn" type="button">Dauer aus aktueller Audio-/Videodatei übernehmen</button>
+        <button id="timelineUseMediaDurationBtn" type="button">Dauer aus längstem Audio/Video übernehmen</button>
       </div>
       <div class="panel">
         <h3>Event</h3>
@@ -270,12 +299,19 @@ Was wurde bewusst nicht veraendert?
     </div>
     <div id="params" style="display:none">
       <label>Name</label><input id="pName" />
-      <label>Typ</label><select id="pType"><option value="light">Lichtemitter</option><option value="lightbar">Lightbar</option><option value="movinghead">Moving Head</option><option value="fog">Nebelemitter</option><option value="screen">Screen</option><option value="particle">Partikeleffekt</option><option value="visualizer">Visualizer</option><option value="mandalaVisualizer">MandalaVisualizer</option><option value="imageParticle">Image-to-Particle</option><option value="greenscreen">Greenscreen</option><option value="imageAsset">ImageAsset</option><option value="audioSource">AudioSource</option></select>
+      <label>Typ</label><select id="pType"><option value="light">Lichtemitter</option><option value="lightbar">Lightbar</option><option value="movinghead">Moving Head</option><option value="fog">Nebelemitter</option><option value="cloud">Wolke / Cloud</option><option value="screen">Screen</option><option value="text">Text</option><option value="particle">Partikeleffekt</option><option value="visualizer">Visualizer</option><option value="mandalaVisualizer">MandalaVisualizer</option><option value="imageParticle">Image-to-Particle</option><option value="greenscreen">Greenscreen</option><option value="imageAsset">ImageAsset</option><option value="audioSource">AudioSource</option></select>
       <div class="row"><div><label>X</label><input id="pX" type="number" step="0.1"></div><div><label>Y</label><input id="pY" type="number" step="0.1"></div></div>
       <label>Layer <span style="color:#6f829b">(-99 bis -1 = hinter Hintergrund, 0 = Hintergrund, 1+ = davor)</span></label><input id="pLayer" type="number" min="-99" max="99" step="1">
       <label>Größe / Radius</label><input id="pSize" type="range" min="8" max="400" step="1">
-      <label>Intensität</label><input id="pIntensity" type="range" min="0" max="2" step="0.01">
+      <label style="display:flex;align-items:center;gap:8px"><input id="pObjectKeepAspect" type="checkbox" checked> Seitenverhältnis beim Skalieren beibehalten</label>
+      <label class="cloudHideInBasic">Intensität</label><input class="cloudHideInBasic" id="pIntensity" type="range" min="0" max="2" step="0.01">
       <label>Rotation</label><input id="pRotation" type="range" min="0" max="360" step="1">
+      <div class="type-cloud-only cloudBasicPanel">
+        <label><input id="pCloudVisible" type="checkbox" checked> Sichtbar</label>
+        <label><input id="pCloudLocked" type="checkbox"> Position sperren</label>
+        <label>Transparenz: <span data-cloud-value="Opacity">0.78</span></label><input id="pCloudOpacity" type="range" min="0" max="1" step="0.01" value="0.78">
+        <button id="cloudExpertOpen" type="button" onclick="document.getElementById('cloudExpertPanel').hidden=false;document.body.classList.add('cloudExpertOpen')">Cloud-Expertenmenü öffnen</button>
+      </div>
       <div class="type-light-only"><label>Schwenkgeschwindigkeit: <span id="panSpeedValue">0.00</span></label><input id="pPanSpeed" type="range" min="0" max="30" step="0.01"></div>
       <div class="type-light-only"><label>Schwenkwinkel ±: <span id="panAngleValue">0°</span></label><input id="pPanAngle" type="range" min="0" max="180" step="1"></div>
       <div class="type-light-only"><label style="display:flex;align-items:center;gap:8px"><input id="pLaser" type="checkbox"> Laser <span class="mini">(gebündelt, kein musikgesteuerter Fächerwinkel)</span></label></div>
@@ -285,12 +321,18 @@ Was wurde bewusst nicht veraendert?
       <div class="type-light-only"><label>Rand-Weichheit: <span id="softnessValue">0.55</span></label><input id="pSoftness" type="range" min="0" max="1" step="0.01"></div>
       <div class="type-light-only"><label>Punkt-Glow: <span id="glowValue">0.25</span></label><input id="pGlow" type="range" min="0" max="2" step="0.01"></div>
       <div class="type-light-only"><label>Punkt-Transparenz: <span id="opacityValue">0.85</span></label><input id="pOpacity" type="range" min="0" max="1" step="0.01"></div>
-      <label>Farbe</label><input id="pColor" type="color">
+      <label class="cloudHideInBasic">Farbe</label><input class="cloudHideInBasic" id="pColor" type="color">
       <div class="type-wind-only panel" style="margin-top:12px">
         <h3>Wind</h3>
         <label><input id="pWindAffected" type="checkbox" checked> Wind Affected</label>
         <label>Wind Influence: <span id="windInfluenceValue">1.00</span></label><input id="pWindInfluence" type="range" min="0" max="1" step="0.01" value="1">
       </div>
+      <div class="type-light-emitter-only"><label>Emitterform</label><select id="pLightEmitterShape"><option value="point">Punkt</option><option value="line">Linie</option><option value="rectangle">Rechteck</option></select></div>
+      <div class="type-light-emitter-only light-rectangle-settings"><label>Rechteck-Abstrahlung</label><select id="pLightRectangleEmission"><option value="outward">Nach außen</option><option value="inward">Nach innen</option><option value="solid">Massiv / Scheinwerfer</option></select></div>
+      <div class="type-light-emitter-only"><label>Emitter-Linienlänge: <span id="lightEmitterLengthValue">240</span></label><input id="pLightEmitterLength" type="range" min="20" max="1600" step="1" value="240"></div>
+      <div class="type-light-emitter-only"><label>Rechteck-Breite: <span id="lightEmitterWidthValue">480</span></label><input id="pLightEmitterWidth" type="range" min="20" max="1920" step="1" value="480"></div>
+      <div class="type-light-emitter-only"><label>Rechteck-Höhe: <span id="lightEmitterHeightValue">270</span></label><input id="pLightEmitterHeight" type="range" min="20" max="1080" step="1" value="270"></div>
+      <div class="type-light-emitter-only"><label style="display:flex;align-items:center;gap:8px"><input id="pLightEmitterKeepAspect" type="checkbox" checked> Seitenverhältnis beim Skalieren beibehalten</label></div>
       <div class="type-light-only"><label>Alternierende Farbe</label><input id="pAltColor" type="color"></div>
       <div class="type-light-only"><label>Farbwechsel-Geschwindigkeit: <span id="altSpeedValue">0.60</span></label><input id="pAltSpeed" type="range" min="0" max="5" step="0.01"></div>
       <div class="type-light-only"><label>Farbwechsel-Stärke: <span id="altAmountValue">1.00</span></label><input id="pAltAmount" type="range" min="0" max="1" step="0.01"></div>
@@ -333,7 +375,8 @@ Was wurde bewusst nicht veraendert?
       </div>
       <div class="type-fog-only"><label>Nebel-Schwenkgeschwindigkeit: <span id="fogPanSpeedValue">0.00</span></label><input id="pFogPanSpeed" type="range" min="0" max="5" step="0.01"></div>
       <div class="type-fog-only"><label>Nebel-Schwenkwinkel ±: <span id="fogPanAngleValue">0°</span></label><input id="pFogPanAngle" type="range" min="0" max="180" step="1"></div>
-      <div class="type-fog-only"><label>Ausstoßwinkel Nebel: <span id="fogAngleValue">80°</span></label><input id="pFogAngle" type="range" min="1" max="360" step="1"></div>
+      <div class="type-fog-only"><label>Öffnungswinkel Nebel: <span id="fogAngleValue">80°</span></label><input id="pFogAngle" type="range" min="0" max="170" step="1"></div>
+      <div class="type-fog-only"><label>Anfangsweite Nebel: <span id="fogStartWidthValue">80</span></label><input id="pFogStartWidth" type="range" min="0" max="600" step="1"></div>
       <div class="type-fog-only"><label>Nebel-Lebensdauer: <span id="fogLifeValue">4.0 s</span></label><input id="pFogLife" type="range" min="0.5" max="20" step="0.1"></div>
       <div class="type-fog-only"><label>Nebel-Dynamik / Ausstoß: <span id="fogDynamicsValue">1.00</span></label><input id="pFogDynamics" type="range" min="0" max="3" step="0.01"></div>
       <div class="type-fog-only"><label>Nebel-Gravitation: <span id="fogGravityValue">0.00</span></label><input id="pFogGravity" type="range" min="0" max="2" step="0.01"></div>
@@ -359,15 +402,20 @@ Was wurde bewusst nicht veraendert?
         <label>Shadow Color</label><input id="pShadowColor" type="color" value="#000000">
         <p class="mini">Leichte Fake-Shadows: Oval ist am schnellsten, Shape nutzt vorhandene Alpha/Silhouette wenn sinnvoll, Screen Rectangle ist für Flächen gedacht.</p>
       </div>
+      <div id="screenTimelineDurationRow" class="panel" style="display:none;margin-top:12px"><h3>Timeline-Medium</h3><label>Timeline-Dauer (Screen / Scene)</label><input id="pScreenTimelineDuration" type="number" min="0.1" max="1800" step="0.1" value="5"></div>
 <div class="type-screen-only panel" style="margin-top:12px">
         <div class="mini"><b>Screen</b><br>Screen-Objekte sind Bühnenflächen auf frei definierbaren Layern. Sie können als Farbfläche, Audio-Panel, Pulse-Screen oder als Träger für geladene Bilder und Videos laufen.</div>
       </div>
-      <div class="type-screen-only row"><div><label>Screen-Breite: <span id="screenWidthValue">260</span></label><input id="pScreenWidth" type="range" min="40" max="1920" step="1"></div><div><label>Screen-Höhe: <span id="screenHeightValue">120</span></label><input id="pScreenHeight" type="range" min="20" max="1080" step="1"></div></div>
+      <div class="type-screen-only type-text-only row"><div><label>Breite: <span id="screenWidthValue">260</span></label><input id="pScreenWidth" type="range" min="40" max="1920" step="1"></div><div><label>Höhe: <span id="screenHeightValue">120</span></label><input id="pScreenHeight" type="range" min="20" max="1080" step="1"></div></div>
+      <div class="type-screen-only type-text-only"><label style="display:flex;align-items:center;gap:8px"><input id="pScreenKeepAspect" type="checkbox" checked> Seitenverhältnis beim Skalieren beibehalten</label></div>
       <div class="type-screen-only"><label>Screen-Modus</label><select id="pScreenMode"><option value="solid">Farbfläche</option><option value="audio">Audio-Balken</option><option value="pulse">Pulse-Screen</option><option value="image">Bild</option><option value="video">Video</option><option value="engine">Engine-Ausschnitt</option><option value="text">Text</option><option value="mp3cover">Aktuelles MP3-Cover</option></select></div>
-      <div class="type-screen-only screen-text-settings">
+      <div class="type-screen-only type-text-only screen-text-settings">
         <h3>Text</h3>
         <label>Textquelle</label><select id="pScreenTextSource"><option value="custom">Eigener Text</option><option value="songTitle">Aktueller Songtitel</option></select>
-        <label>Textinhalt</label><input id="pScreenText" type="text" value="VSE">
+        <label>Textinhalt</label><textarea id="pScreenText" rows="4">VSE</textarea>
+        <div class="row"><label style="display:flex;align-items:center;gap:6px"><input id="pScreenTextBold" type="checkbox" checked> Fett</label><label style="display:flex;align-items:center;gap:6px"><input id="pScreenTextItalic" type="checkbox"> Kursiv</label><label style="display:flex;align-items:center;gap:6px"><input id="pScreenTextUnderline" type="checkbox"> Unterstrichen</label></div>
+        <label>Textausrichtung</label><select id="pScreenTextAlign"><option value="left">Links</option><option value="center" selected>Zentriert</option><option value="right">Rechts</option></select>
+        <label>Zeilenabstand: <span id="screenTextLineHeightValue">1.20</span></label><input id="pScreenTextLineHeight" type="range" min="0.8" max="2.5" step="0.05" value="1.2">
         <label>Textmodus</label><select id="pScreenTextMode"><option value="static">Feststehender Text</option><option value="marquee">Lauftext</option></select>
         <label>Schriftart</label><select id="pScreenTextFont"><option value="Arial">Arial</option><option value="Segoe UI">Segoe UI</option><option value="Verdana">Verdana</option><option value="Georgia">Georgia</option><option value="Times New Roman">Times New Roman</option><option value="Courier New">Courier New</option><option value="Impact">Impact</option></select>
         <label>Schriftgröße: <span id="screenTextSizeValue">48</span></label><input id="pScreenTextSize" type="range" min="8" max="240" step="1" value="48">
@@ -569,13 +617,16 @@ Was wurde bewusst nicht veraendert?
         <div class="mini"><b>Greenscreen</b><br>Lokales Video oder Webcam als WebGL-Objekt. Grün wird per Chroma-Key im Shader entfernt.</div>
         <h3>Greenscreen</h3>
         <label>Lokales Video laden</label><input id="pGreenscreenVideoFile" type="file" accept="video/*">
-        <button id="pGreenscreenWebcamBtn" type="button">Webcam als Quelle starten</button>
+        <label>Webcam auswählen</label><select id="pGreenscreenWebcamDevice"><option value="">Standard-Webcam</option></select>
+        <button id="pGreenscreenWebcamBtn" type="button">Ausgewählte Webcam starten</button>
         <button id="pGreenscreenStopBtn" type="button">Greenscreen-Quelle stoppen</button>
         <p class="mini" id="greenscreenInfo">Keine Greenscreen-Quelle geladen.</p>
         <div class="row"><div><label>Greenscreen-Breite: <span id="greenscreenWidthValue">480</span></label><input id="pGreenscreenWidth" type="range" min="40" max="1920" step="1"></div><div><label>Greenscreen-Höhe: <span id="greenscreenHeightValue">270</span></label><input id="pGreenscreenHeight" type="range" min="20" max="1080" step="1"></div></div>
         <label><input id="pGreenscreenKeepAspect" type="checkbox" checked> Seitenverhältnis des Videos beibehalten</label>
         <label><input id="pGreenscreenSwapAspect" type="checkbox"> Seitenverhältnis tauschen / 90° korrigieren</label>
         <p class="mini">Wenn ein Handyvideo zu breit oder gestaucht wirkt, „Seitenverhältnis tauschen“ aktivieren. Die Breite bleibt der Hauptregler; die sichtbare Höhe wird automatisch aus dem Videoformat berechnet.</p>
+        <label><input id="pGreenscreenChromaKeyEnabled" type="checkbox" checked> Chroma-Key aktiv</label>
+        <p class="mini">Deaktivieren zeigt das unveränderte Kamera- oder Videobild und überspringt die Chroma-Key-Berechnung.</p>
         <label>Key-Farbe / zu entfernende Farbe</label><input id="pGreenscreenKeyColor" type="color" value="#00ff00">
         <label>Toleranz: <span id="greenscreenToleranceValue">0.32</span></label><input id="pGreenscreenTolerance" type="range" min="0" max="1" step="0.01">
         <label>Kantenweichheit: <span id="greenscreenSoftnessValue">0.12</span></label><input id="pGreenscreenSoftness" type="range" min="0" max="0.8" step="0.01">
@@ -600,15 +651,17 @@ Was wurde bewusst nicht veraendert?
           <p class="mini">Der Schatten wird als eigenes WebGL-Element hinter dem Greenscreen gerendert. Position und Größe beziehen sich auf das Greenscreen-Objekt.</p>
         </div>
       </div>
-      <label>Reaktionsschwelle / Musikempfindlichkeit</label><input id="pMusic" type="range" min="0" max="1" step="0.01">
-      <label><input id="pThresholdBelow" type="checkbox"> Reaktion unterhalb des Threshold</label>
+      <div class="cloudHideInBasic">
+      <label>Threshold der Musikreaktion</label><input id="pMusic" type="range" min="0" max="1" step="0.01">
+      <label><input id="pThresholdBelow" type="checkbox"> Unterhalb des Threshold reagieren</label>
       <p class="mini">Aus: Objekt reagiert oberhalb des blauen Schwellenstrichs. An: Objekt reagiert unterhalb des blauen Schwellenstrichs. Der Marker bleibt unverändert im Frequenzbalkenvisualizer sichtbar.</p>
-      <label>Frequenz-Reaktionsbereich: <span id="audioFreqValue">120 Hz</span></label>
+      <label>Reaktionsfrequenz: <span id="audioFreqValue">120 Hz</span></label>
       <div class="range-with-number" id="audioFreqRow">
         <input id="pAudioFreqLog" type="range" min="0" max="1" step="0.001" value="0.259">
         <input id="pAudioFreqHz" class="range-number" type="number" min="20" max="20000" step="1" value="120" title="Reaktionsfrequenz in Hz händisch eingeben">
       </div>
       <p class="mini">Logarithmisch 20 Hz–20 kHz. Das Objekt reagiert auf ein Frequenzband um diesen Wert, nicht mehr pauschal auf das gesamte Signal.</p>
+      </div>
       <div class="type-imageasset-only panel" style="margin-top:12px">
         <div class="mini"><b>ImageAsset</b><br>Lokale Bilddatei als eigenes WebGL-Objekt für Deko, Einrichtung, Bühnenausstattung oder einfache Szenenelemente. PNG-Transparenz bleibt erhalten.</div>
         <h3>ImageAsset</h3>
@@ -716,6 +769,7 @@ Was wurde bewusst nicht veraendert?
           <button id="micBtn" type="button" title="Mikrofon starten">Mic</button>
           <button id="sysBtn" type="button" title="Systemsound / Tab-Audio starten">System</button>
         </div>
+        <label>Mikrofon auswählen</label><select id="micDeviceSelect"><option value="">Standard-Mikrofon</option></select>
         <label>Audiodatei laden</label><input id="audioFile" type="file" accept="audio/*">
         <label>Audio-Ordner auswählen</label><input id="audioFolder" type="file" accept="audio/*" multiple webkitdirectory directory>
         <div id="audioPlaylist"><div class="mini">Kein Audio-Ordner geladen.</div></div>
@@ -755,30 +809,44 @@ Was wurde bewusst nicht veraendert?
     </section>
   </aside>
 </div>
+<section id="cloudExpertPanel" class="cloudExpertPanel" hidden aria-label="Cloud Expertenmenü">
+  <div class="cloudExpertHeader"><div><b>Cloud · Experten</b><small>Prozedurale WebGL-Wolke</small></div><button id="cloudExpertClose" type="button" aria-label="Schließen" onclick="document.getElementById('cloudExpertPanel').hidden=true;document.body.classList.remove('cloudExpertOpen')">×</button></div>
+  <label>Wolkentyp</label><select id="pCloudPreset"><option value="cumulus">Cumulus</option><option value="stratus">Stratus</option><option value="fog">Nebelwolke</option><option value="storm">Gewitterwolke</option><option value="smoke">Rauchwolke</option></select>
+  <div class="row"><div><label>Dichte <span data-cloud-value="Density">0.82</span></label><input id="pCloudDensity" type="range" min="0" max="1.5" step="0.01"></div><div><label>Weichheit <span data-cloud-value="Softness">0.72</span></label><input id="pCloudSoftness" type="range" min="0" max="1" step="0.01"></div></div>
+  <div class="row"><div><label>Farbe</label><input id="pCloudColor" type="color" value="#f4f7ff"></div><div><label>Helligkeit <span data-cloud-value="Brightness">1.08</span></label><input id="pCloudBrightness" type="range" min="0.1" max="2" step="0.01"></div></div>
+  <label>Form-Zufall / Seed <span data-cloud-value="Seed">1</span></label><input id="pCloudSeed" type="range" min="0" max="1000" step="1">
+  <div class="row"><div><label>Wabern <span data-cloud-value="Motion">0.35</span></label><input id="pCloudMotion" type="range" min="0" max="2" step="0.01"></div><div><label>Geschwindigkeit <span data-cloud-value="Speed">0.24</span></label><input id="pCloudSpeed" type="range" min="0" max="2" step="0.01"></div></div>
+  <div class="row"><div><label>Wind-Einfluss <span data-cloud-value="WindInfluence">0.55</span></label><input id="pCloudWindInfluence" type="range" min="0" max="1" step="0.01"></div><div><label>Detailgrad <span data-cloud-value="Detail">0.68</span></label><input id="pCloudDetail" type="range" min="0" max="1" step="0.01"></div></div>
+  <div class="panel"><h3>Audio-Reaktion</h3><label>Ziel</label><select id="pCloudAudioMode"><option value="off">Aus</option><option value="opacity">Transparenz</option><option value="density">Dichte</option><option value="brightness">Helligkeit</option></select><label>Stärke <span data-cloud-value="AudioAmount">0.45</span></label><input id="pCloudAudioAmount" type="range" min="0" max="2" step="0.01"><label>Frequenz <span data-cloud-value="AudioFrequency">250</span> Hz</label><input id="pCloudAudioFrequency" type="range" min="20" max="20000" step="10"><label>Threshold <span data-cloud-value="AudioThreshold">0.30</span></label><input id="pCloudAudioThreshold" type="range" min="0" max="1" step="0.01"></div>
+</section>
 <button id="showMenusBtn" type="button">Menüs anzeigen</button>
-<button id="sceneViewBtn" class="stageHudDot stageHudDotBlue" type="button" title="Scene ohne Menüs anzeigen" aria-label="Scene ohne Menüs anzeigen"></button>
+<button id="sceneViewBtn" class="stageHudDot stageHudDotBlue" type="button" title="Scene ohne Menüs anzeigen" aria-label="Scene ohne Menüs anzeigen"><svg class="hudPhosphorIcon" data-phosphor-icon="corners-out" viewBox="0 0 256 256" aria-hidden="true"><polyline points="160 48 208 48 208 96"></polyline><line x1="152" y1="104" x2="208" y2="48"></line><polyline points="96 208 48 208 48 160"></polyline><line x1="104" y1="152" x2="48" y2="208"></line><polyline points="208 160 208 208 160 208"></polyline><line x1="152" y1="152" x2="208" y2="208"></line><polyline points="48 96 48 48 96 48"></polyline><line x1="104" y1="104" x2="48" y2="48"></line></svg></button>
 <div id="recordHudOverlay" aria-label="Recording Overlay">
-  <button id="recordHudStartBtn" class="recRound" type="button" title="Recording starten"></button>
+  <button id="recordHudStartBtn" class="recRound" type="button" title="Recording starten" aria-label="Recording starten"><svg class="hudPhosphorIcon" data-phosphor-icon="video-camera" viewBox="0 0 256 256" aria-hidden="true"><rect x="24" y="64" width="152" height="128" rx="16"></rect><polygon points="176 104 232 72 232 184 176 152"></polygon></svg></button>
+  <button id="sceneScreenshotBtn" class="sceneShot" type="button" title="Screenshot der Scene speichern" aria-label="Screenshot der Scene speichern"><svg class="hudPhosphorIcon" data-phosphor-icon="camera" viewBox="0 0 256 256" aria-hidden="true"><path d="M208 64h-32l-16-24H96L80 64H48A24 24 0 0 0 24 88v96a24 24 0 0 0 24 24h160a24 24 0 0 0 24-24V88a24 24 0 0 0-24-24Z"></path><circle cx="128" cy="136" r="40"></circle></svg></button>
   <button id="recordHudStopBtn" class="stopSquare" type="button" title="Recording stoppen"></button>
   <div id="recordHudTime" class="recTime">00:00</div>
 </div>
 <!-- ===== JavaScript / Applikationslogik ===== -->
-<script src="src/io/sceneIO.js?v=20260624-scene-dot"></script>
+<script src="src/io/sceneIO.js?v=20260627-three-tracks"></script>
 <script src="src/app/00a-hoisted-functions.js?v=20260624-scene-dot"></script>
-<script src="src/app/00b-menu-structure.js?v=20260624-scene-dot"></script>
-<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260624-scene-dot"></script>
+<script src="src/app/00b-menu-structure.js?v=20260627-music-reaction-controls"></script>
+<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260627-scene-screenshot"></script>
 <script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260624-scene-dot"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260624-scene-dot"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260628-chroma-toggle-2"></script>
 <script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260624-scene-dot"></script>
-<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260624-scene-dot"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260624-scene-dot"></script>
-<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260624-icon-color-inline"></script>
-<script src="src/app/07-audio-playlist-und-analyzer.js?v=20260624-scene-dot"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260624-scene-dot"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260624-icon-color"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260624-scene-dot"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260624-scene-dot"></script>
+<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260627-webcam-device-select"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260628-chroma-toggle-2"></script>
+<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260627-scene-switch"></script>
+<script src="src/app/07-audio-playlist-und-analyzer.js?v=20260627-mic-early-bind"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260628-cloud-object-2"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260627-scene-export-fix"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260628-cloud-object"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260627-screen-rich-text"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260624-scene-dot"></script>
+<script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
+<script src="src/app/14-three-track-timeline.js?v=20260627-timeline-video-playback"></script>
+<script src="src/app/15-cloud-object.js?v=20260628-cloud-particles"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>

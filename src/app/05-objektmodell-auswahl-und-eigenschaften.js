@@ -1,4 +1,44 @@
 /* ===== Objektmodell, Auswahl und Eigenschaften ===== */
+const fogStartWidthInput=document.getElementById('pFogStartWidth');
+const lightEmitterShapeInput=document.getElementById('pLightEmitterShape');
+const lightRectangleEmissionInput=document.getElementById('pLightRectangleEmission');
+const lightEmitterLengthInput=document.getElementById('pLightEmitterLength');
+const lightEmitterWidthInput=document.getElementById('pLightEmitterWidth');
+const lightEmitterHeightInput=document.getElementById('pLightEmitterHeight');
+const objectKeepAspectInput=document.getElementById('pObjectKeepAspect');
+const screenKeepAspectInput=document.getElementById('pScreenKeepAspect');
+const lightEmitterKeepAspectInput=document.getElementById('pLightEmitterKeepAspect');
+const screenTextBoldInput=document.getElementById('pScreenTextBold');
+const screenTextItalicInput=document.getElementById('pScreenTextItalic');
+const screenTextUnderlineInput=document.getElementById('pScreenTextUnderline');
+const screenTextAlignInput=document.getElementById('pScreenTextAlign');
+const screenTextLineHeightInput=document.getElementById('pScreenTextLineHeight');
+function objectDimensionSpec(o){
+  if(!o)return null;
+  if(o.type==='screen'||o.type==='text')return {w:'screenWidth',h:'screenHeight',wf:fields.ScreenWidth,hf:fields.ScreenHeight,dw:o.type==='text'?520:260,dh:o.type==='text'?180:120};
+  if(o.type==='visualizer')return {w:'visualizerWidth',h:'visualizerHeight',wf:fields.VisualizerWidth,hf:fields.VisualizerHeight,dw:520,dh:180};
+  if(isWaterObject(o))return {w:'waterWidth',h:'waterHeight',wf:fields.WaterWidth,hf:fields.WaterHeight,dw:420,dh:180};
+  if(o.type==='mandalaVisualizer')return {w:'mandalaObjWidth',h:'mandalaObjHeight',wf:fields.MandalaObjWidth,hf:fields.MandalaObjHeight,dw:420,dh:420};
+  if(o.type==='imageAsset')return {w:'imageAssetWidth',h:'imageAssetHeight',wf:fields.ImageAssetWidth,hf:fields.ImageAssetHeight,dw:240,dh:160};
+  if(o.type==='greenscreen')return {w:'greenscreenWidth',h:'greenscreenHeight',wf:fields.GreenscreenWidth,hf:fields.GreenscreenHeight,dw:480,dh:270};
+  if(o.type==='light'&&(o.lightEmitterShape||'point')==='rectangle')return {w:'lightEmitterWidth',h:'lightEmitterHeight',wf:lightEmitterWidthInput,hf:lightEmitterHeightInput,dw:480,dh:270};
+  return null;
+}
+function ensureObjectAspect(o){
+  if(!o)return;
+  if(o.objectKeepAspect===undefined)o.objectKeepAspect=true;
+  const spec=objectDimensionSpec(o);
+  if(spec&&!(Number(o.objectAspect)>0))o.objectAspect=Math.max(.001,Number(o[spec.w]??spec.dw)/Math.max(.001,Number(o[spec.h]??spec.dh)));
+}
+function applyObjectAspectLock(o,changedKey){
+  const spec=objectDimensionSpec(o);
+  if(!spec||o.objectKeepAspect===false||![spec.w,spec.h].includes(changedKey))return;
+  const aspect=Math.max(.001,Number(o.objectAspect)||Number(o[spec.w]??spec.dw)/Math.max(.001,Number(o[spec.h]??spec.dh)));
+  if(changedKey===spec.w)o[spec.h]=Math.max(1,Number(o[spec.w]??spec.dw)/aspect);
+  else o[spec.w]=Math.max(1,Number(o[spec.h]??spec.dh)*aspect);
+  if(spec.wf)spec.wf.value=o[spec.w];
+  if(spec.hf)spec.hf.value=o[spec.h];
+}
 function isWaterObject(o){return !!(o&&['waterSurface','waterFlowOverlay'].includes(o.type));}
 function isMandalaObject(o){return !!(o&&o.type==='mandalaVisualizer');}
 function ensureMandalaDefaults(o){
@@ -80,6 +120,10 @@ function selectSingleCore(o){
   empty.style.display=o?'none':'block';
   params.style.display=o?'block':'none';
   if(!o){updateParticleTriggerButton();return;}
+  ensureObjectAspect(o);
+  if(objectKeepAspectInput)objectKeepAspectInput.checked=o.objectKeepAspect!==false;
+  if(screenKeepAspectInput)screenKeepAspectInput.checked=o.objectKeepAspect!==false;
+  if(lightEmitterKeepAspectInput)lightEmitterKeepAspectInput.checked=o.objectKeepAspect!==false;
   ensureShadowDefaults(o);
   ensureWaterDefaults(o);
   ensureMandalaDefaults(o);
@@ -150,6 +194,11 @@ function selectSingleCore(o){
   if(fields.LightColorMusicBelow)fields.LightColorMusicBelow.checked=!!o.lightColorMusicBelow;
   if(fields.LightColorMusicAmount)fields.LightColorMusicAmount.value=o.lightColorMusicAmount??1;
   updateLightColorMusicFreqUI(o);
+  if(lightEmitterShapeInput)lightEmitterShapeInput.value=o.lightEmitterShape||'point';
+  if(lightRectangleEmissionInput)lightRectangleEmissionInput.value=o.lightRectangleEmission||'outward';
+  if(lightEmitterLengthInput)lightEmitterLengthInput.value=o.lightEmitterLength??240;
+  if(lightEmitterWidthInput)lightEmitterWidthInput.value=o.lightEmitterWidth??480;
+  if(lightEmitterHeightInput)lightEmitterHeightInput.value=o.lightEmitterHeight??270;
   if(fields.LightbarCount)fields.LightbarCount.value=o.lightbarCount??8;
   if(fields.LightbarLength)fields.LightbarLength.value=o.lightbarLength??320;
   if(fields.LightbarSpread)fields.LightbarSpread.value=o.lightbarSpread??0;
@@ -167,6 +216,7 @@ function selectSingleCore(o){
   fields.FogPanSpeed.value=o.fogPanSpeed??0;
   fields.FogPanAngle.value=o.fogPanAngle??0;
   fields.FogAngle.value=o.fogAngle??80;
+  if(fogStartWidthInput)fogStartWidthInput.value=o.fogStartWidth??80;
   fields.FogLife.value=o.fogLife??4.0;
   fields.FogDynamics.value=o.fogDynamics??1.0;
   if(fields.FogGravity)fields.FogGravity.value=o.fogGravity??0;
@@ -189,6 +239,11 @@ function selectSingleCore(o){
   if(fields.ScreenTextFont)fields.ScreenTextFont.value=o.screenTextFont||'Arial';
   if(fields.ScreenTextSize)fields.ScreenTextSize.value=o.screenTextSize??48;
   if(fields.ScreenTextColor)fields.ScreenTextColor.value=o.screenTextColor||'#ffffff';
+  if(screenTextBoldInput)screenTextBoldInput.checked=o.screenTextBold!==false;
+  if(screenTextItalicInput)screenTextItalicInput.checked=!!o.screenTextItalic;
+  if(screenTextUnderlineInput)screenTextUnderlineInput.checked=!!o.screenTextUnderline;
+  if(screenTextAlignInput)screenTextAlignInput.value=o.screenTextAlign||'center';
+  if(screenTextLineHeightInput)screenTextLineHeightInput.value=o.screenTextLineHeight??1.2;
   if(fields.ScreenTextSpeed)fields.ScreenTextSpeed.value=o.screenTextSpeed??80;
   if(fields.ScreenTextBgMode)fields.ScreenTextBgMode.value=o.screenTextBgMode||'transparent';
   if(fields.ScreenTextBgColor)fields.ScreenTextBgColor.value=o.screenTextBgColor||'#000000';
@@ -278,6 +333,8 @@ function selectSingleCore(o){
   if(fields.GreenscreenHeight)fields.GreenscreenHeight.value=o.greenscreenHeight??270;
   if(fields.GreenscreenKeepAspect)fields.GreenscreenKeepAspect.checked=o.greenscreenKeepAspect!==false;
   if(fields.GreenscreenSwapAspect)fields.GreenscreenSwapAspect.checked=!!o.greenscreenSwapAspect;
+  if(greenscreenWebcamDevice&&o.greenscreenDeviceId&&[...greenscreenWebcamDevice.options].some(option=>option.value===o.greenscreenDeviceId))greenscreenWebcamDevice.value=o.greenscreenDeviceId;
+  if(fields.GreenscreenChromaKeyEnabled)fields.GreenscreenChromaKeyEnabled.checked=o.greenscreenChromaKeyEnabled!==false;
   if(fields.GreenscreenKeyColor)fields.GreenscreenKeyColor.value=o.greenscreenKeyColor||'#00ff00';
   if(fields.GreenscreenTolerance)fields.GreenscreenTolerance.value=o.greenscreenTolerance??.32;
   if(fields.GreenscreenSoftness)fields.GreenscreenSoftness.value=o.greenscreenSoftness??.12;
@@ -426,10 +483,12 @@ function syncRangeWrapperVisibilityClasses(){
 function syncTypeUI(){
   syncRangeWrapperVisibilityClasses();
   const isLight=selected&&(selected.type==='light'||selected.type==='lightbar'||selected.type==='movinghead');
+  const isLightEmitter=selected&&selected.type==='light';
   const isMovingHead=selected&&selected.type==='movinghead';
   const isLightbar=selected&&selected.type==='lightbar';
   const isFog=selected&&selected.type==='fog';
   const isScreen=selected&&selected.type==='screen';
+  const isText=selected&&selected.type==='text';
   const isParticle=selected&&selected.type==='particle';
   const isImageParticle=selected&&selected.type==='imageParticle';
   const isImageAsset=selected&&selected.type==='imageAsset';
@@ -443,12 +502,15 @@ function syncTypeUI(){
   const hasShadow=selected&&supportsShadow(selected);
   const isWindSupported=selected&&supportsWindObject(selected);
   document.querySelectorAll('.type-light-only').forEach(e=>e.style.display=isLight?'block':'none');
+  document.querySelectorAll('.type-light-emitter-only').forEach(e=>e.style.display=isLightEmitter?'block':'none');
+  document.querySelectorAll('.light-rectangle-settings').forEach(e=>e.style.display=(isLightEmitter&&(selected.lightEmitterShape||'point')==='rectangle')?'block':'none');
   document.querySelectorAll('.type-lightbar-only').forEach(e=>e.style.display=isLightbar?'block':'none');
   document.querySelectorAll('.type-movinghead-only').forEach(e=>e.style.display=isMovingHead?'block':'none');
   document.querySelectorAll('.type-fog-only').forEach(e=>e.style.display=isFog?'block':'none');
   document.querySelectorAll('.type-screen-only').forEach(e=>e.style.display=isScreen?'block':'none');
+  document.querySelectorAll('.type-text-only').forEach(e=>e.style.display=(isText||isScreen)?'block':'none');
   document.querySelectorAll('.screen-engine-crop').forEach(e=>e.style.display=(isScreen && (selected.screenMode||'solid')==='engine')?'block':'none');
-  document.querySelectorAll('.screen-text-settings').forEach(e=>e.style.display=(isScreen && (selected.screenMode||'solid')==='text')?'block':'none');
+  document.querySelectorAll('.screen-text-settings').forEach(e=>e.style.display=(isText||(isScreen&&(selected.screenMode||'solid')==='text'))?'block':'none');
   document.querySelectorAll('.type-particle-only').forEach(e=>e.style.display=isParticle?'block':'none');
   document.querySelectorAll('.particle-explosion-settings').forEach(e=>e.style.display=(isParticle && (selected.particleMode||'free')==='explosion')?'block':'none');
   document.querySelectorAll('.particle-gasjet-settings').forEach(e=>e.style.display=(isParticle && (selected.particleMode||'free')==='gasJet')?'block':'none');
@@ -483,6 +545,9 @@ function syncTypeUI(){
     if(typeof lightColorMusicThresholdValue!=='undefined')lightColorMusicThresholdValue.textContent=Number(selected.lightColorMusicThreshold??.35).toFixed(2);
     if(typeof lightColorMusicAmountValue!=='undefined')lightColorMusicAmountValue.textContent=Number(selected.lightColorMusicAmount??1).toFixed(2);
     updateLightColorMusicFreqUI(selected);
+    if(typeof lightEmitterLengthValue!=='undefined')lightEmitterLengthValue.textContent=Math.round(selected.lightEmitterLength??240);
+    if(typeof lightEmitterWidthValue!=='undefined')lightEmitterWidthValue.textContent=Math.round(selected.lightEmitterWidth??480);
+    if(typeof lightEmitterHeightValue!=='undefined')lightEmitterHeightValue.textContent=Math.round(selected.lightEmitterHeight??270);
     if(typeof lightbarCountValue!=='undefined')lightbarCountValue.textContent=Math.round(selected.lightbarCount??8);
     if(typeof lightbarLengthValue!=='undefined')lightbarLengthValue.textContent=Math.round(selected.lightbarLength??320);
     if(typeof lightbarSpreadValue!=='undefined')lightbarSpreadValue.textContent=Math.round(selected.lightbarSpread??0)+'°';
@@ -498,6 +563,7 @@ function syncTypeUI(){
     fogPanSpeedValue.textContent=Number(selected.fogPanSpeed??0).toFixed(2);
     fogPanAngleValue.textContent=Math.round(selected.fogPanAngle??0)+'°';
     fogAngleValue.textContent=Math.round(selected.fogAngle??80)+'°';
+    if(typeof fogStartWidthValue!=='undefined')fogStartWidthValue.textContent=Math.round(selected.fogStartWidth??80);
     fogLifeValue.textContent=Number(selected.fogLife??4.0).toFixed(1)+' s';
     fogDynamicsValue.textContent=Number(selected.fogDynamics??1.0).toFixed(2);
     if(typeof fogGravityValue!=='undefined')fogGravityValue.textContent=Number(selected.fogGravity??0).toFixed(2);
@@ -518,6 +584,7 @@ function syncTypeUI(){
     screenAltSpeedValue.textContent=Number(selected.screenAltSpeed??.25).toFixed(2);
     screenAltAmountValue.textContent=Number(selected.screenAltAmount??.6).toFixed(2);
     if(typeof screenTextSizeValue!=='undefined')screenTextSizeValue.textContent=Math.round(Number(selected.screenTextSize??48));
+    if(typeof screenTextLineHeightValue!=='undefined')screenTextLineHeightValue.textContent=Number(selected.screenTextLineHeight??1.2).toFixed(2);
     if(typeof screenTextSpeedValue!=='undefined')screenTextSpeedValue.textContent=Math.round(Number(selected.screenTextSpeed??80));
     if(typeof screenTextBgOpacityValue!=='undefined')screenTextBgOpacityValue.textContent=Number(selected.screenTextBgOpacity??1).toFixed(2);
     if(typeof screenAmbilightStrengthValue!=='undefined'&&screenAmbilightStrengthValue)screenAmbilightStrengthValue.textContent=Number(selected.screenAmbilightStrength??1).toFixed(2);
@@ -785,13 +852,19 @@ function applyTypeDefaults(o,type){
     o.color=o.color||'#62d8ff'; o.altColor=o.altColor||'#ff4fd8'; o.altSpeed=o.altSpeed??0.6; o.altAmount=o.altAmount??1; o.angle=o.angle??10; o.audioAngleMax=o.audioAngleMax??360; o.movingMode=o.movingMode||'static'; o.movingPan=o.movingPan??0; o.movingTilt=o.movingTilt??-55; o.movingPanRange=o.movingPanRange??90; o.movingTiltRange=o.movingTiltRange??70; o.movingSpeed=o.movingSpeed??.8; o.movingBeamAngle=o.movingBeamAngle??14; o.movingBeamRange=o.movingBeamRange??480; o.movingBodyVisible=o.movingBodyVisible??true; o.movingHeadGlow=o.movingHeadGlow??.35; o.movingAudioMove=o.movingAudioMove??.7; o.size=o.size||64;
   }
   if(type==='light'){
-    o.altColor=o.altColor||'#ff4fd8'; o.altSpeed=o.altSpeed??0.6; o.altAmount=o.altAmount??1; o.lightColorMusicEnabled=!!(o.lightColorMusicEnabled??false); o.lightColorMusicFreq=Math.max(20,Math.min(20000,Number(o.lightColorMusicFreq??1000))); o.lightColorMusicThreshold=Math.max(0,Math.min(1,Number(o.lightColorMusicThreshold??.35))); o.lightColorMusicBelow=!!(o.lightColorMusicBelow??false); o.lightColorMusicAmount=Math.max(0,Math.min(2,Number(o.lightColorMusicAmount??1))); o.panSpeed=o.panSpeed??0; o.panAngle=o.panAngle??0; o.laser=o.laser??false; o.angle=o.angle??6; o.audioAngleMax=o.audioAngleMax??360; o.color=o.color||'#62d8ff';
+    o.altColor=o.altColor||'#ff4fd8'; o.altSpeed=o.altSpeed??0.6; o.altAmount=o.altAmount??1; o.lightColorMusicEnabled=!!(o.lightColorMusicEnabled??false); o.lightColorMusicFreq=Math.max(20,Math.min(20000,Number(o.lightColorMusicFreq??1000))); o.lightColorMusicThreshold=Math.max(0,Math.min(1,Number(o.lightColorMusicThreshold??.35))); o.lightColorMusicBelow=!!(o.lightColorMusicBelow??false); o.lightColorMusicAmount=Math.max(0,Math.min(2,Number(o.lightColorMusicAmount??1))); o.lightEmitterShape=o.lightEmitterShape||'point'; o.lightRectangleEmission=o.lightRectangleEmission||'outward'; o.lightEmitterLength=o.lightEmitterLength??240; o.lightEmitterWidth=o.lightEmitterWidth??480; o.lightEmitterHeight=o.lightEmitterHeight??270; o.panSpeed=o.panSpeed??0; o.panAngle=o.panAngle??0; o.laser=o.laser??false; o.angle=o.angle??6; o.audioAngleMax=o.audioAngleMax??360; o.color=o.color||'#62d8ff';
   }
   if(type==='fog'){
-    o.color=o.color||'#cfe8ff'; o.fogPanSpeed=o.fogPanSpeed??0; o.fogPanAngle=o.fogPanAngle??0; o.fogAngle=o.fogAngle??80; o.fogLife=o.fogLife??4.0; o.fogDynamics=o.fogDynamics??1.0; o.fogGravity=o.fogGravity??0; o.fogSoftness=o.fogSoftness??.75; o.fogGlow=o.fogGlow??.15; o.fogEmitterOpacity=o.fogEmitterOpacity??.44; o.fogOpacity=o.fogOpacity??.35; o.fogAltColor=o.fogAltColor||'#b7f0ff'; o.fogAltSpeed=o.fogAltSpeed??.3; o.fogAltAmount=o.fogAltAmount??.4; o.fogMotion=o.fogMotion??.9; o.fogTurbulence=o.fogTurbulence??.85; o.size=o.size||52;
+    o.color=o.color||'#cfe8ff'; o.fogPanSpeed=o.fogPanSpeed??0; o.fogPanAngle=o.fogPanAngle??0; o.fogAngle=o.fogAngle??80; o.fogStartWidth=o.fogStartWidth??80; o.fogLife=o.fogLife??4.0; o.fogDynamics=o.fogDynamics??1.0; o.fogGravity=o.fogGravity??0; o.fogSoftness=o.fogSoftness??.75; o.fogGlow=o.fogGlow??.15; o.fogEmitterOpacity=o.fogEmitterOpacity??.44; o.fogOpacity=o.fogOpacity??.35; o.fogAltColor=o.fogAltColor||'#b7f0ff'; o.fogAltSpeed=o.fogAltSpeed??.3; o.fogAltAmount=o.fogAltAmount??.4; o.fogMotion=o.fogMotion??.9; o.fogTurbulence=o.fogTurbulence??.85; o.size=o.size||52;
   }
   if(type==='screen'){
     o.color=o.color||'#2fd6ff'; o.screenWidth=o.screenWidth??260; o.screenHeight=o.screenHeight??120; o.screenMode=o.screenMode||'audio'; o.screenFrameMode=o.screenFrameMode||'visible'; o.screenBrightness=o.screenBrightness??1; o.screenOpacity=o.screenOpacity??1; o.screenScanlines=o.screenScanlines??.3; o.screenAudio=o.screenAudio??.5; o.screenAltColor=o.screenAltColor||'#ff4fd8'; o.screenAltSpeed=o.screenAltSpeed??.25; o.screenAltAmount=o.screenAltAmount??.6; o.screenMediaType=o.screenMediaType||'none'; o.screenMediaName=o.screenMediaName||''; o.screenMediaData=o.screenMediaData||null; o.screenMediaEmbedded=!!o.screenMediaData; o.screenMediaFit=o.screenMediaFit||'cover'; o.screenFlipX=o.screenFlipX??true; o.screenFlipY=o.screenFlipY??false; o.screenVideoAudio=o.screenVideoAudio??true; o.screenVideoVolume=o.screenVideoVolume??1; o.screenMediaAspect=o.screenMediaAspect||1; o.screenTextSource=o.screenTextSource||'custom'; o.screenText=o.screenText??'VSE'; o.screenTextMode=o.screenTextMode||'static'; o.screenTextFont=o.screenTextFont||'Arial'; o.screenTextSize=o.screenTextSize??48; o.screenTextColor=o.screenTextColor||'#ffffff'; o.screenTextSpeed=o.screenTextSpeed??80; o.screenTextBgMode=o.screenTextBgMode||'transparent'; o.screenTextBgColor=o.screenTextBgColor||'#000000'; o.screenTextBgOpacity=o.screenTextBgOpacity??1; o.screenTextBgFit=o.screenTextBgFit||'cover'; o.screenTextBgImageName=o.screenTextBgImageName||''; o.screenTextBgImageData=o.screenTextBgImageData||null; o.screenTextBgImageElement=o.screenTextBgImageElement||null; o.screenTextBgImageReady=!!o.screenTextBgImageElement; o.screenTextDirty=true; o.screenAmbilight=!!o.screenAmbilight; o.screenAmbilightStrength=o.screenAmbilightStrength??1; o.screenEngineX=o.screenEngineX??0; o.screenEngineY=o.screenEngineY??0; o.screenEngineW=o.screenEngineW??640; o.screenEngineH=o.screenEngineH??360; o._ambilightColor=o._ambilightColor||null; o._ambilightLastSample=o._ambilightLastSample||0; o.size=o.size||70;
+    o.screenTextBold=o.screenTextBold!==false; o.screenTextItalic=!!o.screenTextItalic; o.screenTextUnderline=!!o.screenTextUnderline; o.screenTextAlign=o.screenTextAlign||'center'; o.screenTextLineHeight=Math.max(.8,Math.min(2.5,Number(o.screenTextLineHeight??1.2)));
+  }
+  if(type==='text'){
+    o.screenWidth=o.screenWidth??520; o.screenHeight=o.screenHeight??180; o.screenMode='text'; o.screenFrameMode='hidden'; o.screenOpacity=o.screenOpacity??1; o.screenBrightness=o.screenBrightness??1; o.screenScanlines=0; o.screenAudio=0; o.screenFlipX=false; o.screenFlipY=false;
+    o.screenTextSource=o.screenTextSource||'custom'; o.screenText=o.screenText??'Text'; o.screenTextMode=o.screenTextMode||'static'; o.screenTextFont=o.screenTextFont||'Arial'; o.screenTextSize=o.screenTextSize??48; o.screenTextColor=o.screenTextColor||'#ffffff'; o.screenTextBold=o.screenTextBold!==false; o.screenTextItalic=!!o.screenTextItalic; o.screenTextUnderline=!!o.screenTextUnderline; o.screenTextAlign=o.screenTextAlign||'center'; o.screenTextLineHeight=o.screenTextLineHeight??1.2;
+    o.screenTextBgMode=o.screenTextBgMode||'transparent'; o.screenTextBgColor=o.screenTextBgColor||'#000000'; o.screenTextBgOpacity=o.screenTextBgOpacity??1; o.screenTextBgFit=o.screenTextBgFit||'cover'; o.screenTextDirty=true; o.size=o.size||70;
   }
   if(type==='visualizer'){
     o.color=o.color||'#39ff57'; o.visualizerMode=o.visualizerMode||'freqBars'; o.visualizerWidth=o.visualizerWidth??520; o.visualizerHeight=o.visualizerHeight??180; o.visualizerBars=o.visualizerBars??32; o.visualizerSensitivity=o.visualizerSensitivity??1; o.visualizerDecay=0; o.visualizerGap=o.visualizerGap??.25; o.visualizerOpacity=o.visualizerOpacity??.95; o.visualizerPeakHold=o.visualizerPeakHold??30; o.size=o.size||80; o.music=o.music??1;
@@ -872,6 +945,11 @@ function applyParticlePresetToBulk(mode, source){
 function getBulkTypeTargets(type){return getBulkEditTargets().filter(o=>o&&o.type===type);}
 Object.entries(fields).forEach(([k,el])=>el&&el.addEventListener('input',()=>{
   if(!selected)return;
+  if(k==='GreenscreenChromaKeyEnabled'){
+    selected.greenscreenChromaKeyEnabled=el.checked;
+    propagateSelectedProperty('greenscreenChromaKeyEnabled',selected);
+    return;
+  }
   const map={Name:'name',Type:'type',X:'x',Y:'y',Layer:'layer',Size:'size',Intensity:'intensity',Rotation:'rotation',WindAffected:'windAffected',WindInfluence:'windInfluence',PanSpeed:'panSpeed',PanAngle:'panAngle',Laser:'laser',Angle:'angle',AudioAngleMax:'audioAngleMax',Range:'range',Softness:'softness',Glow:'glow',Opacity:'opacity',Color:'color',AltColor:'altColor',AltSpeed:'altSpeed',AltAmount:'altAmount',LightColorMusicEnabled:'lightColorMusicEnabled',LightColorMusicFreq:'lightColorMusicFreq',LightColorMusicThreshold:'lightColorMusicThreshold',LightColorMusicBelow:'lightColorMusicBelow',LightColorMusicAmount:'lightColorMusicAmount',LightbarCount:'lightbarCount',LightbarLength:'lightbarLength',LightbarSpread:'lightbarSpread',MovingMode:'movingMode',MovingPan:'movingPan',MovingTilt:'movingTilt',MovingPanRange:'movingPanRange',MovingTiltRange:'movingTiltRange',MovingSpeed:'movingSpeed',MovingBeamAngle:'movingBeamAngle',MovingBeamRange:'movingBeamRange',MovingBodyVisible:'movingBodyVisible',MovingHeadGlow:'movingHeadGlow',MovingAudioMove:'movingAudioMove',FogPanSpeed:'fogPanSpeed',FogPanAngle:'fogPanAngle',FogAngle:'fogAngle',FogLife:'fogLife',FogDynamics:'fogDynamics',FogGravity:'fogGravity',FogSoftness:'fogSoftness',FogGlow:'fogGlow',FogEmitterOpacity:'fogEmitterOpacity',FogOpacity:'fogOpacity',FogAltColor:'fogAltColor',FogAltSpeed:'fogAltSpeed',FogAltAmount:'fogAltAmount',FogMotion:'fogMotion',FogTurbulence:'fogTurbulence',ScreenWidth:'screenWidth',ScreenHeight:'screenHeight',ScreenMode:'screenMode',ScreenTextSource:'screenTextSource',ScreenText:'screenText',ScreenTextMode:'screenTextMode',ScreenTextFont:'screenTextFont',ScreenTextSize:'screenTextSize',ScreenTextColor:'screenTextColor',ScreenTextSpeed:'screenTextSpeed',ScreenTextBgMode:'screenTextBgMode',ScreenTextBgColor:'screenTextBgColor',ScreenTextBgOpacity:'screenTextBgOpacity',ScreenTextBgFit:'screenTextBgFit',ScreenFrameMode:'screenFrameMode',ScreenBrightness:'screenBrightness',ScreenOpacity:'screenOpacity',ScreenScanlines:'screenScanlines',ScreenAudio:'screenAudio',ScreenAltColor:'screenAltColor',ScreenAltSpeed:'screenAltSpeed',ScreenAltAmount:'screenAltAmount',ScreenAmbilight:'screenAmbilight',ScreenAmbilightStrength:'screenAmbilightStrength',ScreenEngineX:'screenEngineX',ScreenEngineY:'screenEngineY',ScreenEngineW:'screenEngineW',ScreenEngineH:'screenEngineH',ParticleMode:'particleMode',ParticleEmitterShape:'particleEmitterShape',ParticleEmitterLength:'particleEmitterLength',ParticleEmitterTransparency:'particleEmitterTransparency',ParticleAmount:'particleAmount',ParticleSpeed:'particleSpeed',ParticleSpread:'particleSpread',ParticleLife:'particleLife',ParticleEmissionDuration:'particleEmissionDuration',ParticleUnlimited:'particleUnlimited',ParticleEmissionMode:'particleEmissionMode',ParticleGravity:'particleGravity',ParticleTurbulence:'particleTurbulence',ParticleSize:'particleSize',ParticleGlow:'particleGlow',ParticleOpacity:'particleOpacity',ParticleAltColor:'particleAltColor',ParticleAudio:'particleAudio',ParticleBlastEnergy:'particleBlastEnergy',ParticleShockwaveRadius:'particleShockwaveRadius',ParticleInitialVelocity:'particleInitialVelocity',ParticleVelocitySpread:'particleVelocitySpread',ParticleExplosionTurbulence:'particleExplosionTurbulence',ParticleUpdraft:'particleUpdraft',ParticleFireballDuration:'particleFireballDuration',ParticleSmokeAmount:'particleSmokeAmount',ParticleSmokeLifetime:'particleSmokeLifetime',ParticleDebrisAmount:'particleDebrisAmount',ParticleDebrisGravity:'particleDebrisGravity',ParticleShockwaveVisible:'particleShockwaveVisible',ParticleJetPressure:'particleJetPressure',ParticleJetVelocity:'particleJetVelocity',ParticleJetWidth:'particleJetWidth',ParticleJetLength:'particleJetLength',ParticleCoreStability:'particleCoreStability',ParticleEdgeTurbulence:'particleEdgeTurbulence',ParticleUpdraftStrength:'particleUpdraftStrength',ParticleTipTurbulence:'particleTipTurbulence',ParticleBrightness:'particleBrightness',ParticleGlowStrength:'particleGlowStrength',ParticleJetSmokeAmount:'particleJetSmokeAmount',IpmDensity:'ipmDensity',IpmParticleSize:'ipmParticleSize',IpmScale:'ipmScale',IpmOpacity:'ipmOpacity',IpmMode:'ipmMode',IpmReaction:'ipmReaction',IpmReturn:'ipmReturn',IpmThreshold:'ipmThreshold',IpmWave:'ipmWave',IpmJitter:'ipmJitter',IpmPixelMode:'ipmPixelMode',IpmEffectStrength:'ipmEffectStrength',IpmEffectSpeed:'ipmEffectSpeed',IpmAudioEffectSpeed:'ipmAudioEffectSpeed',IpmAudioEffectStrength:'ipmAudioEffectStrength',IpmAudioEffectPulse:'ipmAudioEffectPulse',IpmAudioMovement:'ipmAudioMovement',IpmAudioSize:'ipmAudioSize',IpmAudioAlpha:'ipmAudioAlpha',IpmUseImageColors:'ipmUseImageColors',IpmMono:'ipmMono',IpmInvert:'ipmInvert',IpmFlipX:'ipmFlipX',IpmFlipY:'ipmFlipY',IpmDestructionEnabled:'ipmDestructionEnabled',IpmDestructionMode:'ipmDestructionMode',IpmDestructionReverse:'ipmDestructionReverse',IpmDestructionAudioEnabled:'ipmDestructionAudioEnabled',IpmDestructionStrength:'ipmDestructionStrength',IpmDestructionDirX:'ipmDestructionDirX',IpmDestructionDirY:'ipmDestructionDirY',IpmDestructionSpread:'ipmDestructionSpread',IpmDestructionGravity:'ipmDestructionGravity',IpmDestructionDuration:'ipmDestructionDuration',IpmDestructionReturnEnabled:'ipmDestructionReturnEnabled',IpmDestructionReturnSpeed:'ipmDestructionReturnSpeed',IpmDestructionRandomness:'ipmDestructionRandomness',IpmDestructionClusterSize:'ipmDestructionClusterSize',IpmDestructionParticleFade:'ipmDestructionParticleFade',IpmDestructionFadeTime:'ipmDestructionFadeTime',IpmDestructionAudioThreshold:'ipmDestructionAudioThreshold',IpmDestructionRetrigger:'ipmDestructionRetrigger',VisualizerMode:'visualizerMode',VisualizerWidth:'visualizerWidth',VisualizerHeight:'visualizerHeight',VisualizerBars:'visualizerBars',VisualizerSensitivity:'visualizerSensitivity',VisualizerGap:'visualizerGap',VisualizerOpacity:'visualizerOpacity',VisualizerPeakHold:'visualizerPeakHold',MandalaObjWidth:'mandalaObjWidth',MandalaObjHeight:'mandalaObjHeight',MandalaObjKeepAspect:'mandalaObjKeepAspect',MandalaObjVisible:'mandalaObjVisible',MandalaObjLocked:'mandalaObjLocked',MandalaObjOpacity:'mandalaObjOpacity',MandalaObjSegments:'mandalaObjSegments',MandalaObjRotation:'mandalaObjRotation',MandalaObjCenterX:'mandalaObjCenterX',MandalaObjCenterY:'mandalaObjCenterY',MandalaObjZoom:'mandalaObjZoom',MandalaObjMix:'mandalaObjMix',MandalaObjAutoRotate:'mandalaObjAutoRotate',MandalaObjMusicRotation:'mandalaObjMusicRotation',MandalaObjMusicZoom:'mandalaObjMusicZoom',MandalaObjMusicMix:'mandalaObjMusicMix',ImageAssetWidth:'imageAssetWidth',ImageAssetHeight:'imageAssetHeight',ImageAssetKeepAspect:'imageAssetKeepAspect',ImageAssetOpacity:'imageAssetOpacity',ImageAssetIgnoreGlobalDimming:'imageAssetIgnoreGlobalDimming',ImageAssetPerspectiveEnabled:'imageAssetPerspectiveEnabled',ImageAssetPerspectiveStrength:'imageAssetPerspectiveStrength',ImageAssetPerspectiveMin:'imageAssetPerspectiveMin',ImageAssetAudioEnabled:'imageAssetAudioEnabled',ImageAssetAudioDirX:'imageAssetAudioDirX',ImageAssetAudioDirY:'imageAssetAudioDirY',ImageAssetAudioStrength:'imageAssetAudioStrength',ImageAssetAudioPhysicsImpulse:'imageAssetAudioPhysicsImpulse',ImageAssetAudioImpulseCooldown:'imageAssetAudioImpulseCooldown',ImageAssetPhysicsEnabled:'imageAssetPhysicsEnabled',ImageAssetMass:'imageAssetMass',ImageAssetGravity:'imageAssetGravity',ImageAssetFriction:'imageAssetFriction',ImageAssetBounce:'imageAssetBounce',ImageAssetAngularDamping:'imageAssetAngularDamping',ImageAssetLinearDamping:'imageAssetLinearDamping',ImageAssetCollisionEnabled:'imageAssetCollisionEnabled',ImageAssetReverseXOnSideCollision:'imageAssetReverseXOnSideCollision',ImageAssetColliderType:'imageAssetColliderType',ImageAssetImpulseX:'imageAssetImpulseX',ImageAssetImpulseY:'imageAssetImpulseY',ImageAssetImpulseStrength:'imageAssetImpulseStrength',ImageAssetImpulseRotation:'imageAssetImpulseRotation',AudioSourceVolume:'audioSourceVolume',AudioSourceRange:'audioSourceRange',AudioSourceFalloff:'audioSourceFalloff',AudioSourceIconOpacity:'audioSourceIconOpacity',AudioSourceLoop:'audioSourceLoop',AudioSourceAnalyze:'audioSourceAnalyze',AudioSourceDirectional:'audioSourceDirectional',AudioSourceDirection:'audioSourceDirection',GreenscreenWidth:'greenscreenWidth',GreenscreenHeight:'greenscreenHeight',GreenscreenKeepAspect:'greenscreenKeepAspect',GreenscreenSwapAspect:'greenscreenSwapAspect',GreenscreenKeyColor:'greenscreenKeyColor',GreenscreenTolerance:'greenscreenTolerance',GreenscreenSoftness:'greenscreenSoftness',GreenscreenEdgeTrim:'greenscreenEdgeTrim',GreenscreenSpillReduction:'greenscreenSpillReduction',GreenscreenEdgeDarken:'greenscreenEdgeDarken',GreenscreenOpacity:'greenscreenOpacity',GreenscreenAudioEnabled:'greenscreenAudioEnabled',GreenscreenAudioVolume:'greenscreenAudioVolume',GreenscreenShadowEnabled:'greenscreenShadowEnabled',GreenscreenShadowWidth:'greenscreenShadowWidth',GreenscreenShadowHeight:'greenscreenShadowHeight',GreenscreenShadowOffsetX:'greenscreenShadowOffsetX',GreenscreenShadowOffsetY:'greenscreenShadowOffsetY',GreenscreenShadowSoftness:'greenscreenShadowSoftness',GreenscreenShadowOpacity:'greenscreenShadowOpacity',ShadowEnabled:'shadowEnabled',ShadowMode:'shadowMode',ShadowOpacity:'shadowOpacity',ShadowBlur:'shadowBlur',ShadowOffsetX:'shadowOffsetX',ShadowOffsetY:'shadowOffsetY',ShadowScaleX:'shadowScaleX',ShadowScaleY:'shadowScaleY',ShadowRotation:'shadowRotation',ShadowColor:'shadowColor',WaterMode:'waterMode',WaterWidth:'waterWidth',WaterHeight:'waterHeight',WaterOpacity:'waterOpacity',WaterWaveHeight:'waterWaveHeight',WaterWaveScale:'waterWaveScale',WaterWaveSpeed:'waterWaveSpeed',WaterFlowDirection:'waterFlowDirection',WaterFlowSpeed:'waterFlowSpeed',WaterFlowScale:'waterFlowScale',WaterDistortionStrength:'waterDistortionStrength',WaterReflectionStrength:'waterReflectionStrength',WaterHighlightStrength:'waterHighlightStrength',WaterWaveNoise:'waterWaveNoise',WaterEdgeFade:'waterEdgeFade',WaterColorTint:'waterColorTint',WaterAudioReaction:'waterAudioReaction',WaterSparklesEnabled:'waterSparklesEnabled',WaterSparkleDensity:'waterSparkleDensity',WaterSparkleSize:'waterSparkleSize',WaterSparkleBrightness:'waterSparkleBrightness',WaterSparkleSpeed:'waterSparkleSpeed',WaterSparkleColor:'waterSparkleColor',WaterFoamEnabled:'waterFoamEnabled',WaterFoamAmount:'waterFoamAmount',WaterFoamSpeed:'waterFoamSpeed',WaterFoamScale:'waterFoamScale',WaterFoamOpacity:'waterFoamOpacity',Music:'music',ThresholdBelow:'thresholdBelow',Life:'life'};
   let v=(el.type==='checkbox')?el.checked:el.value;
   if(map[k]==='type'&&v==='laser')v='light';
@@ -881,21 +959,31 @@ Object.entries(fields).forEach(([k,el])=>el&&el.addEventListener('input',()=>{
   if(map[k]==='screenHeight')v=Math.max(1,Math.min(Number(scene.stageHeight||stageState.h||1080),Number(v)||1));
   const oldType=selected.type;
   selected[map[k]]=v;
-  if(selected.type==='mandalaVisualizer' && selected.mandalaObjKeepAspect!==false && (map[k]==='mandalaObjWidth' || map[k]==='mandalaObjHeight')){
+  if(['mandalaObjKeepAspect','imageAssetKeepAspect','greenscreenKeepAspect'].includes(map[k])){
+    selected.objectKeepAspect=v!==false;
+    if(objectKeepAspectInput)objectKeepAspectInput.checked=selected.objectKeepAspect;
+    if(selected.objectKeepAspect){delete selected.objectAspect;ensureObjectAspect(selected);}
+  }
+  applyObjectAspectLock(selected,map[k]);
+  const lockedSpec=objectDimensionSpec(selected);
+  if(lockedSpec&&selected.objectKeepAspect!==false&&[lockedSpec.w,lockedSpec.h].includes(map[k])){
+    propagateSelectedProperty(map[k]===lockedSpec.w?lockedSpec.h:lockedSpec.w,selected);
+  }
+  if(selected.objectKeepAspect===undefined&&selected.type==='mandalaVisualizer' && selected.mandalaObjKeepAspect!==false && (map[k]==='mandalaObjWidth' || map[k]==='mandalaObjHeight')){
     const asp=Math.max(0.01,Number(selected.mandalaObjAspect||1));
     if(map[k]==='mandalaObjWidth')selected.mandalaObjHeight=Math.max(1,Number(selected.mandalaObjWidth||420)/asp);
     if(map[k]==='mandalaObjHeight')selected.mandalaObjWidth=Math.max(1,Number(selected.mandalaObjHeight||420)*asp);
     if(fields.MandalaObjWidth)fields.MandalaObjWidth.value=selected.mandalaObjWidth;
     if(fields.MandalaObjHeight)fields.MandalaObjHeight.value=selected.mandalaObjHeight;
   }
-  if(selected.type==='imageAsset' && selected.imageAssetKeepAspect!==false && (map[k]==='imageAssetWidth' || map[k]==='imageAssetHeight')){
+  if(selected.objectKeepAspect===undefined&&selected.type==='imageAsset' && selected.imageAssetKeepAspect!==false && (map[k]==='imageAssetWidth' || map[k]==='imageAssetHeight')){
     const asp=Math.max(0.01,Number(selected.imageAssetAspect||1));
     if(map[k]==='imageAssetWidth')selected.imageAssetHeight=Math.max(1,Number(selected.imageAssetWidth||240)/asp);
     if(map[k]==='imageAssetHeight')selected.imageAssetWidth=Math.max(1,Number(selected.imageAssetHeight||160)*asp);
     if(fields.ImageAssetWidth)fields.ImageAssetWidth.value=selected.imageAssetWidth;
     if(fields.ImageAssetHeight)fields.ImageAssetHeight.value=selected.imageAssetHeight;
   }
-  if(selected.type==='screen' && ['screenTextSource','screenText','screenTextMode','screenTextFont','screenTextSize','screenTextColor','screenTextSpeed','screenTextBgMode','screenTextBgColor','screenTextBgOpacity','screenTextBgFit'].includes(map[k])) selected.screenTextDirty=true;
+  if((selected.type==='screen'||selected.type==='text') && ['screenTextSource','screenText','screenTextMode','screenTextFont','screenTextSize','screenTextColor','screenTextSpeed','screenTextBgMode','screenTextBgColor','screenTextBgOpacity','screenTextBgFit'].includes(map[k])) selected.screenTextDirty=true;
   if(selected.type==='screen' && ['screenAmbilight','screenAmbilightStrength','screenEngineX','screenEngineY','screenEngineW','screenEngineH'].includes(map[k])){ selected._ambilightColor=null; selected._ambilightLastSample=0; }
   // IPM-Farbkorrektur: Bei händischer Farbwahl wird der monochrome IPM-Farbmodus aktiviert,
   // damit der Farbwähler sofort sichtbar wirkt und nicht von Bildfarben überdeckt wird.
@@ -933,6 +1021,91 @@ Object.entries(fields).forEach(([k,el])=>el&&el.addEventListener('input',()=>{
   propagateSelectedProperty(map[k],selected);
   syncTypeUI();
 }));
+if(objectKeepAspectInput)objectKeepAspectInput.addEventListener('change',()=>{
+  if(!selected)return;
+  const enabled=objectKeepAspectInput.checked;
+  const targets=getBulkEditTargets().length?getBulkEditTargets():[selected];
+  targets.forEach(o=>{
+    o.objectKeepAspect=enabled;
+    o.mandalaObjKeepAspect=enabled;
+    o.imageAssetKeepAspect=enabled;
+    o.greenscreenKeepAspect=enabled;
+    if(enabled){delete o.objectAspect;ensureObjectAspect(o);}
+  });
+  if(fields.MandalaObjKeepAspect)fields.MandalaObjKeepAspect.checked=enabled;
+  if(fields.ImageAssetKeepAspect)fields.ImageAssetKeepAspect.checked=enabled;
+  if(fields.GreenscreenKeepAspect)fields.GreenscreenKeepAspect.checked=enabled;
+  if(screenKeepAspectInput)screenKeepAspectInput.checked=enabled;
+  if(lightEmitterKeepAspectInput)lightEmitterKeepAspectInput.checked=enabled;
+});
+if(screenKeepAspectInput)screenKeepAspectInput.addEventListener('change',()=>{
+  if(!selected||!['screen','text'].includes(selected.type))return;
+  const enabled=screenKeepAspectInput.checked;
+  getBulkTypeTargets(selected.type).forEach(o=>{
+    o.objectKeepAspect=enabled;
+    if(enabled){delete o.objectAspect;ensureObjectAspect(o);}
+  });
+  if(objectKeepAspectInput)objectKeepAspectInput.checked=enabled;
+});
+function setScreenRichTextProperty(key,value){
+  if(!selected||!['screen','text'].includes(selected.type))return;
+  getBulkTypeTargets(selected.type).forEach(o=>{o[key]=value;o.screenTextDirty=true;});
+}
+if(screenTextBoldInput)screenTextBoldInput.addEventListener('change',()=>setScreenRichTextProperty('screenTextBold',screenTextBoldInput.checked));
+if(screenTextItalicInput)screenTextItalicInput.addEventListener('change',()=>setScreenRichTextProperty('screenTextItalic',screenTextItalicInput.checked));
+if(screenTextUnderlineInput)screenTextUnderlineInput.addEventListener('change',()=>setScreenRichTextProperty('screenTextUnderline',screenTextUnderlineInput.checked));
+if(screenTextAlignInput)screenTextAlignInput.addEventListener('change',()=>setScreenRichTextProperty('screenTextAlign',screenTextAlignInput.value));
+if(screenTextLineHeightInput)screenTextLineHeightInput.addEventListener('input',()=>{
+  const value=Math.max(.8,Math.min(2.5,Number(screenTextLineHeightInput.value)||1.2));
+  setScreenRichTextProperty('screenTextLineHeight',value);
+  if(typeof screenTextLineHeightValue!=='undefined')screenTextLineHeightValue.textContent=value.toFixed(2);
+});
+if(lightEmitterKeepAspectInput)lightEmitterKeepAspectInput.addEventListener('change',()=>{
+  if(!selected||selected.type!=='light')return;
+  const enabled=lightEmitterKeepAspectInput.checked;
+  getBulkTypeTargets('light').forEach(o=>{
+    o.objectKeepAspect=enabled;
+    if(enabled){delete o.objectAspect;ensureObjectAspect(o);}
+  });
+  if(objectKeepAspectInput)objectKeepAspectInput.checked=enabled;
+});
+if(fogStartWidthInput)fogStartWidthInput.addEventListener('input',()=>{
+  if(!selected||selected.type!=='fog')return;
+  const value=Math.max(0,Number(fogStartWidthInput.value)||0);
+  getBulkTypeTargets('fog').forEach(o=>o.fogStartWidth=value);
+  if(typeof fogStartWidthValue!=='undefined')fogStartWidthValue.textContent=Math.round(value);
+});
+if(lightEmitterShapeInput)lightEmitterShapeInput.addEventListener('input',()=>{
+  if(!selected||selected.type!=='light')return;
+  const shape=['line','rectangle'].includes(lightEmitterShapeInput.value)?lightEmitterShapeInput.value:'point';
+  getBulkTypeTargets('light').forEach(o=>{o.lightEmitterShape=shape;delete o.objectAspect;ensureObjectAspect(o);});
+  syncTypeUI();
+});
+if(lightRectangleEmissionInput)lightRectangleEmissionInput.addEventListener('change',()=>{
+  if(!selected||selected.type!=='light')return;
+  const mode=['inward','solid'].includes(lightRectangleEmissionInput.value)?lightRectangleEmissionInput.value:'outward';
+  getBulkTypeTargets('light').forEach(o=>o.lightRectangleEmission=mode);
+});
+if(lightEmitterLengthInput)lightEmitterLengthInput.addEventListener('input',()=>{
+  if(!selected||selected.type!=='light')return;
+  const value=Math.max(20,Number(lightEmitterLengthInput.value)||240);
+  getBulkTypeTargets('light').forEach(o=>o.lightEmitterLength=value);
+  if(typeof lightEmitterLengthValue!=='undefined')lightEmitterLengthValue.textContent=Math.round(value);
+});
+if(lightEmitterWidthInput)lightEmitterWidthInput.addEventListener('input',()=>{
+  if(!selected||selected.type!=='light')return;
+  const value=Math.max(20,Number(lightEmitterWidthInput.value)||480);
+  getBulkTypeTargets('light').forEach(o=>{o.lightEmitterWidth=value;applyObjectAspectLock(o,'lightEmitterWidth');});
+  if(selected){lightEmitterHeightInput.value=selected.lightEmitterHeight??270;if(typeof lightEmitterHeightValue!=='undefined')lightEmitterHeightValue.textContent=Math.round(selected.lightEmitterHeight??270);}
+  if(typeof lightEmitterWidthValue!=='undefined')lightEmitterWidthValue.textContent=Math.round(value);
+});
+if(lightEmitterHeightInput)lightEmitterHeightInput.addEventListener('input',()=>{
+  if(!selected||selected.type!=='light')return;
+  const value=Math.max(20,Number(lightEmitterHeightInput.value)||270);
+  getBulkTypeTargets('light').forEach(o=>{o.lightEmitterHeight=value;applyObjectAspectLock(o,'lightEmitterHeight');});
+  if(selected){lightEmitterWidthInput.value=selected.lightEmitterWidth??480;if(typeof lightEmitterWidthValue!=='undefined')lightEmitterWidthValue.textContent=Math.round(selected.lightEmitterWidth??480);}
+  if(typeof lightEmitterHeightValue!=='undefined')lightEmitterHeightValue.textContent=Math.round(value);
+});
 if(screenImageFile)screenImageFile.addEventListener('change',()=>{if(selected&&selected.type==='screen'&&screenImageFile.files[0])loadScreenMedia(selected,screenImageFile.files[0],'image');screenImageFile.value='';});
 if(screenVideoFile)screenVideoFile.addEventListener('change',()=>{if(selected&&selected.type==='screen'&&screenVideoFile.files[0])loadScreenMedia(selected,screenVideoFile.files[0],'video');screenVideoFile.value='';});
 if(screenMediaFolder)screenMediaFolder.addEventListener('change',()=>{if(selected&&selected.type==='screen'&&screenMediaFolder.files&&screenMediaFolder.files.length)loadScreenMediaFolder(selected,screenMediaFolder.files);screenMediaFolder.value='';});
@@ -946,13 +1119,18 @@ if(screenFlipY)screenFlipY.addEventListener('change',()=>{if(!selected||selected
 if(screenVideoAudio)screenVideoAudio.addEventListener('change',()=>{if(!selected||selected.type!=='screen')return;getBulkTypeTargets('screen').forEach(o=>{o.screenVideoAudio=screenVideoAudio.checked;if(o.screenMediaType==='video'&&o.screenMediaElement){o.screenMediaElement.muted=!o.screenVideoAudio;o.screenMediaElement.volume=Number(o.screenVideoVolume??1);o.screenMediaElement.play().catch(()=>{});}});syncTypeUI();});
 if(screenVideoVolume)screenVideoVolume.addEventListener('input',()=>{if(!selected||selected.type!=='screen')return;const vol=parseFloat(screenVideoVolume.value);getBulkTypeTargets('screen').forEach(o=>{o.screenVideoVolume=vol;if(o.screenMediaType==='video'&&o.screenMediaElement){o.screenMediaElement.volume=Number(o.screenVideoVolume??1);}});syncTypeUI();});
 if(clearScreenMediaBtn)clearScreenMediaBtn.onclick=()=>{if(!selected||selected.type!=='screen')return;releaseScreenMedia(selected);selected.screenMode='solid';fields.ScreenMode.value='solid';select(selected);};
-if(screenTextBgImageFile)screenTextBgImageFile.addEventListener('change',()=>{if(selected&&selected.type==='screen'&&screenTextBgImageFile.files[0])loadScreenTextBackgroundImage(selected,screenTextBgImageFile.files[0]);screenTextBgImageFile.value='';});
-if(clearScreenTextBgImageBtn)clearScreenTextBgImageBtn.onclick=()=>{if(!selected||selected.type!=='screen')return;clearScreenTextBackgroundImage(selected);select(selected);};
+if(screenTextBgImageFile)screenTextBgImageFile.addEventListener('change',()=>{if(selected&&['screen','text'].includes(selected.type)&&screenTextBgImageFile.files[0])loadScreenTextBackgroundImage(selected,screenTextBgImageFile.files[0]);screenTextBgImageFile.value='';});
+if(clearScreenTextBgImageBtn)clearScreenTextBgImageBtn.onclick=()=>{if(!selected||!['screen','text'].includes(selected.type))return;clearScreenTextBackgroundImage(selected);select(selected);};
 
 if(greenscreenVideoFile)greenscreenVideoFile.addEventListener('change',()=>{if(selected&&selected.type==='greenscreen'&&greenscreenVideoFile.files[0])loadGreenscreenVideo(selected,greenscreenVideoFile.files[0]);greenscreenVideoFile.value='';});
 if(fields.GreenscreenAudioEnabled)fields.GreenscreenAudioEnabled.addEventListener('change',()=>{if(selected&&selected.type==='greenscreen')updateGreenscreenAudioRouting(selected);});
 if(fields.GreenscreenAudioVolume)fields.GreenscreenAudioVolume.addEventListener('input',()=>{if(selected&&selected.type==='greenscreen')updateGreenscreenAudioRouting(selected);});
 if(greenscreenWebcamBtn)greenscreenWebcamBtn.addEventListener('click',()=>{if(selected&&selected.type==='greenscreen')startGreenscreenWebcam(selected);});
+if(greenscreenWebcamDevice)greenscreenWebcamDevice.addEventListener('change',()=>{
+  if(!selected||selected.type!=='greenscreen')return;
+  selected.greenscreenDeviceId=greenscreenWebcamDevice.value;
+  if(selected.greenscreenMediaType==='webcam')startGreenscreenWebcam(selected);
+});
 if(greenscreenStopBtn)greenscreenStopBtn.addEventListener('click',()=>{if(selected&&selected.type==='greenscreen'){releaseGreenscreenMedia(selected);select(selected);}});
 
 if(imageAssetFile)imageAssetFile.addEventListener('change',()=>{if(selected&&selected.type==='imageAsset'&&imageAssetFile.files[0])loadImageAssetFile(selected,imageAssetFile.files[0]);imageAssetFile.value='';});
@@ -1084,6 +1262,21 @@ if(bgCaptureSource)bgCaptureSource.addEventListener('change',()=>{if(bgToImageAs
 function toggleBgCaptureMode(){
   bgCaptureMode=!bgCaptureMode;
   bgCaptureDrag=null;
+  const capturePanel=document.getElementById('bgCaptureParams');
+  if(capturePanel)capturePanel.style.display=bgCaptureMode?'block':'none';
+  if(bgCaptureMode){
+    document.body.classList.remove('rightPanelCollapsed');
+    const panelToggle=document.getElementById('rightPanelToggle');
+    if(panelToggle)panelToggle.setAttribute('aria-expanded','true');
+    if(empty)empty.style.display='none';
+    if(params)params.style.display='none';
+    if(timelineParams)timelineParams.style.display='none';
+    if(capturePanel)requestAnimationFrame(()=>capturePanel.scrollIntoView({block:'nearest'}));
+  }else if(timelineState&&timelineState.selected){
+    selectTimeline();
+  }else{
+    selectSingleCore(selected||null);
+  }
   if(bgToImageAssetStatus){
     const mode=getBgCaptureRemoveFromBackground()?'Ausschneiden mit transparentem Loch':'Kopieren ohne Hintergrundänderung';
     const source=getBgCaptureSource()==='stage'?'Bühne mit Objekten':'Nur Hintergrund';

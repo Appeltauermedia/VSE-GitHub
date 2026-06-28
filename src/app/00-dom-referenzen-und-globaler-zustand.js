@@ -82,6 +82,7 @@ const recordOverlayOpacity=document.getElementById('recordOverlayOpacity');
 const recordOverlayOpacityValue=document.getElementById('recordOverlayOpacityValue');
 const recordHudOverlay=document.getElementById('recordHudOverlay');
 const recordHudStartBtn=document.getElementById('recordHudStartBtn');
+const sceneScreenshotBtn=document.getElementById('sceneScreenshotBtn');
 const recordHudStopBtn=document.getElementById('recordHudStopBtn');
 const recordHudTime=document.getElementById('recordHudTime');
 const particleTriggerBtn=document.getElementById('particleTriggerBtn');

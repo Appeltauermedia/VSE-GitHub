@@ -201,11 +201,17 @@ function applyTimelineEvents(){
   }
   ensureTimelineBaseSnapshots();
   const t=Math.max(0,currentTimelineTime());
+  const liveTimelineAssetIds=new Set();
+  for(const event of (timelineState.events||[])){
+    if(event&&(event.timelineAssetKind==='screen-media'||event.timelineAssetKind==='scene')){
+      timelineObjectsForEvent(event).forEach(object=>liveTimelineAssetIds.add(object.id));
+    }
+  }
   const affected=timelineAffectedObjectIds();
   for(const oid of affected){
     const o=objects.find(x=>x.id===oid);
     if(!o)continue;
-    if(o._timelineBaseSnapshot)applyTimelineSnapshot(o,o._timelineBaseSnapshot);
+    if(o._timelineBaseSnapshot&&!liveTimelineAssetIds.has(oid))applyTimelineSnapshot(o,o._timelineBaseSnapshot);
     o._timelineHidden=!getTimelineStartActive(oid);
   }
   const events=[...(timelineState.events||[])].filter(e=>e&&e.enabled!==false&&timelineObjectsForEvent(e).length).sort((a,b)=>(Number(a.time)||0)-(Number(b.time)||0));
@@ -231,7 +237,7 @@ function applyTimelineEvents(){
       for(const o of targets){
         if(dur>0){o._timelineHidden=!inWindow;}else{o._timelineHidden=false;}
       }
-      if((dur<=0||inWindow)&&ev.snapshot)applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);
+      if((dur<=0||inWindow)&&ev.snapshot&&ev.timelineAssetKind!=='screen-media'&&ev.timelineAssetKind!=='scene')applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);
     }else if(action==='parameter'){
       if(dur<=0||inWindow){if(ev.snapshot)applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);}
     }else if(action==='ipmDestruction'){

@@ -1,8 +1,27 @@
 /* ===== Import, Export und Asset-Wiederherstellung ===== */
+function serializeScenePackage(data){
+  const seen=new WeakSet();
+  return JSON.stringify(data,(key,value)=>{
+    if(typeof value==='function')return undefined;
+    if(value&&typeof value==='object'){
+      const ctor=value.constructor&&value.constructor.name||'';
+      if(/^(HTML|WebGL|Audio|MediaStream|CanvasRendering|ImageBitmap|VideoFrame)/.test(ctor))return undefined;
+      if(seen.has(value))return undefined;
+      seen.add(value);
+    }
+    return value;
+  },2);
+}
 function exportProject(download=true){
-  const json=JSON.stringify(projectPackage(),null,2);
-  const outEl=document.getElementById('out'); if(outEl) outEl.value=json;
-  if(download) downloadText('VSE_V2_Project_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.scene',json);
+  try{
+    const json=serializeScenePackage(projectPackage());
+    if(!json)throw new Error('Das Scene-Paket konnte nicht serialisiert werden.');
+    const outEl=document.getElementById('out'); if(outEl)outEl.value=json;
+    if(download)downloadText('VSE_V2_Project_'+new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')+'.scene',json);
+  }catch(error){
+    console.error('Scene-Export fehlgeschlagen',error);
+    alert('Scene-Export fehlgeschlagen: '+((error&&error.message)||error));
+  }
 }
 exportBtn.onclick=()=>exportProject(true);
 if(importBtn)importBtn.onclick=()=>importFile&&importFile.click();

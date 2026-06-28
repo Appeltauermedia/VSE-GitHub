@@ -15,6 +15,13 @@ function ensureAudio(){
     monitorGain.gain.value=0;
     monitorGain.connect(audioCtx.destination);
   }
+  if(!analysisSinkGain){
+    // Hält analyse-only Quellen aktiv, ohne Mikrofon/Systemsound auszugeben.
+    analysisSinkGain=audioCtx.createGain();
+    analysisSinkGain.gain.value=0;
+    analyser.connect(analysisSinkGain);
+    analysisSinkGain.connect(audioCtx.destination);
+  }
   if(!recordingAudioDest){
     recordingAudioDest=audioCtx.createMediaStreamDestination();
   }
@@ -58,8 +65,63 @@ function connectSource(mode){
   // Gemeinsamer Audio-Ausgang: Quelle -> Analyzer/Recording/Monitoring.
   rebuildAudioRouting();
 }
-async function startMic(){try{const ctx=ensureAudio();await ctx.resume();disconnectAudio();audioPlayer.pause();audioStream=await navigator.mediaDevices.getUserMedia({audio:true,video:false});audioSource=ctx.createMediaStreamSource(audioStream);connectSource('microphone');audioState.enabled=true;audioState.source='microphone';audioStatus.textContent='Audio aktiv: Mikrofon · analyse-only';}catch(err){audioStatus.textContent='Mikrofon konnte nicht gestartet werden: '+err.message;}}
+async function refreshMicrophoneDevices(preferredId){
+  if(!micDeviceSelect||!navigator.mediaDevices||typeof navigator.mediaDevices.enumerateDevices!=='function')return;
+  const previous=preferredId!==undefined?preferredId:micDeviceSelect.value;
+  try{
+    const devices=(await navigator.mediaDevices.enumerateDevices()).filter(device=>device.kind==='audioinput');
+    micDeviceSelect.innerHTML='';
+    const defaultOption=document.createElement('option');
+    defaultOption.value='';defaultOption.textContent='Standard-Mikrofon';micDeviceSelect.appendChild(defaultOption);
+    devices.forEach((device,index)=>{
+      const option=document.createElement('option');
+      option.value=device.deviceId;
+      option.textContent=device.label||('Mikrofon '+(index+1));
+      micDeviceSelect.appendChild(option);
+    });
+    if([...micDeviceSelect.options].some(option=>option.value===previous))micDeviceSelect.value=previous;
+  }catch(error){console.warn('Mikrofonliste konnte nicht gelesen werden.',error);}
+}
+async function startMic(){
+  try{
+    if(!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function')throw new Error('Dieser Browser stellt keinen Mikrofonzugriff bereit. Bitte über localhost oder HTTPS öffnen.');
+    const ctx=ensureAudio();
+    if(ctx.state==='suspended')await ctx.resume();
+    disconnectAudio();
+    audioPlayer.pause();
+    audioStatus.textContent='Mikrofonzugriff wird angefordert …';
+    const selectedDeviceId=micDeviceSelect&&micDeviceSelect.value;
+    const audioConstraints={echoCancellation:false,noiseSuppression:false,autoGainControl:false};
+    if(selectedDeviceId)audioConstraints.deviceId={exact:selectedDeviceId};
+    const stream=await navigator.mediaDevices.getUserMedia({audio:audioConstraints,video:false});
+    const tracks=stream.getAudioTracks();
+    if(!tracks.length||tracks.every(track=>track.readyState==='ended')){
+      stream.getTracks().forEach(track=>track.stop());
+      throw new Error('Keine aktive Mikrofonspur verfügbar.');
+    }
+    audioStream=stream;
+    audioSource=ctx.createMediaStreamSource(stream);
+    connectSource('microphone');
+    audioState.enabled=true;
+    audioState.source='microphone';
+    await refreshMicrophoneDevices(selectedDeviceId||tracks[0].getSettings().deviceId||'');
+    tracks.forEach(track=>{track.onended=()=>{if(audioStream===stream)stopAudio();};});
+    audioStatus.textContent='Audio aktiv: Mikrofon · analyse-only';
+  }catch(err){
+    disconnectAudio();
+    audioState.enabled=false;
+    audioState.source='none';
+    const reason=err&&err.name==='NotAllowedError'?'Mikrofonzugriff wurde nicht erlaubt.':(err&&err.message)||String(err);
+    audioStatus.textContent='Mikrofon konnte nicht gestartet werden: '+reason;
+  }
+}
 async function startSystemAudio(){try{const ctx=ensureAudio();await ctx.resume();disconnectAudio();audioPlayer.pause();audioStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});const tracks=audioStream.getAudioTracks();if(!tracks.length)throw new Error('Keine Audiospur gewählt. Beim Teilen Tab-/Systemaudio aktivieren.');audioSource=ctx.createMediaStreamSource(new MediaStream(tracks));connectSource('system');audioState.enabled=true;audioState.source='system';audioStatus.textContent='Audio aktiv: Systemsound / Tab-Audio · analyse-only, keine VSE-Ausgabe';}catch(err){audioStatus.textContent='Systemsound konnte nicht gestartet werden: '+err.message;}}
+if(micBtn){
+  micBtn.addEventListener('click',()=>{
+    if(audioStatus)audioStatus.textContent='Mic wurde gewählt – Mikrofonzugriff wird gestartet …';
+    startMic();
+  });
+}
 function fmtTime(sec){
   if(!Number.isFinite(sec)||sec<0)sec=0;
   const m=Math.floor(sec/60),s=Math.floor(sec%60);
@@ -436,7 +498,12 @@ function updateAudioFreqAnalyzer(){
 }
 
 function stopAudio(){disconnectAudio();audioPlayer.pause();audioPlayer.currentTime=0;audioState.enabled=false;audioState.source='none';audioState.monitor=false;audioState.level=audioState.bass=audioState.mid=audioState.high=0;audioStatus.textContent='Audio aus.';updateAudioPlayerUI();}
-micBtn.onclick=startMic;sysBtn.onclick=startSystemAudio;stopAudioBtn.onclick=stopAudio;
+sysBtn.onclick=startSystemAudio;stopAudioBtn.onclick=stopAudio;
+if(micDeviceSelect)micDeviceSelect.addEventListener('change',()=>{if(audioState.source==='microphone')startMic();});
+if(navigator.mediaDevices){
+  refreshMicrophoneDevices();
+  if(typeof navigator.mediaDevices.addEventListener==='function')navigator.mediaDevices.addEventListener('devicechange',()=>refreshMicrophoneDevices());
+}
 audioSensitivity.addEventListener('input',()=>{audioState.sensitivity=parseFloat(audioSensitivity.value);audioSensValue.textContent=audioState.sensitivity.toFixed(2);});
 if(audioShowBpm)audioShowBpm.addEventListener('change',()=>{audioState.showBpm=audioShowBpm.checked;updateBpmDisplayVisibility();});
 audioVolume.addEventListener('input',()=>{

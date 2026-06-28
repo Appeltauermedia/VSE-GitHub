@@ -34,7 +34,7 @@ function importProjectData(data){
   syncWindUi();
   syncMandalaUi();
   applyBackgroundFromData(data.background||{});
-  Object.assign(timelineState,{duration:180,widthPercent:100,events:[],selectedEventId:null},data.timeline||{});
+  Object.assign(timelineState,{duration:180,widthPercent:100,events:[],selectedEventId:null,manualDuration:true,currentTime:0,playing:false,lastClockTime:0},data.timeline||{});
   updateTimelineUI();
   if(data.audio){
     audioState.sensitivity=Number(data.audio.sensitivity??audioState.sensitivity);
@@ -51,4 +51,3 @@ function importProjectData(data){
   objects.forEach(o=>{restoreScreenImage(o);restoreScreenTextBackgroundImage(o);restoreParticleImage(o);if(o.type==='imageAsset')loadImageAssetFromData(o,o.imageAssetData,o.imageAssetName||'importiertes Bild');if(o.type==='greenscreen'){o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';}});
   select(objects[0]||null); syncLightUI(); updateHud(); updateObjectManager(); const outEl=document.getElementById('out'); if(outEl) outEl.value=JSON.stringify(projectPackage(),null,2);
 }
-
