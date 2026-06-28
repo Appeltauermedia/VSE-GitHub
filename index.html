@@ -26,7 +26,7 @@ Was wurde bewusst nicht veraendert?
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
 <script src="src/render/shaders/particles.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/fog.js?v=20260627-fog-gravity-wisps"></script>
-<script src="src/render/shaders/cloud.js?v=20260628-cloud-particles-2"></script>
+<script src="src/render/shaders/cloud.js?v=20260628-cloud-lifecycle-wind"></script>
 <script src="src/render/shaders/water.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/background.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/mandala.js?v=20260624-scene-dot"></script>
@@ -309,6 +309,7 @@ Was wurde bewusst nicht veraendert?
       <div class="type-cloud-only cloudBasicPanel">
         <label><input id="pCloudVisible" type="checkbox" checked> Sichtbar</label>
         <label><input id="pCloudLocked" type="checkbox"> Position sperren</label>
+        <div class="row"><div><label>Breite: <span data-cloud-value="Width">360</span></label><input id="pCloudWidth" type="range" min="40" max="1920" step="1" value="360"></div><div><label>Höhe: <span data-cloud-value="Height">220</span></label><input id="pCloudHeight" type="range" min="30" max="1080" step="1" value="220"></div></div>
         <label>Transparenz: <span data-cloud-value="Opacity">0.78</span></label><input id="pCloudOpacity" type="range" min="0" max="1" step="0.01" value="0.78">
         <button id="cloudExpertOpen" type="button" onclick="document.getElementById('cloudExpertPanel').hidden=false;document.body.classList.add('cloudExpertOpen')">Cloud-Expertenmenü öffnen</button>
       </div>
@@ -815,7 +816,9 @@ Was wurde bewusst nicht veraendert?
   <div class="row"><div><label>Dichte <span data-cloud-value="Density">0.82</span></label><input id="pCloudDensity" type="range" min="0" max="1.5" step="0.01"></div><div><label>Weichheit <span data-cloud-value="Softness">0.72</span></label><input id="pCloudSoftness" type="range" min="0" max="1" step="0.01"></div></div>
   <div class="row"><div><label>Farbe</label><input id="pCloudColor" type="color" value="#f4f7ff"></div><div><label>Helligkeit <span data-cloud-value="Brightness">1.08</span></label><input id="pCloudBrightness" type="range" min="0.1" max="2" step="0.01"></div></div>
   <label>Form-Zufall / Seed <span data-cloud-value="Seed">1</span></label><input id="pCloudSeed" type="range" min="0" max="1000" step="1">
+  <label>Partikelbewegung</label><select id="pCloudEvolutionMode"><option value="wobble">Wabern</option><option value="build">Aufbau</option><option value="dissolve">Auflösen</option><option value="cycle">Aufbau / Auflösen</option></select>
   <div class="row"><div><label>Wabern <span data-cloud-value="Motion">0.35</span></label><input id="pCloudMotion" type="range" min="0" max="2" step="0.01"></div><div><label>Geschwindigkeit <span data-cloud-value="Speed">0.24</span></label><input id="pCloudSpeed" type="range" min="0" max="2" step="0.01"></div></div>
+  <label>Zyklusdauer: <span data-cloud-value="EvolutionDuration">8.00</span> s</label><input id="pCloudEvolutionDuration" type="range" min="1" max="30" step="0.5" value="8">
   <div class="row"><div><label>Wind-Einfluss <span data-cloud-value="WindInfluence">0.55</span></label><input id="pCloudWindInfluence" type="range" min="0" max="1" step="0.01"></div><div><label>Detailgrad <span data-cloud-value="Detail">0.68</span></label><input id="pCloudDetail" type="range" min="0" max="1" step="0.01"></div></div>
   <div class="panel"><h3>Audio-Reaktion</h3><label>Ziel</label><select id="pCloudAudioMode"><option value="off">Aus</option><option value="opacity">Transparenz</option><option value="density">Dichte</option><option value="brightness">Helligkeit</option></select><label>Stärke <span data-cloud-value="AudioAmount">0.45</span></label><input id="pCloudAudioAmount" type="range" min="0" max="2" step="0.01"><label>Frequenz <span data-cloud-value="AudioFrequency">250</span> Hz</label><input id="pCloudAudioFrequency" type="range" min="20" max="20000" step="10"><label>Threshold <span data-cloud-value="AudioThreshold">0.30</span></label><input id="pCloudAudioThreshold" type="range" min="0" max="1" step="0.01"></div>
 </section>
@@ -839,14 +842,14 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260628-chroma-toggle-2"></script>
 <script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260627-scene-switch"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260627-mic-early-bind"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260628-cloud-object-2"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260628-cloud-dimensions"></script>
 <script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260627-scene-export-fix"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260628-cloud-object"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260627-screen-rich-text"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260624-scene-dot"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
 <script src="src/app/14-three-track-timeline.js?v=20260627-timeline-video-playback"></script>
-<script src="src/app/15-cloud-object.js?v=20260628-cloud-particles"></script>
+<script src="src/app/15-cloud-object.js?v=20260628-cloud-lifecycle-wind"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>

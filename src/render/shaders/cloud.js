@@ -3,8 +3,8 @@ const VSE_CLOUD_VERTEX_SHADER=`
 precision highp float;
 precision mediump int;
 attribute float aIndex;
-uniform vec2 uPixelRes,uCssRes,uOriginCss,uWind;
-uniform float uSize,uRot,uTime,uSeed,uMotion,uSpeed,uDensity,uDetail,uAudio;
+uniform vec2 uPixelRes,uCssRes,uOriginCss,uWind,uSize;
+uniform float uRot,uTime,uSeed,uMotion,uSpeed,uDensity,uDetail,uAudio,uLifecycle;
 uniform int uPreset;
 varying float vShade;
 varying float vAlpha;
@@ -36,9 +36,10 @@ void main(){
   gl_Position=vec4(clip,0.0,1.0);
   float pixelRatio=(uPixelRes.x/max(uCssRes.x,1.0)+uPixelRes.y/max(uCssRes.y,1.0))*.5;
   float detailSize=mix(1.20,.72,clamp(uDetail,0.0,1.0));
-  gl_PointSize=max(2.0,uSize*(.105+.115*r3)*detailSize*pixelRatio*(1.0+uAudio*.18));
+  float alive=smoothstep(r1-.10,r1+.06,uLifecycle);
+  gl_PointSize=max(2.0,min(uSize.x,uSize.y)*(.105+.115*r3)*detailSize*pixelRatio*(1.0+uAudio*.18)*mix(.45,1.0,alive));
   vShade=.68+.42*r1-.18*local.y;
-  vAlpha=clamp((.055+.055*r2)*uDensity*(1.0+uAudio*.45),.01,.22);
+  vAlpha=clamp((.055+.055*r2)*uDensity*(1.0+uAudio*.45),.01,.22)*alive;
 }`;
 const VSE_CLOUD_FRAGMENT_SHADER=`
 precision mediump float;
