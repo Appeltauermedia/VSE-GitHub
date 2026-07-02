@@ -5,6 +5,7 @@ const fields=['Name','Type','X','Y','Layer','Size','Intensity','Rotation','WindA
 const groupSyncShadow={enabled:document.getElementById('groupSyncShadowEnabled'),opacity:document.getElementById('groupSyncShadowOpacity'),blur:document.getElementById('groupSyncShadowBlur'),color:document.getElementById('groupSyncShadowColor'),offset:document.getElementById('groupSyncShadowOffset'),scale:document.getElementById('groupSyncShadowScale')};
 const bgFile=document.getElementById('bgFile'),bgColor=document.getElementById('bgColor'),bgMode=document.getElementById('bgMode'),bgOpacity=document.getElementById('bgOpacity'),bgZoom=document.getElementById('bgZoom');
 const bgToImageAssetBtn=document.getElementById('bgToImageAssetBtn'),bgToImageAssetStatus=document.getElementById('bgToImageAssetStatus'),bgCaptureShape=document.getElementById('bgCaptureShape'),bgCaptureSource=document.getElementById('bgCaptureSource'),bgCaptureRemoveFromBackground=document.getElementById('bgCaptureRemoveFromBackground'),bgCaptureCreateAssetBtn=document.getElementById('bgCaptureCreateAssetBtn'),waterShapeInput=document.getElementById('pWaterShape');
+const bgCaptureButtonIdleHtml=bgToImageAssetBtn?bgToImageAssetBtn.innerHTML:'';
 let bgCaptureMode=false,bgCaptureDrag=null,bgCaptureUndo=null,waterDrawMode=null,waterDrawDrag=null;
 function getBgCaptureShape(){return (bgCaptureShape&&bgCaptureShape.value)||'rect';}
 function getBgCaptureSource(){return (bgCaptureSource&&bgCaptureSource.value)||'background';}
@@ -13,6 +14,7 @@ function setBgCaptureButtonState(active){
   const capturePanel=document.getElementById('bgCaptureParams');
   if(!active&&capturePanel)capturePanel.style.display='none';
   if(!bgToImageAssetBtn)return;
+  if(!active){bgToImageAssetBtn.innerHTML=bgCaptureButtonIdleHtml;return;}
   bgToImageAssetBtn.innerHTML=active
     ? '<b>✕</b><small>Capture abbrechen: Hintergrund → Asset ist aktiv. Nochmals klicken zum Abbrechen.</small>'
     : '<b>✂️</b><small>Hintergrundbereich als Asset: Rechteck, Kreis/Ellipse oder freien Pfad direkt auf der Arbeitsfläche markieren.</small>';
