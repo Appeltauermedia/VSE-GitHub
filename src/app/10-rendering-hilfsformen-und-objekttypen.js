@@ -984,8 +984,6 @@ function ensureScreenTextTexture(o){
   if(!o||!['screen','text'].includes(o.type))return null;
   if(!o.screenTextCanvas){
     o.screenTextCanvas=document.createElement('canvas');
-    o.screenTextCanvas.width=1024;
-    o.screenTextCanvas.height=256;
     o.screenTextDirty=true;
   }
   if(!o.screenTextTexture){
@@ -993,16 +991,24 @@ function ensureScreenTextTexture(o){
     o.screenTextDirty=true;
   }
   const canvas2=o.screenTextCanvas;
-  const screenAspect=Math.max(.1,Number(o.screenWidth||260)/Math.max(1,Number(o.screenHeight||120)));
-  const desiredTextWidth=Math.max(128,Math.min(2048,Math.round(canvas2.height*screenAspect)));
-  if(canvas2.width!==desiredTextWidth){
+  const logicalWidth=Math.max(1,Number(o.screenWidth||(o.type==='text'?520:260)));
+  const logicalHeight=Math.max(1,Number(o.screenHeight||(o.type==='text'?180:120)));
+  const maxTextureSize=Math.min(4096,gl.getParameter(gl.MAX_TEXTURE_SIZE)||4096);
+  let desiredTextWidth=Math.max(256,Math.round(logicalWidth*2));
+  let desiredTextHeight=Math.max(256,Math.round(logicalHeight*2));
+  const textureLimit=Math.min(1,maxTextureSize/Math.max(desiredTextWidth,desiredTextHeight));
+  desiredTextWidth=Math.max(1,Math.floor(desiredTextWidth*textureLimit));
+  desiredTextHeight=Math.max(1,Math.floor(desiredTextHeight*textureLimit));
+  if(canvas2.width!==desiredTextWidth||canvas2.height!==desiredTextHeight){
     canvas2.width=desiredTextWidth;
+    canvas2.height=desiredTextHeight;
     o.screenTextDirty=true;
   }
+  const textScale=canvas2.height/logicalHeight;
   const ctx=canvas2.getContext('2d');
   const textSource=String(o.screenTextSource||'custom');
   const text=String(textSource==='songTitle'?(audioTitleState.title||titleFromFileName(audioTitleState.fileName||'')):(o.screenText??''));
-  const fontSize=Math.max(8,Math.min(240,Number(o.screenTextSize??48)));
+  const fontSize=Math.max(8,Math.min(240,Number(o.screenTextSize??48)))*textScale;
   const fontFamily=String(o.screenTextFont||'Arial');
   const color=String(o.screenTextColor||'#ffffff');
   const bold=o.screenTextBold!==false;
@@ -1011,7 +1017,7 @@ function ensureScreenTextTexture(o){
   const textAlign=['left','right'].includes(o.screenTextAlign)?o.screenTextAlign:'center';
   const lineHeight=Math.max(.8,Math.min(2.5,Number(o.screenTextLineHeight??1.2)));
   const mode=String(o.screenTextMode||'static');
-  const speed=Math.max(0,Number(o.screenTextSpeed??80));
+  const speed=Math.max(0,Number(o.screenTextSpeed??80))*textScale;
   const bgMode=String(o.screenTextBgMode||'transparent');
   const bgColor=String(o.screenTextBgColor||'#000000');
   const bgOpacity=Math.max(0,Math.min(1,Number(o.screenTextBgOpacity??1)));
@@ -1063,7 +1069,7 @@ function ensureScreenTextTexture(o){
       ctx.fillRect(x,y,tw,Math.max(1,fontSize*.055));
     }
   }else{
-    const padding=Math.max(24,fontSize*.65);
+    const padding=Math.max(12*textScale,fontSize*.65);
     const lines=wrapScreenCanvasText(ctx,text||' ',canvas2.width-padding*2);
     const lineStep=fontSize*lineHeight;
     const firstY=canvas2.height/2-(lines.length-1)*lineStep/2;

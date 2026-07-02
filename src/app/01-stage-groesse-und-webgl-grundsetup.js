@@ -19,4 +19,21 @@ function applyStageViewSize(){
   document.documentElement.style.setProperty('--stage-view-w',Math.max(1,Math.round(baseW*scale))+'px');
   document.documentElement.style.setProperty('--stage-view-h',Math.max(1,Math.round(baseH*scale))+'px');
 }
-function resize(){applyStageViewSize();canvas.width=Math.floor(canvas.clientWidth*DPR);canvas.height=Math.floor(canvas.clientHeight*DPR);gl.viewport(0,0,canvas.width,canvas.height);if(typeof positionRecordingHud==='function')positionRecordingHud();if(typeof positionStageHudControls==='function')positionStageHudControls();} window.addEventListener('resize',resize); requestAnimationFrame(resize);
+function resize(){
+  applyStageViewSize();
+  // Die CSS-Größe ist nur die Vorschau. Gerendert wird mindestens in der
+  // gewählten Projektauflösung, damit Screens, Medien und Text beim Skalieren
+  // sowie bei Screenshots nicht an die kleine Editoransicht gebunden sind.
+  const maxSize=gl.getParameter(gl.MAX_RENDERBUFFER_SIZE)||4096;
+  let renderW=Math.max(Math.floor(canvas.clientWidth*DPR),Math.round(Number(stageState.w)||1920));
+  let renderH=Math.max(Math.floor(canvas.clientHeight*DPR),Math.round(Number(stageState.h)||1080));
+  const limit=Math.min(1,maxSize/Math.max(renderW,renderH));
+  renderW=Math.max(1,Math.floor(renderW*limit));
+  renderH=Math.max(1,Math.floor(renderH*limit));
+  if(canvas.width!==renderW)canvas.width=renderW;
+  if(canvas.height!==renderH)canvas.height=renderH;
+  gl.viewport(0,0,canvas.width,canvas.height);
+  if(typeof positionRecordingHud==='function')positionRecordingHud();
+  if(typeof positionStageHudControls==='function')positionStageHudControls();
+}
+window.addEventListener('resize',resize); requestAnimationFrame(resize);
