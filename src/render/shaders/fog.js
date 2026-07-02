@@ -80,18 +80,22 @@ void main(){
   float n=mix(mix(n1,n2,0.46),n3,0.28*turb);
   // Unterhalb der normalen Kante entstehen unregelmäßige, sich auflösende
   // Nebelfahnen. Der Kern und seine Richtung werden dabei nicht gebogen.
-  float below=max(0.0,q.y-halfWidth);
+  // Die Gravitationsfahnen beginnen bereits innerhalb der weichen Plume-Kante.
+  // Dadurch bleiben Hauptnebel und absinkende Partikel ohne transparente Naht verbunden.
+  float gravityOverlap=max(3.0,edgeFeather*0.72);
+  float below=max(0.0,q.y-halfWidth+gravityOverlap);
   float gravityReach=max(uGravity,0.0)*uRange*(0.055+forward*0.30);
   float raggedReach=gravityReach*(0.38+n*0.82+0.12*sin(t*1.7+forward*15.0+n*5.0));
   float falloff=1.0-smoothstep(0.0,max(1.0,raggedReach),below);
   float dissolve=smoothstep(0.24+0.34*below/max(1.0,gravityReach),0.78,n);
-  float gravityWisps=step(0.001,uGravity)*step(halfWidth,q.y)*(1.0-plumeMask)*falloff*dissolve;
+  float gravityBlend=smoothstep(halfWidth-gravityOverlap,halfWidth+gravityOverlap*0.35,q.y);
+  float gravityWisps=step(0.001,uGravity)*gravityBlend*falloff*dissolve;
   float fogShape=max(plumeMask,gravityWisps*0.72);
   float breathing=0.84+0.16*sin(uTime*(0.65+motion*0.50)+n*4.1+forward*2.0);
   float ageFade=1.0-smoothstep(0.62,1.0,forward);
   float birthFade=smoothstep(0.0,0.055+uSoftness*0.035,forward);
   float body=pow(max(0.0,1.0-abs(lateral)),0.42+uSoftness*0.32);
-  float wispBody=mix(body,0.72,gravityWisps);
+  float wispBody=max(body,gravityWisps*0.72);
   float alpha=ageFade*birthFade*fogShape*wispBody*(0.18+n*0.82)*uAmount*uOpacity*breathing;
   alpha=sat(alpha*(0.76+0.25*turb));
   if(alpha<0.003){discard;}
