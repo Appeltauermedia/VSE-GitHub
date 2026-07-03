@@ -566,7 +566,7 @@ if(timelineUseMediaDurationBtn)timelineUseMediaDurationBtn.onclick=()=>{const d=
 if(timelineUseSelectedObjectBtn)timelineUseSelectedObjectBtn.onclick=()=>{const value=timelineCurrentSelectionValue();if(value&&timelineEventObject){updateTimelineObjectOptions();timelineEventObject.value=value;}};
 if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
-[timelineEventTime,timelineEventDuration].forEach(el=>{if(el)el.addEventListener('input',()=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(1)+' s';});});
+[timelineEventTime,timelineEventDuration].forEach(el=>{if(el)el.addEventListener('input',()=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(2)+' s';});});
 if(timelineDropZone){
   timelineDropZone.addEventListener('dragover',e=>{e.preventDefault();timelineDropZone.classList.add('isOver');});
   timelineDropZone.addEventListener('dragleave',()=>timelineDropZone.classList.remove('isOver'));

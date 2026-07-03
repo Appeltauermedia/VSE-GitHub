@@ -1,8 +1,12 @@
 /* ===== Timeline: Mediensteuerung und Auswahl ===== */
 function formatTimelineTime(sec){
-  sec=Math.max(0,Number(sec)||0);
-  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=Math.floor(sec%60);
-  return h>0 ? h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0') : String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const totalHundredths=Math.max(0,Math.round((Number(sec)||0)*100));
+  const h=Math.floor(totalHundredths/360000);
+  const m=Math.floor((totalHundredths%360000)/6000);
+  const s=Math.floor((totalHundredths%6000)/100);
+  const hundredths=totalHundredths%100;
+  const seconds=String(s).padStart(2,'0')+'.'+String(hundredths).padStart(2,'0');
+  return h>0 ? h+':'+String(m).padStart(2,'0')+':'+seconds : String(m).padStart(2,'0')+':'+seconds;
 }
 function currentTimelineTime(){
   if(audioPlayer&&Number.isFinite(audioPlayer.currentTime)&&audioPlayer.currentTime>0)return audioPlayer.currentTime;
@@ -57,16 +61,19 @@ function updateTimelineMediaControls(){
 function deselectTimeline(){
   timelineState.selected=false;
   if(timelineDock)timelineDock.classList.remove('isSelected');
-  if(timelineParams)timelineParams.style.display='none';
+  const floatingPanel=document.getElementById('objectTimelineFloatingPanel');
+  if(timelineParams&&(!floatingPanel||floatingPanel.hidden))timelineParams.style.display='none';
 }
 function selectTimeline(){
+  const activeEvent=selectedTimelineEvent();
+  const eventObject=activeEvent&&timelineObjectsForEvent(activeEvent)[0];
+  if(eventObject&&selected!==eventObject)select(eventObject);
   timelineState.selected=true;
-  selected=null;
-  selectedIds.clear();
   if(timelineDock)timelineDock.classList.add('isSelected');
-  if(empty)empty.style.display='none';
-  if(params)params.style.display='none';
+  if(empty)empty.style.display=selected?'none':'block';
+  if(params)params.style.display=selected?'block':'none';
   if(timelineParams)timelineParams.style.display='block';
+  if(typeof openObjectTimelineMenu==='function')openObjectTimelineMenu();
   updateTimelineUI();
   setTimelineEventForm(selectedTimelineEvent());
   updateHud();

@@ -108,7 +108,7 @@ if(timelineUseSelectedObjectBtn)timelineUseSelectedObjectBtn.onclick=()=>{const 
 if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineCopyEventBtn)timelineCopyEventBtn.onclick=copyTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
-[timelineEventTime,timelineEventDuration].forEach(el=>{if(el)el.addEventListener('input',()=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(1)+' s';});});
+[timelineEventTime,timelineEventDuration].forEach(el=>{if(el)el.addEventListener('input',()=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(2)+' s';});});
 if(timelineDropZone){
   timelineDropZone.addEventListener('dragover',e=>{e.preventDefault();timelineDropZone.classList.add('isOver');});
   timelineDropZone.addEventListener('dragleave',()=>timelineDropZone.classList.remove('isOver'));
@@ -194,6 +194,12 @@ function resetTimelineBaseSnapshotFor(oid){
     o._timelineBaseSnapshot=timelineSnapshotObject(o);
   }
 }
+let timelineParticleTriggerLastTime=null;
+function resetTimelineParticleTriggers(){
+  for(const ev of (timelineState.events||[])){
+    if(ev)ev._particleTimelineFired=false;
+  }
+}
 function applyTimelineEvents(){
   if(!timelineState||!Array.isArray(timelineState.events)||!timelineState.events.length){
     objects.forEach(o=>{if(o)o._timelineHidden=false;});
@@ -201,6 +207,10 @@ function applyTimelineEvents(){
   }
   ensureTimelineBaseSnapshots();
   const t=Math.max(0,currentTimelineTime());
+  const timelineWentBack=timelineParticleTriggerLastTime!==null&&t<timelineParticleTriggerLastTime-0.001;
+  if(timelineWentBack)resetTimelineParticleTriggers();
+  if(!timelineState.playing&&t<=0.001)resetTimelineParticleTriggers();
+  timelineParticleTriggerLastTime=t;
   const liveTimelineAssetIds=new Set();
   for(const event of (timelineState.events||[])){
     if(event&&(event.timelineAssetKind==='screen-media'||event.timelineAssetKind==='scene')){
@@ -208,9 +218,11 @@ function applyTimelineEvents(){
     }
   }
   const affected=timelineAffectedObjectIds();
+  const timelineObjectBeingEdited=!timelineState.playing?(window.objectTimelineEditingObjectId||''):'';
   for(const oid of affected){
     const o=objects.find(x=>x.id===oid);
     if(!o)continue;
+    if(timelineObjectBeingEdited===oid){o._timelineHidden=false;continue;}
     if(o._timelineBaseSnapshot&&!liveTimelineAssetIds.has(oid))applyTimelineSnapshot(o,o._timelineBaseSnapshot);
     o._timelineHidden=!getTimelineStartActive(oid);
   }
@@ -218,13 +230,13 @@ function applyTimelineEvents(){
   for(const ev of events){
     const kind=timelineEventTargetKind(ev);
     const targetId=timelineEventTargetId(ev);
-    const targets=timelineObjectsForEvent(ev);
+    const targets=timelineObjectsForEvent(ev).filter(o=>o.id!==timelineObjectBeingEdited);
     if(!targets.length)continue;
     const start=Number(ev.time)||0;
     const dur=Number(ev.duration)||0;
     const inWindow=t>=start&&(dur<=0||t<=start+dur);
     const after=t>=start;
-    if(!after)continue;
+    if(!after){ev._particleTimelineFired=false;continue;}
     const action=ev.action||'activate';
     if(action==='deactivate'){
       for(const o of targets){
@@ -238,6 +250,18 @@ function applyTimelineEvents(){
         if(dur>0){o._timelineHidden=!inWindow;}else{o._timelineHidden=false;}
       }
       if((dur<=0||inWindow)&&ev.snapshot&&ev.timelineAssetKind!=='screen-media'&&ev.timelineAssetKind!=='scene')applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);
+      const particleActivationActive=dur<=0||inWindow;
+      if(particleActivationActive&&timelineState.playing&&!ev._particleTimelineFired){
+        let particleTargetFound=false;
+        for(const o of targets){
+          if(o&&o.type==='particle'){
+            particleTargetFound=true;
+            triggerParticleEffect(o,1);
+          }
+        }
+        if(particleTargetFound)ev._particleTimelineFired=true;
+      }
+      if(!particleActivationActive)ev._particleTimelineFired=false;
     }else if(action==='parameter'){
       if(dur<=0||inWindow){if(ev.snapshot)applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);}
     }else if(action==='ipmDestruction'){
@@ -272,7 +296,7 @@ if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineCopyEventBtn)timelineCopyEventBtn.onclick=copyTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
 if(timelineCaptureConfigBtn)timelineCaptureConfigBtn.onclick=captureTimelineEventConfig;
-[timelineEventTime,timelineEventDuration,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('input',()=>{const ev=selectedTimelineEvent();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=Number(timelineEventDuration?.value||0);ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(1)+' s';updateTimelineUI();});});
+[timelineEventTime,timelineEventDuration,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('input',()=>{const ev=selectedTimelineEvent();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=Number(timelineEventDuration?.value||0);ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';updateTimelineUI();});});
 
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&vrState.active){e.preventDefault();endVrViewer();return;}

@@ -3,9 +3,12 @@
   const opener=document.getElementById('audioMenuBtn');
   const header=document.getElementById('audioFloatingHeader');
   const close=document.getElementById('audioFloatingClose');
-  if(!panel||!opener||!header||!close)return;
+  const analyzerOnlyToggle=document.getElementById('audioAnalyzerOnlyToggle');
+  const subtitle=document.getElementById('audioFloatingSubtitle');
+  if(!panel||!opener||!header||!close||!analyzerOnlyToggle)return;
 
   const positionKey='vse.audioFloatingPosition';
+  const analyzerOnlyKey='vse.audioAnalyzerOnly';
   function clampPosition(left,top){
     const margin=8;
     return {
@@ -27,8 +30,21 @@
     opener.setAttribute('aria-expanded',open?'true':'false');
     if(open)restorePosition();
   }
+  function setAnalyzerOnly(enabled){
+    panel.classList.toggle('analyzerOnly',enabled);
+    analyzerOnlyToggle.setAttribute('aria-pressed',enabled?'true':'false');
+    analyzerOnlyToggle.title=enabled?'Vollständiges Audiomenü wiederherstellen':'Nur Analyzer anzeigen';
+    analyzerOnlyToggle.setAttribute('aria-label',analyzerOnlyToggle.title);
+    if(subtitle)subtitle.textContent=enabled?'Analyzer':'Player, Quellen und Analyzer';
+    panel.scrollTop=0;
+    try{localStorage.setItem(analyzerOnlyKey,enabled?'1':'0');}catch(e){}
+  }
+  let analyzerOnly=false;
+  try{analyzerOnly=localStorage.getItem(analyzerOnlyKey)==='1';}catch(e){}
+  setAnalyzerOnly(analyzerOnly);
   opener.addEventListener('click',()=>setOpen(panel.hidden));
   close.addEventListener('click',()=>setOpen(false));
+  analyzerOnlyToggle.addEventListener('click',()=>setAnalyzerOnly(!panel.classList.contains('analyzerOnly')));
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden)setOpen(false);});
 
   header.addEventListener('pointerdown',event=>{

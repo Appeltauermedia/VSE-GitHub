@@ -443,9 +443,11 @@ function updateAudioFreqAnalyzerOverlay(){
   if(!audioFreqAnalyzer)return;
   const band=audioFreqAnalyzer.querySelector('.audioFreqOverlayBand');
   const line=audioFreqAnalyzer.querySelector('.audioFreqThresholdLine');
-  if(!band||!line)return;
+  const centerLine=audioFreqAnalyzer.querySelector('.audioFreqCenterLine');
+  const label=audioFreqAnalyzer.querySelector('.audioFreqMarkerLabel');
+  if(!band||!line||!centerLine||!label)return;
   const info=getFrequencyOverlayInfo();
-  if(!info){band.style.display='none';line.style.display='none';return;}
+  if(!info){band.style.display='none';line.style.display='none';centerLine.style.display='none';label.style.display='none';return;}
   const center=info.freq;
   const lo=Math.max(AUDIO_REACT_MIN,center/Math.SQRT2);
   const hi=Math.min(AUDIO_REACT_MAX,center*Math.SQRT2);
@@ -456,6 +458,12 @@ function updateAudioFreqAnalyzerOverlay(){
   band.style.width=Math.max(0.7,Math.min(100,Math.max(l,r)-Math.min(l,r))).toFixed(2)+'%';
   line.style.display='block';
   line.style.bottom=(clamp01(info.threshold)*100).toFixed(2)+'%';
+  const centerPosition=Math.max(0,Math.min(100,freqToLogValue(center)*100));
+  centerLine.style.display='block';
+  centerLine.style.left=centerPosition.toFixed(2)+'%';
+  label.style.display='block';
+  label.style.left=Math.max(8,Math.min(92,centerPosition)).toFixed(2)+'%';
+  label.textContent=center>=1000?(center/1000).toFixed(center>=10000?0:1)+' kHz':Math.round(center)+' Hz';
 }
 
 function setupAudioFreqAnalyzerBars(){
@@ -471,11 +479,91 @@ function setupAudioFreqAnalyzerBars(){
   overlayBand.className='audioFreqOverlayBand';
   const thresholdLine=document.createElement('div');
   thresholdLine.className='audioFreqThresholdLine';
+  const centerLine=document.createElement('div');
+  centerLine.className='audioFreqCenterLine';
+  const markerLabel=document.createElement('div');
+  markerLabel.className='audioFreqMarkerLabel';
   audioFreqAnalyzer.appendChild(overlayBand);
   audioFreqAnalyzer.appendChild(thresholdLine);
+  audioFreqAnalyzer.appendChild(centerLine);
+  audioFreqAnalyzer.appendChild(markerLabel);
+}
+function setupAudioFreqAnalyzerInteraction(){
+  if(!audioFreqAnalyzer||audioFreqAnalyzer.dataset.interactive==='1')return;
+  audioFreqAnalyzer.dataset.interactive='1';
+  audioFreqAnalyzer.title='Frequenzband horizontal ziehen · außerhalb des Bands Threshold vertikal ziehen';
+  let dragMode='';
+  function usesColorMusic(){return !!(selected&&(selected.type==='light'||selected.type==='lightbar')&&selected.lightColorMusicEnabled);}
+  function applyPointer(event){
+    if(!selected||!getFrequencyOverlayInfo())return;
+    const rect=audioFreqAnalyzer.getBoundingClientRect();
+    if(rect.width<=0||rect.height<=0)return;
+    if(dragMode==='frequency'){
+      const normalized=clamp01((event.clientX-rect.left)/rect.width);
+      const frequency=logValueToFreq(normalized);
+      if(usesColorMusic()){
+        selected.lightColorMusicFreq=frequency;
+        if(typeof setSelectedLightColorMusicFreq==='function')setSelectedLightColorMusicFreq(frequency);
+        else if(typeof propagateSelectedProperty==='function')propagateSelectedProperty('lightColorMusicFreq',selected);
+      }else{
+        if(selected.type==='cloud'){
+          selected.cloudAudioFrequency=frequency;
+          const cloudInput=document.getElementById('pCloudAudioFrequency');if(cloudInput)cloudInput.value=String(frequency);
+          if(typeof propagateSelectedProperty==='function')propagateSelectedProperty('cloudAudioFrequency',selected);
+        }
+        selected.audioFreq=frequency;
+        if(typeof setSelectedAudioFreq==='function')setSelectedAudioFreq(frequency);
+        else if(typeof propagateSelectedProperty==='function')propagateSelectedProperty('audioFreq',selected);
+      }
+    }else if(dragMode==='threshold'){
+      const threshold=clamp01(1-(event.clientY-rect.top)/rect.height);
+      if(usesColorMusic()){
+        selected.lightColorMusicThreshold=threshold;
+        if(typeof propagateSelectedProperty==='function')propagateSelectedProperty('lightColorMusicThreshold',selected);
+        const input=document.getElementById('pLightColorMusicThreshold');if(input)input.value=String(threshold);
+        if(typeof lightColorMusicThresholdValue!=='undefined')lightColorMusicThresholdValue.textContent=threshold.toFixed(2);
+      }else{
+        if(selected.type==='cloud'){
+          selected.cloudAudioThreshold=threshold;
+          const cloudInput=document.getElementById('pCloudAudioThreshold');if(cloudInput)cloudInput.value=String(threshold);
+          if(typeof propagateSelectedProperty==='function')propagateSelectedProperty('cloudAudioThreshold',selected);
+        }
+        selected.music=threshold;
+        if(typeof propagateSelectedProperty==='function')propagateSelectedProperty('music',selected);
+        const input=document.getElementById('pMusic');if(input)input.value=String(threshold);
+      }
+      if(typeof syncRangeNumberInputs==='function')syncRangeNumberInputs();
+    }
+    updateAudioFreqAnalyzerOverlay();
+  }
+  audioFreqAnalyzer.addEventListener('pointerdown',event=>{
+    if(event.button!==0||!selected||!getFrequencyOverlayInfo())return;
+    const band=audioFreqAnalyzer.querySelector('.audioFreqOverlayBand');
+    const bandRect=band&&band.getBoundingClientRect();
+    dragMode=bandRect&&event.clientX>=bandRect.left-7&&event.clientX<=bandRect.right+7?'frequency':'threshold';
+    audioFreqAnalyzer.classList.toggle('draggingFrequency',dragMode==='frequency');
+    audioFreqAnalyzer.classList.toggle('draggingThreshold',dragMode==='threshold');
+    audioFreqAnalyzer.setPointerCapture(event.pointerId);
+    event.preventDefault();applyPointer(event);
+  });
+  audioFreqAnalyzer.addEventListener('pointermove',event=>{
+    if(dragMode){applyPointer(event);return;}
+    const band=audioFreqAnalyzer.querySelector('.audioFreqOverlayBand');
+    const rect=band&&band.getBoundingClientRect();
+    audioFreqAnalyzer.style.cursor=rect&&event.clientX>=rect.left-7&&event.clientX<=rect.right+7?'ew-resize':'ns-resize';
+  });
+  function endDrag(event){
+    if(!dragMode)return;
+    if(audioFreqAnalyzer.hasPointerCapture(event.pointerId))audioFreqAnalyzer.releasePointerCapture(event.pointerId);
+    dragMode='';audioFreqAnalyzer.classList.remove('draggingFrequency','draggingThreshold');
+  }
+  audioFreqAnalyzer.addEventListener('pointerup',endDrag);
+  audioFreqAnalyzer.addEventListener('pointercancel',endDrag);
+  audioFreqAnalyzer.addEventListener('pointerleave',()=>{if(!dragMode)audioFreqAnalyzer.style.cursor='';});
 }
 function updateAudioFreqAnalyzer(){
   setupAudioFreqAnalyzerBars();
+  setupAudioFreqAnalyzerInteraction();
   if(!audioFreqAnalyzer)return;
   const bars=audioFreqAnalyzer.querySelectorAll('span');
   if(!bars.length)return;
@@ -565,6 +653,7 @@ if(audioFolder)audioFolder.addEventListener('change',async()=>{
 if(audioPrevBtn)audioPrevBtn.addEventListener('click',()=>playPlaylistOffset(-1));
 if(audioNextBtn)audioNextBtn.addEventListener('click',()=>playPlaylistOffset(1));
 setupAudioFreqAnalyzerBars();
+setupAudioFreqAnalyzerInteraction();
 
 audioPlayer.addEventListener('ended',()=>{
   updateAudioPlayerUI();

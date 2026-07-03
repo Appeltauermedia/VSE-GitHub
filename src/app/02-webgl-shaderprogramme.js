@@ -48,6 +48,8 @@ const bgLoc={pos:gl.getAttribLocation(bgProg,'aPos'),tex:gl.getUniformLocation(b
 let bgTex=null,bgImageData=null,bgImageSize=[0,0];
 const background={layer:0,color:'#05070c',mode:'cover',opacity:1,zoom:1,imageName:null,imageData:null};
 const scene={showGrid:true,screenDim:0,screenBrighten:0,dimTargetBackground:true,dimTargetImageAssets:true,dimTargetScreens:false,dimTargetGreenscreen:false,backlightPass:0,uiHidden:false,stageWidth:1920,stageHeight:1080,objectIconColor:'#eef6ff',vrSceneScale:1,vrSceneDistance:3,vrScreenCurvature:0,vrScreenSegments:64,mandalaEnabled:false,mandalaSegments:6,mandalaRotation:0,mandalaCenterX:.5,mandalaCenterY:.5,mandalaZoom:1,mandalaMix:1,mandalaAutoRotate:false,mandalaMusicRotation:false,mandalaMusicZoom:false,mandalaMusicMix:false,windEnabled:false,windStrength:0,windDirection:0,windVariationSpeed:.35,windGustsEnabled:false,gustStrength:.6,gustFrequency:.45,gustSmoothness:.65,turbulenceAmount:.35,turbulenceScale:1,turbulenceSpeed:.55,windApplyToFog:true,windApplyToParticles:true,windApplyToPhysicsAssets:true,windApplyToScreens:false,windApplyToGreenscreen:false,windApplyToWater:true,windApplyToSmokeDust:true,windApplyToWeatherParticles:true};
+scene.gridSpacing=100;
+scene.gridColor='#526e99';
 
 const mandalaProg=program(VSE_MANDALA_VERTEX_SHADER,VSE_MANDALA_FRAGMENT_SHADER);
 const mandalaLoc={pos:gl.getAttribLocation(mandalaProg,'aPos'),scene:gl.getUniformLocation(mandalaProg,'uScene'),center:gl.getUniformLocation(mandalaProg,'uCenter'),segments:gl.getUniformLocation(mandalaProg,'uSegments'),rotation:gl.getUniformLocation(mandalaProg,'uRotation'),zoom:gl.getUniformLocation(mandalaProg,'uZoom'),mix:gl.getUniformLocation(mandalaProg,'uMix'),objectMode:gl.getUniformLocation(mandalaProg,'uObjectMode'),pixelRes:gl.getUniformLocation(mandalaProg,'uPixelRes'),cssRes:gl.getUniformLocation(mandalaProg,'uCssRes'),originCss:gl.getUniformLocation(mandalaProg,'uOriginCss'),sizeCss:gl.getUniformLocation(mandalaProg,'uSizeCss'),objectRot:gl.getUniformLocation(mandalaProg,'uObjectRot'),opacity:gl.getUniformLocation(mandalaProg,'uOpacity')};
@@ -82,10 +84,11 @@ function makeBgTexture(img){
 function drawBackground(){
   const c=hex(background.color||'#05070c');
   const bgAlpha=1-Math.max(0,Math.min(1,Number(scene.backlightPass||0)));
+  const backgroundSource=bgTex||(initTexture._backgroundFallback||(initTexture._backgroundFallback=initTexture()));
   if(bgTex||bgAlpha<0.999){gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);}else{gl.disable(gl.BLEND);}
   gl.useProgram(bgProg);
   gl.bindBuffer(gl.ARRAY_BUFFER,quad);gl.enableVertexAttribArray(bgLoc.pos);gl.vertexAttribPointer(bgLoc.pos,2,gl.FLOAT,false,0,0);
-  if(bgTex){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,bgTex);gl.uniform1i(bgLoc.tex,0);}
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,backgroundSource);gl.uniform1i(bgLoc.tex,0);
   gl.uniform2f(bgLoc.img,bgTex?bgImageSize[0]:0,bgTex?bgImageSize[1]:0);
   gl.uniform2f(bgLoc.canvas,canvas.clientWidth,canvas.clientHeight);
   gl.uniform1f(bgLoc.opacity,background.opacity);

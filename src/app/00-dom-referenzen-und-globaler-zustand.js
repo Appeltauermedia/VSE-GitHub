@@ -1,6 +1,10 @@
 /* ===== DOM-Referenzen und globaler Zustand ===== */
 const canvas=document.getElementById('gl');
 const stageWrap=document.getElementById('stageWrap');
+const gridSpacingInput=document.getElementById('gridSpacing');
+const gridSpacingNumber=document.getElementById('gridSpacingNumber');
+const gridSpacingValue=document.getElementById('gridSpacingValue');
+const gridColorInput=document.getElementById('gridColor');
 const timelineDock=document.getElementById('timelineDock');
 const timelineBar=document.getElementById('timelineBar');
 const timelineEventsEl=document.getElementById('timelineEvents');

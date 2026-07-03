@@ -1,10 +1,21 @@
 /* ===== Rendering: Hilfsformen und Objekttypen ===== */
 function drawGrid(){
   const cw=canvas.clientWidth, ch=canvas.clientHeight;
+  const hex=String(scene.gridColor||'#526e99').replace('#','');
+  const color=/^[0-9a-f]{6}$/i.test(hex)?[
+    parseInt(hex.slice(0,2),16)/255,
+    parseInt(hex.slice(2,4),16)/255,
+    parseInt(hex.slice(4,6),16)/255
+  ]:[.322,.431,.600];
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   gl.useProgram(shapeProg);gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.enableVertexAttribArray(loc.a);gl.vertexAttribPointer(loc.a,2,gl.FLOAT,false,0,0);
   gl.uniform2f(loc.res,cw,ch);gl.uniform2f(loc.pos,0,0);gl.uniform1f(loc.scale,1);gl.uniform1f(loc.rot,0);
-  let lines=[];const step=cw/10;for(let x=0;x<=cw+.1;x+=step){lines.push(x,0,x,ch);}const stepy=ch/10;for(let y=0;y<=ch+.1;y+=stepy){lines.push(0,y,cw,y);}
-  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.STATIC_DRAW);gl.uniform4f(loc.color,.32,.43,.60,.16);gl.drawArrays(gl.LINES,0,lines.length/2);
+  let lines=[];
+  const step=Math.max(4,su(scene.gridSpacing||100));
+  for(let x=0;x<=cw+.1;x+=step)lines.push(x,0,x,ch);
+  for(let y=0;y<=ch+.1;y+=step)lines.push(0,y,cw,y);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(lines),gl.STATIC_DRAW);gl.uniform4f(loc.color,color[0],color[1],color[2],.18);gl.drawArrays(gl.LINES,0,lines.length/2);
 }
 function shapePoints(type){if(type==='pyro')return [-.16,.36,0,-.72,.16,.36];if(type==='confetti')return [-.5,-.25,.5,-.25,.5,.25,-.5,-.25,.5,.25,-.5,.25];let pts=[0,0];for(let i=0;i<=48;i++){let a=i/48*Math.PI*2;pts.push(Math.cos(a),Math.sin(a));}return pts;}
 function circlePts(n=32){const pts=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2;pts.push(Math.cos(a),Math.sin(a));}return pts;}
@@ -868,6 +879,7 @@ function ensureRenderTarget(target){
     gl.bindFramebuffer(gl.FRAMEBUFFER,target.fbo);
     gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,target.tex,0);
     gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+    gl.bindTexture(gl.TEXTURE_2D,null);
   }
   return target;
 }

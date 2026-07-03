@@ -18,9 +18,9 @@ Was wurde bewusst nicht veraendert?
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
+<title>Virtual Scene Engine</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260703-floating-audio-menu">
+<link rel="stylesheet" href="src/styles/main.css?v=20260703-vse-brand">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
@@ -48,8 +48,10 @@ Was wurde bewusst nicht veraendert?
     <!-- Globale Projektaktionen und Szenenmenues -->
 <header aria-hidden="true"></header>
 <aside>
-    <details class="fold">
-      <summary>Projekt</summary>
+    <details class="fold" id="projectMenuShell" data-floating-menu="project">
+      <summary class="topbarIconSummary" title="Projekt" aria-label="Projekt">
+        <svg viewBox="0 0 256 256" aria-hidden="true"><path d="M216 208H40a16 16 0 0 1-16-16V64a16 16 0 0 1 16-16h52l24 24h100a16 16 0 0 1 16 16v16"></path><path d="M40 208l32-104h160l-32 104"></path></svg>
+      </summary>
       <div class="foldBody">
         <div class="panel">
           <button id="importBtn" type="button">Scene importieren (.scene)</button>
@@ -60,6 +62,8 @@ Was wurde bewusst nicht veraendert?
             <h3>Objekt-Icons</h3>
             <label>Icon-Farbe</label><input id="objectIconColor" type="color" value="#eef6ff">
             <button id="resetObjectIconColorBtn" type="button">Icon-Farbe zurücksetzen</button>
+            <button id="saveColorSettingsBtn" class="green" type="button">Icon- und Gitternetzfarben speichern</button>
+            <p class="mini" id="colorSettingsStatus">Standardfarben aktiv.</p>
           </div>
           <div class="panel" style="margin-top:12px">
             <h3>Recording</h3>
@@ -81,12 +85,17 @@ Was wurde bewusst nicht veraendert?
       </div>
     </details>
 
-    <details class="fold">
-      <summary>Scene</summary>
+    <details class="fold" id="sceneMenuShell" data-floating-menu="scene">
+      <summary class="topbarIconSummary" title="Scene" aria-label="Scene">
+        <svg viewBox="0 0 256 256" aria-hidden="true"><rect x="32" y="40" width="192" height="152" rx="16"></rect><line x1="128" y1="192" x2="128" y2="224"></line><line x1="88" y1="224" x2="168" y2="224"></line></svg>
+      </summary>
       <div class="foldBody">
         <div class="panel">
           <p class="mini" style="margin-top:0"><b>Scene</b> enthält alle globalen Bühnen- und Hintergrundparameter. Layer 0 ist grundsätzlich für den Hintergrund reserviert.</p>
           <label class="checkrow"><input id="showGrid" type="checkbox" checked><span>Gitternetz anzeigen</span></label>
+          <label>Gitternetzabstand: <span id="gridSpacingValue">100 px</span></label>
+          <div class="range-with-number"><input id="gridSpacing" type="range" min="10" max="500" step="1" value="100"><input id="gridSpacingNumber" class="range-number" type="number" min="10" max="500" step="1" value="100" title="Pixelabstand zwischen den Gitternetzlinien"></div>
+          <label>Gitternetzfarbe</label><input id="gridColor" type="color" value="#526e99">
           <p class="mini">Das Gitternetz ist nur eine Werkbank-Hilfe und wird nicht als Bühnenobjekt exportiert.</p>
           <button id="hideMenusBtn" type="button">Modus ohne Menüs starten</button>
           <p class="mini">Die Werkbank zeigt jetzt bereits die komplette Zielbühne im gewählten Bildschirmformat. Der menülose Modus vergrößert nur dieselbe Bühne, ohne Positionen oder Proportionen neu zu interpretieren.</p>
@@ -183,8 +192,10 @@ Was wurde bewusst nicht veraendert?
       </div>
     </details>
 
-    <details class="fold">
-      <summary>Object Manager</summary>
+    <details class="fold" id="objectManagerMenuShell" data-floating-menu="objectManager">
+      <summary class="topbarIconSummary" title="Object Manager" aria-label="Object Manager">
+        <svg viewBox="0 0 256 256" aria-hidden="true"><polygon points="128 24 224 72 128 120 32 72 128 24"></polygon><polyline points="32 120 128 168 224 120"></polyline><polyline points="32 168 128 216 224 168"></polyline></svg>
+      </summary>
       <div class="foldBody">
         <div class="panel">
           <button id="importObjectGlobalBtn" type="button">Objekt importieren (.object)</button>
@@ -199,6 +210,7 @@ Was wurde bewusst nicht veraendert?
     <button id="audioMenuBtn" class="topbarIconButton" type="button" title="Audioeinstellungen" aria-label="Audioeinstellungen" aria-expanded="false" aria-controls="audioFloatingPanel">
       <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="180" cy="164" r="28"></circle><circle cx="52" cy="196" r="28"></circle><line x1="208" y1="72" x2="80" y2="104"></line><polyline points="80 196 80 56 208 24 208 164"></polyline></svg>
     </button>
+    <div class="topbarBrand" aria-label="Virtual Scene Engine 2.0">VSE 2.0</div>
 
   </aside>
     <!-- Buehne, Objektpalette und Timeline -->
@@ -224,7 +236,7 @@ Was wurde bewusst nicht veraendert?
       <div class="tool" draggable="true" data-type="particle" data-particle-mode="free"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M84.27,171.73l-55.09-20.3a7.92,7.92,0,0,1,0-14.86l55.09-20.3,20.3-55.09a7.92,7.92,0,0,1,14.86,0l20.3,55.09,55.09,20.3a7.92,7.92,0,0,1,0,14.86l-55.09,20.3-20.3,55.09a7.92,7.92,0,0,1-14.86,0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="16" x2="176" y2="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="224" y1="72" x2="224" y2="104" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="152" y1="40" x2="200" y2="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="208" y1="88" x2="240" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Partikel</span></b><small>Universelles Partikelobjekt. Der genaue Effekt wird nach dem Platzieren rechts im Objektmenü ausgewählt.</small></div>
     </div>
     <div id="timelineDock" aria-label="Timeline">
-      <div class="timelineTop"><span><b>Timeline</b> · Drei-Spur-Editor</span><span class="timelineTime"><span id="timelineCurrentTime">00:00</span> / <span id="timelineTotalTime">03:00</span></span></div>
+      <div class="timelineTop"><span><b>Timeline</b> · Drei-Spur-Editor</span><span class="timelineTime"><span id="timelineCurrentTime">00:00.00</span> / <span id="timelineTotalTime">03:00.00</span></span></div>
       <div id="timelineMediaControls" class="timelineMediaRow" title="Master-Steuerung für alle Timeline-Spuren">
         <button id="timelineMediaPlayBtn" class="timelineMediaBtn" type="button" title="Play/Pause">▶</button>
         <button id="timelineMediaStopBtn" class="timelineMediaBtn redMini" type="button" title="Stop">■</button>
@@ -262,6 +274,9 @@ Was wurde bewusst nicht veraendert?
     </svg>
     <span class="srOnly">Parametermenü ein- oder ausklappen</span>
   </button>
+  <button id="objectTimelineMenuBtn" type="button" aria-controls="objectTimelineFloatingPanel" aria-expanded="false" title="Timelineeinstellungen" aria-label="Timelineeinstellungen">
+    <svg viewBox="0 0 256 256" aria-hidden="true"><rect x="32" y="56" width="192" height="144" rx="16"></rect><line x1="72" y1="56" x2="72" y2="200"></line><line x1="184" y1="56" x2="184" y2="200"></line><line x1="32" y1="104" x2="72" y2="104"></line><line x1="184" y1="104" x2="224" y2="104"></line><line x1="32" y1="152" x2="72" y2="152"></line><line x1="184" y1="152" x2="224" y2="152"></line><polyline points="104 152 104 120 136 104 136 136 160 120"></polyline></svg>
+  </button>
     <!-- Rechte Eigenschaften- und Projektleiste -->
 <aside id="right">
     <h3>Objektparameter</h3>
@@ -287,9 +302,9 @@ Was wurde bewusst nicht veraendert?
         <div id="timelineDropZone" class="timelineDrop">Objekt aus dem Object Manager hierher ziehen<br><span class="mini">oder ausgewähltes Objekt übernehmen</span></div>
         <button id="timelineUseSelectedObjectBtn" type="button">Aktuelle Auswahl als Event-Objekt</button>
         <label>Event-Objekt</label><select id="timelineEventObject"></select>
-        <label>Zeitposition: <span id="timelineEventTimeValue">00:00</span></label><input id="timelineEventTime" type="range" min="0" max="180" step="0.01" value="0">
+        <label>Zeitposition: <span id="timelineEventTimeValue">00:00.00</span></label><input id="timelineEventTime" type="range" min="0" max="180" step="0.01" value="0">
         <label>Aktion</label><select id="timelineEventAction"><option value="activate">Aktivieren</option><option value="deactivate">Deaktivieren</option><option value="parameter">Parameter ab hier setzen</option><option value="ipmDestruction">IPM Destruction</option></select>
-        <label>Dauer: <span id="timelineEventDurationValue">0.0 s</span></label><input id="timelineEventDuration" type="range" min="0" max="300" step="0.1" value="0">
+        <label>Dauer: <span id="timelineEventDurationValue">0.00 s</span></label><input id="timelineEventDuration" type="range" min="0" max="300" step="0.01" value="0">
         <label><input id="timelineEventEnabled" type="checkbox" checked> Event aktiv</label>
         <label><input id="timelineEventStartActive" type="checkbox" checked> Objekt ist von Anfang an aktiv</label>
         <button id="timelineCaptureConfigBtn" type="button">Aktuelle Objekt-Konfiguration ins Event übernehmen</button>
@@ -765,10 +780,23 @@ Was wurde bewusst nicht veraendert?
       <button id="dupBtn" type="button">Duplizieren</button><button class="red" id="delBtn" type="button">Objekt löschen</button>
     </div>
   </aside>
+    <section id="objectTimelineFloatingPanel" hidden aria-label="Timelineeinstellungen für das ausgewählte Objekt">
+      <div id="objectTimelineFloatingHeader" class="objectTimelineFloatingHeader">
+        <div><b>Timelineeinstellungen</b><small id="objectTimelineFloatingSubtitle">Kein Objekt ausgewählt</small></div>
+        <button id="objectTimelineFloatingClose" type="button" title="Timelineeinstellungen schließen" aria-label="Timelineeinstellungen schließen">×</button>
+      </div>
+      <div id="objectTimelineFloatingBody"></div>
+    </section>
     <section id="audioFloatingPanel" hidden aria-label="Audioeinstellungen">
       <div id="audioFloatingHeader" class="audioFloatingHeader">
-        <div><b>Audioeinstellungen</b><small>Player, Quellen und Analyzer</small></div>
-        <button id="audioFloatingClose" type="button" title="Audioeinstellungen schließen" aria-label="Audioeinstellungen schließen">×</button>
+        <div><b>Audioeinstellungen</b><small id="audioFloatingSubtitle">Player, Quellen und Analyzer</small></div>
+        <div class="audioFloatingActions">
+          <button id="audioAnalyzerOnlyToggle" type="button" title="Nur Analyzer anzeigen" aria-label="Nur Analyzer anzeigen" aria-pressed="false">
+            <svg class="audioMinimizeIcon" viewBox="0 0 256 256" aria-hidden="true"><line x1="48" y1="128" x2="208" y2="128"></line></svg>
+            <svg class="audioRestoreIcon" viewBox="0 0 256 256" aria-hidden="true"><polyline points="160 48 208 48 208 96"></polyline><line x1="152" y1="104" x2="208" y2="48"></line><polyline points="96 208 48 208 48 160"></polyline><line x1="104" y1="152" x2="48" y2="208"></line></svg>
+          </button>
+          <button id="audioFloatingClose" type="button" title="Audioeinstellungen schließen" aria-label="Audioeinstellungen schließen">×</button>
+        </div>
       </div>
     <section id="audioDock" aria-label="Audio Player und Quellen">
       <div class="audioSectionTitle">Player und Quellen</div>
@@ -839,25 +867,28 @@ Was wurde bewusst nicht veraendert?
   <div id="recordHudTime" class="recTime">00:00</div>
 </div>
 <!-- ===== JavaScript / Applikationslogik ===== -->
-<script src="src/io/sceneIO.js?v=20260627-three-tracks"></script>
+<script src="src/io/sceneIO.js?v=20260703-preserve-global-colors"></script>
 <script src="src/app/00a-hoisted-functions.js?v=20260624-scene-dot"></script>
 <script src="src/app/00b-menu-structure.js?v=20260627-music-reaction-controls"></script>
-<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260627-scene-screenshot"></script>
+<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260703-independent-grid-color"></script>
 <script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260702-native-stage-resolution"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260628-chroma-toggle-2"></script>
-<script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260624-scene-dot"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260703-webgl-feedback-loop"></script>
+<script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260703-timeline-hundredths"></script>
 <script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260702-cut-icon-restore"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260628-chroma-toggle-2"></script>
-<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260627-scene-switch"></script>
-<script src="src/app/07-audio-playlist-und-analyzer.js?v=20260627-mic-early-bind"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260628-cloud-dimensions"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260627-scene-export-fix"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260702-sharp-screen-text"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260627-screen-rich-text"></script>
-<script src="src/app/12-audio-dock-toggle.js?v=20260703-floating-audio-menu"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260703-independent-grid-color"></script>
+<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260703-timeline-hundredths"></script>
+<script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260703-object-timeline-drop"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260703-timeline-hundredths"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260703-webgl-feedback-loop"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260703-timeline-hundredths"></script>
+<script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
-<script src="src/app/14-three-track-timeline.js?v=20260627-timeline-video-playback"></script>
+<script src="src/app/14-three-track-timeline.js?v=20260703-object-timeline-drop"></script>
 <script src="src/app/15-cloud-object.js?v=20260628-cloud-lifecycle-wind"></script>
+<script src="src/app/16-object-timeline-menu.js?v=20260703-object-timeline-floating"></script>
+<script src="src/app/17-topbar-floating-menus.js?v=20260703-topbar-floating-menus"></script>
+<script src="src/app/18-color-settings-file.js?v=20260703-color-settings-file"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>

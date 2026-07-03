@@ -18,12 +18,23 @@ function downloadText(filename,text){
 }
 
 function importProjectData(data){
+  const preservedObjectIconColor=/^#[0-9a-f]{6}$/i.test(String(scene.objectIconColor||''))?String(scene.objectIconColor).toLowerCase():'#eef6ff';
+  const preservedGridColor=/^#[0-9a-f]{6}$/i.test(String(scene.gridColor||''))?String(scene.gridColor).toLowerCase():'#526e99';
   if(!data||!Array.isArray(data.objects))throw new Error('Keine gültige VSE-Projektdatei.');
   objects.forEach(o=>{if(o.type==='screen')releaseScreenMedia(o);if(o.type==='imageAsset')releaseImageAsset(o);if(o.type==='audioSource')releaseAudioSource(o);if(o.type==='greenscreen')releaseGreenscreenMedia(o);if(o.type==='particle'||o.type==='imageParticle')releaseParticleImage(o);});
   objects=[]; selected=null;
+  scene.gridSpacing=100;
+  scene.gridColor='#526e99';
   Object.assign(scene,{showGrid:true,screenDim:0,screenBrighten:0,dimTargetBackground:true,dimTargetImageAssets:true,dimTargetScreens:false,dimTargetGreenscreen:false,backlightPass:0,uiHidden:false,stageWidth:1920,stageHeight:1080,vrSceneScale:1,vrSceneDistance:3,vrScreenCurvature:0,vrScreenSegments:64,mandalaEnabled:false,mandalaSegments:6,mandalaRotation:0,mandalaCenterX:.5,mandalaCenterY:.5,mandalaZoom:1,mandalaMix:1,mandalaAutoRotate:false,mandalaMusicRotation:false,mandalaMusicZoom:false,mandalaMusicMix:false,...windDefaults()},data.scene||{});ensureWindDefaults();
+  scene.objectIconColor=preservedObjectIconColor;
+  scene.gridColor=preservedGridColor;
+  scene.gridSpacing=Math.max(10,Math.min(500,Math.round(Number(scene.gridSpacing)||100)));
+  scene.gridColor=/^#[0-9a-f]{6}$/i.test(String(scene.gridColor||''))?String(scene.gridColor).toLowerCase():'#526e99';
   setStageResolution(scene.stageWidth||1920,scene.stageHeight||1080);
   if(showGrid)showGrid.checked=!!scene.showGrid;
+  if(typeof syncObjectIconColor==='function')syncObjectIconColor();
+  if(typeof syncGridSpacingUi==='function')syncGridSpacingUi(scene.gridSpacing);
+  if(typeof syncGridColorUi==='function')syncGridColorUi(scene.gridColor);
   if(screenDim){screenDim.value=Number(scene.screenDim??0);screenDimValue.textContent=Number(scene.screenDim??0).toFixed(2);}
   if(screenBrighten){screenBrighten.value=Number(scene.screenBrighten??0);screenBrightenValue.textContent=Number(scene.screenBrighten??0).toFixed(2);} if(backlightPass){backlightPass.value=Number(scene.backlightPass??0);backlightPassValue.textContent=Number(scene.backlightPass??0).toFixed(2);}
   if(dimTargetBackground)dimTargetBackground.checked=scene.dimTargetBackground!==false;

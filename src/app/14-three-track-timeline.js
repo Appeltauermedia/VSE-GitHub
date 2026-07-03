@@ -265,6 +265,35 @@
     resetTimelineBaseSnapshotFor(targetId);
     return ev;
   }
+  function installObjectManagerTimelineDrop(){
+    if(!timelineBar||timelineBar.dataset.objectManagerDrop==='1')return;
+    timelineBar.dataset.objectManagerDrop='1';
+    const carriesObject=event=>Array.from(event.dataTransfer&&event.dataTransfer.types||[]).includes('object-id');
+    timelineBar.addEventListener('dragover',event=>{
+      if(!carriesObject(event))return;
+      event.preventDefault();event.stopPropagation();event.dataTransfer.dropEffect='copy';
+      timelineBar.classList.add('objectDropTarget');
+    });
+    timelineBar.addEventListener('dragleave',event=>{
+      if(event.relatedTarget&&timelineBar.contains(event.relatedTarget))return;
+      timelineBar.classList.remove('objectDropTarget');
+    });
+    timelineBar.addEventListener('drop',event=>{
+      if(!carriesObject(event))return;
+      event.preventDefault();event.stopPropagation();timelineBar.classList.remove('objectDropTarget');
+      const objectId=event.dataTransfer.getData('object-id');
+      const object=objects.find(item=>item&&item.id===objectId);
+      if(!object)return;
+      const rect=timelineBar.getBoundingClientRect();
+      const start=clampTime((event.clientX-rect.left)/Math.max(1,rect.width)*duration());
+      const timelineEvent=createActivationEvent(object,start,0,'object','object');
+      timelineState.selectedAudioClipId=null;
+      timelineState.selectedEventId=timelineEvent.id;
+      timelineState.lastClickTime=start;
+      selectTimeline();setTimelineEventForm(timelineEvent);updateTimelineUI();
+    });
+  }
+  installObjectManagerTimelineDrop();
   async function addAudioFileToTimeline(file){
     if(!file)return;
     const provisionalDuration=5;

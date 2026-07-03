@@ -112,8 +112,11 @@ function applyTimelineSnapshot(o,snap){
 }
 function updateTimelineEventList(){
   if(!timelineEventList)return;
-  const evs=[...(timelineState.events||[])].sort((a,b)=>(Number(a.time)||0)-(Number(b.time)||0));
-  if(!evs.length){timelineEventList.innerHTML='<div class="mini">Noch keine Events.</div>';return;}
+  const objectScopeId=window.objectTimelineMenuObjectId||'';
+  const evs=[...(timelineState.events||[])]
+    .filter(ev=>!objectScopeId||timelineObjectsForEvent(ev).some(o=>o.id===objectScopeId))
+    .sort((a,b)=>(Number(a.time)||0)-(Number(b.time)||0));
+  if(!evs.length){timelineEventList.innerHTML='<div class="mini">Für dieses Objekt sind noch keine Events vorhanden.</div>';return;}
   timelineEventList.innerHTML='';
   const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   for(const ev of evs){
@@ -134,7 +137,7 @@ function setTimelineEventForm(ev){
   if(!ev){
     if(timelineEventTime){timelineEventTime.max=timelineState.duration;timelineEventTime.value=timelineState.lastClickTime||0;}
     if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(timelineState.lastClickTime||0);
-    if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(1)+' s';
+    if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';
     if(timelineEventEnabled)timelineEventEnabled.checked=true;
     if(timelineEventStartActive)timelineEventStartActive.checked=true;
     if(timelineEventInfo)timelineEventInfo.textContent='Noch kein Timeline-Event ausgewählt.';
@@ -147,7 +150,7 @@ function setTimelineEventForm(ev){
   if(timelineEventEnabled)timelineEventEnabled.checked=ev.enabled!==false;
   if(timelineEventStartActive)timelineEventStartActive.checked=ev.startActive!==false;
   if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(ev.time||0);
-  if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(ev.duration||0).toFixed(1)+' s';
+  if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(ev.duration||0).toFixed(2)+' s';
   const kind=timelineEventTargetKind(ev);
   const targetId=timelineEventTargetId(ev);
   const targets=timelineObjectsForTarget(kind,targetId);
@@ -225,5 +228,5 @@ function updateTimelineUI(){
 if(timelineAddEventBtn){timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;timelineAddEventBtn.title='Legt ein neues Timeline-Event mit aktueller Objekt-Konfiguration an.';}
 if(timelineCopyEventBtn){timelineCopyEventBtn.onclick=copyTimelineEvent;timelineCopyEventBtn.title='Kopiert das ausgewählte Timeline-Event mit Ziel, Aktion, Dauer und gespeicherter Konfiguration.';}
 if(timelineCaptureConfigBtn){timelineCaptureConfigBtn.onclick=captureTimelineEventConfig;}
-[timelineEventTime,timelineEventDuration,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('change',()=>{const ev=selectedTimelineEvent();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=Number(timelineEventDuration?.value||0);ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(1)+' s';updateTimelineUI();});});
+[timelineEventTime,timelineEventDuration,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('change',()=>{const ev=selectedTimelineEvent();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=Number(timelineEventDuration?.value||0);ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';updateTimelineUI();});});
 if(typeof updateTimelineUI==='function')updateTimelineUI();

@@ -456,7 +456,7 @@ function isSelected(o){return !!(o&&selectedIds.has(o.id));}
 function getSelectedObjects(){return objects.filter(o=>selectedIds.has(o.id));}
 function select(o,additive=false){
   deselectTimeline();
-  if(!o){waterDrawMode=null;waterDrawDrag=null;selected=null;selectedIds.clear();selectSingleCore(null);updateHud();updateObjectManager();return;}
+  if(!o){waterDrawMode=null;waterDrawDrag=null;selected=null;selectedIds.clear();selectSingleCore(null);if(typeof syncObjectTimelineMenuSelection==='function')syncObjectTimelineMenuSelection();updateHud();updateObjectManager();return;}
   if(additive){
     if(selectedIds.has(o.id))selectedIds.delete(o.id); else selectedIds.add(o.id);
     selected=selectedIds.has(o.id)?o:(getSelectedObjects()[0]||null);
@@ -465,6 +465,7 @@ function select(o,additive=false){
   }
   selectSingleCore(selected);
   if(groupNameInput&&selected)groupNameInput.value=selected.groupName||'';
+  if(typeof syncObjectTimelineMenuSelection==='function')syncObjectTimelineMenuSelection();
   updateHud();updateObjectManager();
 }
 
@@ -1207,6 +1208,22 @@ if(setScreenResBtn)setScreenResBtn.addEventListener('click',()=>{
 });
 setStageResolution(1920,1080);
 showGrid.addEventListener('change',()=>scene.showGrid=showGrid.checked);
+function syncGridSpacingUi(value=scene.gridSpacing){
+  scene.gridSpacing=Math.max(10,Math.min(500,Math.round(Number(value)||100)));
+  if(gridSpacingInput)gridSpacingInput.value=String(scene.gridSpacing);
+  if(gridSpacingNumber)gridSpacingNumber.value=String(scene.gridSpacing);
+  if(gridSpacingValue)gridSpacingValue.textContent=scene.gridSpacing+' px';
+}
+if(gridSpacingInput)gridSpacingInput.addEventListener('input',()=>syncGridSpacingUi(gridSpacingInput.value));
+if(gridSpacingNumber)gridSpacingNumber.addEventListener('input',()=>syncGridSpacingUi(gridSpacingNumber.value));
+syncGridSpacingUi();
+function syncGridColorUi(value=scene.gridColor){
+  const color=String(value||'').trim();
+  scene.gridColor=/^#[0-9a-f]{6}$/i.test(color)?color.toLowerCase():'#526e99';
+  if(gridColorInput)gridColorInput.value=scene.gridColor;
+}
+if(gridColorInput)gridColorInput.addEventListener('input',()=>syncGridColorUi(gridColorInput.value));
+syncGridColorUi();
 screenDim.addEventListener('input',()=>{scene.screenDim=parseFloat(screenDim.value);screenDimValue.textContent=scene.screenDim.toFixed(2);});
 screenBrighten.addEventListener('input',()=>{scene.screenBrighten=parseFloat(screenBrighten.value);screenBrightenValue.textContent=scene.screenBrighten.toFixed(2);});
 if(dimTargetBackground)dimTargetBackground.addEventListener('change',()=>scene.dimTargetBackground=dimTargetBackground.checked);

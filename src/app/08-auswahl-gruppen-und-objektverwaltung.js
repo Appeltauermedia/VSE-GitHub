@@ -90,7 +90,7 @@ function updateObjectManager(){
   }
   if(!anyType)html+='<div class="omEmpty">Keine verwaltbaren Objekte gefunden.</div>';
   objectManager.innerHTML=html;
-  objectManager.querySelectorAll('.omRow').forEach(row=>{const btn=row.querySelector('button[data-oid]');if(btn){row.draggable=true;row.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('object-id',btn.dataset.oid);ev.dataTransfer.setData('text/plain','object:'+btn.dataset.oid);});}});
+  objectManager.querySelectorAll('.omRow').forEach(row=>{const btn=row.querySelector('button[data-oid]');if(btn){row.draggable=true;row.title='In die Objektspur der Timeline ziehen';row.addEventListener('dragstart',ev=>{ev.dataTransfer.effectAllowed='copy';ev.dataTransfer.setData('object-id',btn.dataset.oid);ev.dataTransfer.setData('text/plain','object:'+btn.dataset.oid);});}});
   objectManager.querySelectorAll('button[data-oid]').forEach(b=>b.onclick=()=>selectObjectFromManager(b.dataset.oid));
   objectManager.querySelectorAll('button[data-gid]').forEach(b=>b.onclick=()=>selectGroupFromManager(b.dataset.gid));
 }
