@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>VSE V2.0 · Modul-Werkbank · 162 · Greenscreen-Ton</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260628-cloud-object-3">
+<link rel="stylesheet" href="src/styles/main.css?v=20260703-floating-audio-menu">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
@@ -195,6 +195,10 @@ Was wurde bewusst nicht veraendert?
         </div>
       </div>
     </details>
+
+    <button id="audioMenuBtn" class="topbarIconButton" type="button" title="Audioeinstellungen" aria-label="Audioeinstellungen" aria-expanded="false" aria-controls="audioFloatingPanel">
+      <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="180" cy="164" r="28"></circle><circle cx="52" cy="196" r="28"></circle><line x1="208" y1="72" x2="80" y2="104"></line><polyline points="80 196 80 56 208 24 208 164"></polyline></svg>
+    </button>
 
   </aside>
     <!-- Buehne, Objektpalette und Timeline -->
@@ -760,11 +764,14 @@ Was wurde bewusst nicht veraendert?
       </div>
       <button id="dupBtn" type="button">Duplizieren</button><button class="red" id="delBtn" type="button">Objekt löschen</button>
     </div>
-    <section id="audioDock" aria-label="Audio Player und Analyzer">
-      <button id="audioDockToggle" class="audioDockHeader" type="button" aria-expanded="true" aria-controls="audioDockBody" title="Audio ein- oder ausklappen">
-        <span>Audio</span>
-        <span id="audioDockToggleIcon" aria-hidden="true">▾</span>
-      </button>
+  </aside>
+    <section id="audioFloatingPanel" hidden aria-label="Audioeinstellungen">
+      <div id="audioFloatingHeader" class="audioFloatingHeader">
+        <div><b>Audioeinstellungen</b><small>Player, Quellen und Analyzer</small></div>
+        <button id="audioFloatingClose" type="button" title="Audioeinstellungen schließen" aria-label="Audioeinstellungen schließen">×</button>
+      </div>
+    <section id="audioDock" aria-label="Audio Player und Quellen">
+      <div class="audioSectionTitle">Player und Quellen</div>
       <div id="audioDockBody" class="panel">
         <div class="audioDockSources">
           <button id="micBtn" type="button" title="Mikrofon starten">Mic</button>
@@ -800,6 +807,7 @@ Was wurde bewusst nicht veraendert?
       </div>
     </section>
     <section id="audioAnalyzerDock" aria-label="Frequenzbalken-Analyzer">
+      <div class="audioSectionTitle">Analyzer</div>
       <div class="audioAnalyzerTop">
         <label>Master-Input: <span id="audioSensValue">1.00</span></label>
         <label class="audioInline"><input id="audioMonitor" type="checkbox"> Audio mithören</label>
@@ -808,7 +816,7 @@ Was wurde bewusst nicht veraendert?
       <div class="tinyLabel">Level</div><div class="meter"><span id="mLevel"></span></div>
       <div class="tinyLabel">Reaktionsfrequenz</div><div id="audioFreqAnalyzer" class="audioFreqAnalyzer" aria-label="Frequenzbalken-Analyzer"></div>
     </section>
-  </aside>
+    </section>
 </div>
 <section id="cloudExpertPanel" class="cloudExpertPanel" hidden aria-label="Cloud Expertenmenü">
   <div class="cloudExpertHeader"><div><b>Cloud · Experten</b><small>Prozedurale WebGL-Wolke</small></div><button id="cloudExpertClose" type="button" aria-label="Schließen" onclick="document.getElementById('cloudExpertPanel').hidden=true;document.body.classList.remove('cloudExpertOpen')">×</button></div>
@@ -846,7 +854,7 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260627-scene-export-fix"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260702-sharp-screen-text"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260627-screen-rich-text"></script>
-<script src="src/app/12-audio-dock-toggle.js?v=20260624-scene-dot"></script>
+<script src="src/app/12-audio-dock-toggle.js?v=20260703-floating-audio-menu"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
 <script src="src/app/14-three-track-timeline.js?v=20260627-timeline-video-playback"></script>
 <script src="src/app/15-cloud-object.js?v=20260628-cloud-lifecycle-wind"></script>
