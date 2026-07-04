@@ -259,7 +259,7 @@ function restoreBgCaptureUndo(){
   return true;
 }
 function drawCurrentStageCaptureToCanvas(target,rectCss){
-  const r=canvas.getBoundingClientRect();
+  const r={width:canvas.clientWidth,height:canvas.clientHeight};
   const px=Math.max(0,rectCss.x/r.width*canvas.width);
   const py=Math.max(0,rectCss.y/r.height*canvas.height);
   const pw=Math.max(1,rectCss.w/r.width*canvas.width);
@@ -301,7 +301,7 @@ async function createImageAssetFromBackgroundRect(rectCss){
   if(source==='background'&&!data){alert('Es ist kein Hintergrundbild geladen.');return;}
   if(removeFromBackground&&!data){alert('Zum Entfernen aus dem Hintergrund muss ein Hintergrundbild geladen sein.');return;}
   const previousBg={background:{...background},bgImageData:bgImageData,bgImageSize:[...bgImageSize]};
-  const r=canvas.getBoundingClientRect();
+  const r={width:canvas.clientWidth,height:canvas.clientHeight};
   const sx=rectCss.x/r.width*stageState.w;
   const sy=rectCss.y/r.height*stageState.h;
   const sw=rectCss.w/r.width*stageState.w;

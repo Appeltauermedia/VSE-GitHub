@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Virtual Scene Engine</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260703-vse-brand">
+<link rel="stylesheet" href="src/styles/main.css?v=20260703-zoom-ten-percent-reset">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
@@ -214,7 +214,7 @@ Was wurde bewusst nicht veraendert?
 
   </aside>
     <!-- Buehne, Objektpalette und Timeline -->
-<main id="stageWrap"><canvas id="gl"></canvas><div id="selectionBox"></div><svg id="pathSelectionOverlay"></svg>
+<main id="stageWrap"><div id="workspaceViewport"><canvas id="gl"></canvas><div id="selectionBox"></div><svg id="pathSelectionOverlay"></svg></div><button id="workspaceZoomStatus" type="button" title="Zoom auf 100 % zurücksetzen" aria-label="Zoom auf 100 Prozent zurücksetzen" aria-live="polite">100%</button>
     <div id="objectPalette" aria-label="Objektpalette">
       <div class="tool" draggable="true" data-type="light"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><line x1="128" y1="192" x2="128" y2="144" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><polyline points="96 112 128 144 160 112" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="88" y1="232" x2="168" y2="232" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><path d="M80,168a79.86,79.86,0,0,1-32-63.53C47.76,61.09,82.72,25,126.07,24a80,80,0,0,1,49.77,144.1A19.81,19.81,0,0,0,168,184h0a8,8,0,0,1-8,8H96a8,8,0,0,1-8-8v-.23A19.8,19.8,0,0,0,80,168Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Lichtemitter</span></b><small>Lichtpunkt mit Glow, Transparenz, Fächer und Laseroption.</small></div>
       <div class="tool" draggable="true" data-type="lightbar"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><line x1="176" y1="80" x2="240" y2="80" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="176" x2="240" y2="176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="128" x2="240" y2="128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><path d="M88,200a72,72,0,0,1-72-72.55C16.3,87.75,49.2,56,88.9,56H128a8,8,0,0,1,8,8V192a8,8,0,0,1-8,8Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Lightbar</span></b><small>Mehrere gekoppelte Lichtemitter auf einer Linie.</small></div>
@@ -878,8 +878,8 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260703-independent-grid-color"></script>
 <script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260703-timeline-hundredths"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260703-object-timeline-drop"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260703-timeline-hundredths"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260703-workspace-wheel-zoom"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260703-workspace-wheel-zoom"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260703-webgl-feedback-loop"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260703-timeline-hundredths"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
@@ -889,6 +889,7 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/16-object-timeline-menu.js?v=20260703-object-timeline-floating"></script>
 <script src="src/app/17-topbar-floating-menus.js?v=20260703-topbar-floating-menus"></script>
 <script src="src/app/18-color-settings-file.js?v=20260703-color-settings-file"></script>
+<script src="src/app/19-workspace-zoom.js?v=20260703-zoom-ten-percent-reset"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>

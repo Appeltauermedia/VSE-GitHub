@@ -143,10 +143,8 @@ hit=function(mx,my){
 };
 function setSelectionBoxFromCanvasRect(x,y,w,h){
   if(!selectionBox)return;
-  const cr=canvas.getBoundingClientRect();
-  const wr=stageWrap.getBoundingClientRect();
-  selectionBox.style.left=(cr.left-wr.left+x)+'px';
-  selectionBox.style.top=(cr.top-wr.top+y)+'px';
+  selectionBox.style.left=x+'px';
+  selectionBox.style.top=y+'px';
   selectionBox.style.width=w+'px';
   selectionBox.style.height=h+'px';
 }
@@ -157,14 +155,12 @@ function hidePathSelectionOverlay(){
 }
 function updatePathSelectionOverlay(points,closed=false){
   if(!pathSelectionOverlay||!Array.isArray(points)||!points.length)return;
-  const cr=canvas.getBoundingClientRect();
-  const wr=stageWrap.getBoundingClientRect();
   pathSelectionOverlay.style.display='block';
-  pathSelectionOverlay.style.left=(cr.left-wr.left)+'px';
-  pathSelectionOverlay.style.top=(cr.top-wr.top)+'px';
-  pathSelectionOverlay.style.width=cr.width+'px';
-  pathSelectionOverlay.style.height=cr.height+'px';
-  pathSelectionOverlay.setAttribute('viewBox','0 0 '+cr.width+' '+cr.height);
+  pathSelectionOverlay.style.left='0px';
+  pathSelectionOverlay.style.top='0px';
+  pathSelectionOverlay.style.width=canvas.clientWidth+'px';
+  pathSelectionOverlay.style.height=canvas.clientHeight+'px';
+  pathSelectionOverlay.setAttribute('viewBox','0 0 '+canvas.clientWidth+' '+canvas.clientHeight);
   const attr=points.map(p=>Number(p.x||0).toFixed(1)+','+Number(p.y||0).toFixed(1)).join(' ');
   const tag=closed?'polygon':'polyline';
   pathSelectionOverlay.innerHTML='<'+tag+' points="'+attr+'"></'+tag+'>';
@@ -174,7 +170,7 @@ function waterShapeSelectionRadius(shape){return shape==='oval'?'999px':shape===
 function createWaterObjectFromDraw(cut){
   if(!waterDrawMode||!cut||cut.w<4||cut.h<4)return;
   if(cut.shape==='path'&&(!cut.points||cut.points.length<3))return;
-  const r=canvas.getBoundingClientRect();
+  const r={width:canvas.clientWidth,height:canvas.clientHeight};
   const draft=waterDrawMode.draft||newObj(waterDrawMode.type,50,50);
   const x=(cut.x+cut.w*0.5)/Math.max(1,r.width)*100;
   const y=(cut.y+cut.h*0.5)/Math.max(1,r.height)*100;
