@@ -17,7 +17,8 @@ function downloadText(filename,text){
   setTimeout(()=>URL.revokeObjectURL(url),800);
 }
 
-function importProjectData(data){
+function importProjectData(data,options={}){
+  const preserveLocalColors=options.preserveLocalColors!==false;
   const preservedObjectIconColor=/^#[0-9a-f]{6}$/i.test(String(scene.objectIconColor||''))?String(scene.objectIconColor).toLowerCase():'#eef6ff';
   const preservedGridColor=/^#[0-9a-f]{6}$/i.test(String(scene.gridColor||''))?String(scene.gridColor).toLowerCase():'#526e99';
   if(!data||!Array.isArray(data.objects))throw new Error('Keine gültige VSE-Projektdatei.');
@@ -25,9 +26,12 @@ function importProjectData(data){
   objects=[]; selected=null;
   scene.gridSpacing=100;
   scene.gridColor='#526e99';
-  Object.assign(scene,{showGrid:true,screenDim:0,screenBrighten:0,dimTargetBackground:true,dimTargetImageAssets:true,dimTargetScreens:false,dimTargetGreenscreen:false,backlightPass:0,uiHidden:false,stageWidth:1920,stageHeight:1080,vrSceneScale:1,vrSceneDistance:3,vrScreenCurvature:0,vrScreenSegments:64,mandalaEnabled:false,mandalaSegments:6,mandalaRotation:0,mandalaCenterX:.5,mandalaCenterY:.5,mandalaZoom:1,mandalaMix:1,mandalaAutoRotate:false,mandalaMusicRotation:false,mandalaMusicZoom:false,mandalaMusicMix:false,...windDefaults()},data.scene||{});ensureWindDefaults();
-  scene.objectIconColor=preservedObjectIconColor;
-  scene.gridColor=preservedGridColor;
+  Object.assign(scene,{showGrid:true,screenDim:0,screenBrighten:0,dimTargetBackground:true,dimTargetImageAssets:true,dimTargetScreens:false,dimTargetGreenscreen:false,backlightPass:0,uiHidden:false,stageWidth:1920,stageHeight:1080,cameraZoom:1,cameraPanX:0,cameraPanY:0,vrSceneScale:1,vrSceneDistance:3,vrScreenCurvature:0,vrScreenSegments:64,mandalaEnabled:false,mandalaSegments:6,mandalaRotation:0,mandalaCenterX:.5,mandalaCenterY:.5,mandalaZoom:1,mandalaMix:1,mandalaAutoRotate:false,mandalaMusicRotation:false,mandalaMusicZoom:false,mandalaMusicMix:false,...windDefaults()},data.scene||{});ensureWindDefaults();
+  if(typeof syncWorkspaceView==='function')syncWorkspaceView();
+  if(preserveLocalColors){
+    scene.objectIconColor=preservedObjectIconColor;
+    scene.gridColor=preservedGridColor;
+  }
   scene.gridSpacing=Math.max(10,Math.min(500,Math.round(Number(scene.gridSpacing)||100)));
   scene.gridColor=/^#[0-9a-f]{6}$/i.test(String(scene.gridColor||''))?String(scene.gridColor).toLowerCase():'#526e99';
   setStageResolution(scene.stageWidth||1920,scene.stageHeight||1080);
@@ -57,6 +61,7 @@ function importProjectData(data){
     if(audioShowBpm)audioShowBpm.checked=audioState.showBpm;
     updateBpmDisplayVisibility();
   }
+  groups=Array.isArray(data.groups)?data.groups.filter(Boolean).map(group=>({...group})):[];
   objects=(data.objects||[]).filter(raw=>raw).map(raw=>ensureTypeDefaults({...raw}));
   const maxId=objects.reduce((m,o)=>Math.max(m,Number(String(o.id||'').replace(/\D/g,''))||0),0); if(maxId>=id)id=maxId+1;
   objects.forEach(o=>{restoreScreenImage(o);restoreScreenTextBackgroundImage(o);restoreParticleImage(o);if(o.type==='imageAsset')loadImageAssetFromData(o,o.imageAssetData,o.imageAssetName||'importiertes Bild');if(o.type==='greenscreen'){o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';}});

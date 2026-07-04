@@ -2,13 +2,15 @@
   const panel=document.getElementById('objectTimelineFloatingPanel');
   const opener=document.getElementById('objectTimelineMenuBtn');
   const header=document.getElementById('objectTimelineFloatingHeader');
+  const minimize=document.getElementById('objectTimelineFloatingMinimize');
   const close=document.getElementById('objectTimelineFloatingClose');
   const body=document.getElementById('objectTimelineFloatingBody');
   const subtitle=document.getElementById('objectTimelineFloatingSubtitle');
-  if(!panel||!opener||!header||!close||!body||!timelineParams)return;
+  if(!panel||!opener||!header||!minimize||!close||!body||!timelineParams)return;
 
   body.appendChild(timelineParams);
   const positionKey='vse.objectTimelineFloatingPosition';
+  const minimizedKey='vse.objectTimelineFloatingMinimized';
 
   function currentObject(){return selected&&objects.includes(selected)?selected:null;}
   function eventForObject(object){
@@ -62,7 +64,22 @@
     if(open)openObjectTimelineMenu();
     else window.objectTimelineEditingObjectId='';
   }
+  function setMinimized(minimized){
+    panel.classList.toggle('isMinimized',minimized);
+    minimize.setAttribute('aria-pressed',minimized?'true':'false');
+    minimize.title=minimized?'Timelineeinstellungen wiederherstellen':'Timelineeinstellungen minimieren';
+    minimize.setAttribute('aria-label',minimize.title);
+    try{localStorage.setItem(minimizedKey,minimized?'1':'0');}catch(e){}
+    if(!panel.hidden&&panel.style.left){
+      const rect=panel.getBoundingClientRect(),p=clampPosition(rect.left,rect.top);
+      panel.style.left=p.left+'px';panel.style.top=p.top+'px';panel.style.right='auto';
+    }
+  }
+  let initiallyMinimized=false;
+  try{initiallyMinimized=localStorage.getItem(minimizedKey)==='1';}catch(e){}
+  setMinimized(initiallyMinimized);
   opener.addEventListener('click',()=>setOpen(panel.hidden));
+  minimize.addEventListener('click',()=>setMinimized(!panel.classList.contains('isMinimized')));
   close.addEventListener('click',()=>setOpen(false));
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden)setOpen(false);});
 

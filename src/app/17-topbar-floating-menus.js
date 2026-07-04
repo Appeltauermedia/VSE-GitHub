@@ -25,13 +25,15 @@
     panel.id=definition.key+'FloatingPanel';
     panel.hidden=true;
     panel.setAttribute('aria-label',definition.title);
-    panel.innerHTML=`<div class="topbarFloatingHeader"><div><b>${definition.title}</b><small>${definition.subtitle}</small></div><button type="button" title="${definition.title} schließen" aria-label="${definition.title} schließen">×</button></div><div class="topbarFloatingBody"></div>`;
+    panel.innerHTML=`<div class="topbarFloatingHeader"><div><b>${definition.title}</b><small>${definition.subtitle}</small></div><div class="topbarFloatingActions"><button class="topbarFloatingMinimize" type="button" title="${definition.title} minimieren" aria-label="${definition.title} minimieren" aria-pressed="false"><svg class="topbarMinimizeIcon" viewBox="0 0 256 256" aria-hidden="true"><line x1="48" y1="128" x2="208" y2="128"></line></svg><svg class="topbarRestoreIcon" viewBox="0 0 256 256" aria-hidden="true"><polyline points="160 48 208 48 208 96"></polyline><line x1="152" y1="104" x2="208" y2="48"></line><polyline points="96 208 48 208 48 160"></polyline><line x1="104" y1="152" x2="48" y2="208"></line></svg></button><button class="topbarFloatingClose" type="button" title="${definition.title} schließen" aria-label="${definition.title} schließen">×</button></div></div><div class="topbarFloatingBody"></div>`;
     panel.querySelector('.topbarFloatingBody').appendChild(content);
     document.body.appendChild(panel);
 
     const header=panel.querySelector('.topbarFloatingHeader');
-    const close=header.querySelector('button');
+    const minimize=header.querySelector('.topbarFloatingMinimize');
+    const close=header.querySelector('.topbarFloatingClose');
     const storageKey='vse.topbarFloatingPosition.'+definition.key;
+    const minimizedKey='vse.topbarFloatingMinimized.'+definition.key;
     summary.setAttribute('role','button');
     summary.setAttribute('aria-controls',panel.id);
     summary.setAttribute('aria-expanded','false');
@@ -57,8 +59,24 @@
       shell.classList.toggle('floatingMenuOpen',open);
       if(open)restorePosition();
     }
+    function setMinimized(minimized){
+      panel.classList.toggle('isMinimized',minimized);
+      minimize.setAttribute('aria-pressed',minimized?'true':'false');
+      minimize.title=minimized?definition.title+' maximieren':definition.title+' minimieren';
+      minimize.setAttribute('aria-label',minimize.title);
+      try{localStorage.setItem(minimizedKey,minimized?'1':'0');}catch(e){}
+      if(!panel.hidden){
+        const rect=panel.getBoundingClientRect(),p=clampPanel(panel,rect.left,rect.top);
+        panel.style.left=p.left+'px';panel.style.top=p.top+'px';panel.style.right='auto';
+      }
+    }
+
+    let initiallyMinimized=false;
+    try{initiallyMinimized=localStorage.getItem(minimizedKey)==='1';}catch(e){}
+    setMinimized(initiallyMinimized);
 
     summary.addEventListener('click',event=>{event.preventDefault();setOpen(panel.hidden);});
+    minimize.addEventListener('click',()=>setMinimized(!panel.classList.contains('isMinimized')));
     close.addEventListener('click',()=>setOpen(false));
     document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden)setOpen(false);});
 

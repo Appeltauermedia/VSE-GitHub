@@ -114,7 +114,7 @@ function updateTimelineEventList(){
   if(!timelineEventList)return;
   const objectScopeId=window.objectTimelineMenuObjectId||'';
   const evs=[...(timelineState.events||[])]
-    .filter(ev=>!objectScopeId||timelineObjectsForEvent(ev).some(o=>o.id===objectScopeId))
+    .filter(ev=>ev.timelineAssetKind!=='camera'&&(!objectScopeId||timelineObjectsForEvent(ev).some(o=>o.id===objectScopeId)))
     .sort((a,b)=>(Number(a.time)||0)-(Number(b.time)||0));
   if(!evs.length){timelineEventList.innerHTML='<div class="mini">Für dieses Objekt sind noch keine Events vorhanden.</div>';return;}
   timelineEventList.innerHTML='';

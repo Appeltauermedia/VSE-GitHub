@@ -859,6 +859,7 @@ function drawParticle(o){
 let engineSceneTarget=null;
 let postSceneTarget=null;
 let vrSceneTarget=null;
+let sceneViewSourceTarget=null;
 const vrState={active:false,session:null,referenceSpace:null,referenceSpaceType:'local',baseLayer:null,wasMenuHidden:false,framePending:false};
 function ensureRenderTarget(target){
   const w=Math.max(1,canvas.width), h=Math.max(1,canvas.height);
@@ -894,6 +895,10 @@ function ensureEngineSceneTarget(){
 function ensureVrSceneTarget(){
   vrSceneTarget=ensureRenderTarget(vrSceneTarget);
   return vrSceneTarget;
+}
+function ensureSceneViewSourceTarget(){
+  sceneViewSourceTarget=ensureRenderTarget(sceneViewSourceTarget);
+  return sceneViewSourceTarget;
 }
 function renderEngineSceneTexture(ordered){
   const target=ensureEngineSceneTarget();
@@ -1387,6 +1392,23 @@ function drawVisualizer(o){
   gl.uniform1f(visualizerLoc.hasOverlay,overlayInfo?1:0);
   gl.uniform1f(visualizerLoc.overlayFreq,overlayInfo?overlayInfo.freq:120);
   gl.uniform1f(visualizerLoc.overlayThreshold,overlayInfo?overlayInfo.threshold:0);
+  gl.uniform1f(visualizerLoc.segmentsEnabled,o.visualizerSegmentsEnabled?1:0);
+  gl.uniform1f(visualizerLoc.segmentCount,Math.max(4,Math.min(48,Math.round(Number(o.visualizerSegmentCount??16)))));
+  gl.uniform1f(visualizerLoc.segmentGap,clamp01(Number(o.visualizerSegmentGap??.18)));
+  const backgroundColor=hex(o.visualizerBackgroundColor||'#030503');
+  const lowColor=hex(o.visualizerLowColor||'#1aff2e');
+  const midColor=hex(o.visualizerMidColor||'#ffed29');
+  const highColor=hex(o.visualizerHighColor||'#ff290f');
+  const averageColor=hex(o.visualizerAverageColor||'#ffffff');
+  const peakColor=hex(o.visualizerPeakColor||'#ff0a05');
+  const frameColor=hex(o.visualizerFrameColor||'#61ff6b');
+  gl.uniform3f(visualizerLoc.backgroundColor,...backgroundColor);
+  gl.uniform3f(visualizerLoc.lowColor,...lowColor);
+  gl.uniform3f(visualizerLoc.midColor,...midColor);
+  gl.uniform3f(visualizerLoc.highColor,...highColor);
+  gl.uniform3f(visualizerLoc.averageColor,...averageColor);
+  gl.uniform3f(visualizerLoc.peakColor,...peakColor);
+  gl.uniform3f(visualizerLoc.frameColor,...frameColor);
   gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   gl.drawArrays(gl.TRIANGLES,0,6);
 }
@@ -1518,6 +1540,11 @@ function rebuildAudioSourceRouting(o){
     try{o.audioSourcePan=ctx.createStereoPanner();o.audioSourceGain.connect(o.audioSourcePan);outputNode=o.audioSourcePan;}catch(e){o.audioSourcePan=null;}
   }
   outputNode.connect(ctx.destination);
+  // Der Recording-Mix ist vom optionalen Audio-Backbone/Analyzer getrennt.
+  // So wird eine hoerbare physische AudioSource stets mit aufgezeichnet.
+  if(recordingAudioDest){
+    try{outputNode.connect(recordingAudioDest);}catch(e){}
+  }
   if(o.audioSourceAnalyze&&analyser){
     o.audioSourceAnalyserTap=ctx.createGain();
     o.audioSourceGain.connect(o.audioSourceAnalyserTap);
@@ -2125,17 +2152,8 @@ async function refreshVrAvailability(){
 }
 function renderCompleteSceneTexture(ordered){
   const target=ensureVrSceneTarget();
-  if(scene.mandalaEnabled){
-    const post=ensurePostSceneTarget();
-    gl.bindFramebuffer(gl.FRAMEBUFFER,post.fbo);
-    gl.viewport(0,0,post.w,post.h);
-    renderFinalSceneBase(ordered);
-    drawMandalaPass(post.tex,target);
-  }else{
-    gl.bindFramebuffer(gl.FRAMEBUFFER,target.fbo);
-    gl.viewport(0,0,target.w,target.h);
-    renderFinalSceneBase(ordered);
-  }
+  const source=renderSceneViewSource(ordered);
+  drawSceneViewPass(source.tex,target);
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);
   return target;
 }
@@ -2174,21 +2192,49 @@ function updateVseFrame(){
   renderEngineSceneTexture(ordered);
   return ordered;
 }
-function renderNormalFrame(ordered){
+function renderSceneViewSource(ordered){
+  const target=ensureSceneViewSourceTarget();
   if(scene.mandalaEnabled){
     const post=ensurePostSceneTarget();
     gl.bindFramebuffer(gl.FRAMEBUFFER,post.fbo);
     gl.viewport(0,0,post.w,post.h);
     renderFinalSceneBase(ordered);
-    drawMandalaPass(post.tex);
+    drawMandalaPass(post.tex,target);
   }else{
-    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,target.fbo);
+    gl.viewport(0,0,target.w,target.h);
     renderFinalSceneBase(ordered);
   }
+  return target;
+}
+function drawSceneViewPass(sourceTex,target=null){
+  const w=target?target.w:canvas.width,h=target?target.h:canvas.height;
+  const zoom=Math.max(.2,Math.min(4,Number(scene.cameraZoom)||1));
+  const panX=Math.max(-2,Math.min(2,Number(scene.cameraPanX)||0));
+  const panY=Math.max(-2,Math.min(2,Number(scene.cameraPanY)||0));
+  gl.bindFramebuffer(gl.FRAMEBUFFER,target?target.fbo:null);
+  gl.viewport(0,0,w,h);
+  gl.disable(gl.BLEND);
+  gl.useProgram(sceneViewProg);
+  gl.bindBuffer(gl.ARRAY_BUFFER,quad);
+  gl.enableVertexAttribArray(sceneViewLoc.pos);
+  gl.vertexAttribPointer(sceneViewLoc.pos,2,gl.FLOAT,false,0,0);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D,sourceTex);
+  gl.uniform1i(sceneViewLoc.scene,0);
+  gl.uniform1f(sceneViewLoc.zoom,zoom);
+  gl.uniform2f(sceneViewLoc.pan,panX,-panY);
+  gl.drawArrays(gl.TRIANGLES,0,6);
+  gl.enable(gl.BLEND);
+}
+function renderNormalFrame(ordered){
+  const source=renderSceneViewSource(ordered);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,source.fbo);
+  gl.viewport(0,0,source.w,source.h);
+  drawSelectedReferenceMarkers();
+  drawSceneViewPass(source.tex);
   gl.bindFramebuffer(gl.FRAMEBUFFER,null);
   gl.viewport(0,0,canvas.width,canvas.height);
-  drawSelectedReferenceMarkers();
 }
 function vrFrame(time,frame){
   if(!vrState.active||!vrState.session)return;

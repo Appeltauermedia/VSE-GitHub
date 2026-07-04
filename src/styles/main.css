@@ -68,6 +68,8 @@
   .timelineClip.isDragging{cursor:grabbing;filter:brightness(1.25);z-index:8}
   .timelineAudioClip{background:rgba(87,203,155,.28);border:1px solid rgba(94,225,167,.72);color:#d9ffed}
   .timelineScreenClip{background:rgba(170,112,255,.27);border:1px solid rgba(190,145,255,.76);color:#f0e5ff}
+  .timelineCameraClip{background:rgba(61,174,255,.28);border:1px solid rgba(89,196,255,.82);color:#e1f6ff}
+  .timelineCameraClip.isSelected{box-shadow:0 0 0 1px #bceeff,0 0 10px rgba(61,174,255,.5)}
   .timelineLanePlayhead{position:absolute;z-index:5;top:0;bottom:0;width:2px;background:#ff4d5f;box-shadow:0 0 8px rgba(255,60,70,.72);left:0;pointer-events:none}
   .timelineLanePlayhead::before{content:'';position:absolute;top:0;left:-3px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid #ff4d5f}
   #timelineParams{display:none}
@@ -152,6 +154,7 @@ body.rightPanelCollapsed .cloudExpertPanel{right:18px;width:min(390px,calc(100vw
 
   .objectManager{max-height:230px;overflow:auto;border:1px solid #203047;border-radius:12px;background:#080d15;margin-top:10px;padding:8px}
   .omRow{display:flex;gap:8px;align-items:center;justify-content:space-between;border-bottom:1px solid #18263a;padding:6px 2px;font-size:12px;color:#cfe0f8}.omRow:last-child{border-bottom:0}.omRow button{width:auto;margin:0;padding:5px 8px;font-size:11px}.omMeta{color:#7f93ad;font-size:11px}.omSection{margin:8px 0 4px;padding:6px 8px;border-radius:10px;background:#0d1726;color:#75dfff;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}.omSubSection{margin:6px 0 3px;color:#9fb0c6;font-size:11px;font-weight:700}.omChildren{margin:4px 0 8px 10px;padding-left:8px;border-left:2px solid rgba(117,223,255,.28)}.omRow.isSelected{background:rgba(117,223,255,.10);border-radius:8px}.omRow.isGroup{border-color:#243b5c}.omEmpty{padding:8px;color:#7f93ad;font-size:12px}
+  .omRow>div>b{display:flex;align-items:center;gap:6px}.omTypeIcon{display:inline-grid;place-items:center;flex:0 0 16px;width:16px;height:16px;color:var(--object-icon-color)}.omTypeIcon svg{display:block;width:100%;height:100%}.omTypeIcon svg :not([fill="none"]){fill:currentColor}
 
   /* Recording Overlay: DOM-HUD über dem WebGL-Canvas, wird NICHT mit aufgezeichnet. */
   #recordHudOverlay{position:fixed;right:auto;bottom:auto;z-index:80;display:flex;align-items:center;gap:5px;opacity:.82;transition:opacity .16s ease;pointer-events:auto;user-select:none}
@@ -360,8 +363,12 @@ body.audioDockCollapsed #right{
   background:#050607;
   box-shadow:0 16px 38px rgba(0,0,0,.38);
 }
-#workspaceViewport{position:relative;width:var(--stage-view-w);height:var(--stage-view-h);transform-origin:0 0;transform:translate3d(var(--workspace-pan-x,0px),var(--workspace-pan-y,0px),0) scale(var(--workspace-zoom,1));will-change:transform;flex:0 0 auto;cursor:grab}
+#workspaceViewport{position:relative;width:var(--stage-view-w);height:var(--stage-view-h);overflow:hidden;flex:0 0 auto;cursor:default}
 #workspaceViewport #gl{width:100%;height:100%}
+#workspaceViewport #selectionBox{transform:none}
+#workspaceViewport #pathSelectionOverlay{transform-origin:0 0;transform:translate3d(var(--workspace-pan-x,0px),var(--workspace-pan-y,0px),0) scale(var(--workspace-zoom,1))}
+#stageWrap.workspaceCtrlNavigation #workspaceViewport{cursor:grab}
+#stageWrap.workspaceCutting #workspaceViewport,#stageWrap.workspaceCutting #gl{cursor:crosshair}
 #stageWrap.workspaceGrabbing,#stageWrap.workspaceGrabbing *{cursor:grabbing!important;user-select:none}
 #workspaceZoomStatus{position:absolute;z-index:24;left:12px;top:12px;width:auto;min-width:46px;margin:0;padding:4px 7px;border:1px solid #3a4046;border-radius:5px;background:rgba(17,20,23,.88);color:var(--object-icon-color);font-size:10px;font-variant-numeric:tabular-nums;text-align:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 #workspaceZoomStatus:hover{background:#22262a;border-color:#59616a}
@@ -698,6 +705,15 @@ input[type=range],
 .topbarFloatingHeader b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
 .topbarFloatingHeader small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
 .topbarFloatingHeader button{width:30px;height:30px;margin:0;padding:0;font-size:20px;line-height:1;cursor:pointer}
+.topbarFloatingActions{display:flex;align-items:center;gap:6px}
+.topbarFloatingActions button{display:grid;place-items:center}
+.topbarFloatingActions svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:22;stroke-linecap:round;stroke-linejoin:round}
+.topbarRestoreIcon{display:none}
+.topbarFloatingPanel.isMinimized{max-height:none;overflow:hidden}
+.topbarFloatingPanel.isMinimized .topbarFloatingHeader{position:static;border-bottom:0}
+.topbarFloatingPanel.isMinimized .topbarFloatingHeader small,.topbarFloatingPanel.isMinimized .topbarFloatingBody{display:none}
+.topbarFloatingPanel.isMinimized .topbarMinimizeIcon{display:none}
+.topbarFloatingPanel.isMinimized .topbarRestoreIcon{display:block}
 .topbarFloatingBody{padding:10px}
 .topbarFloatingBody>.foldBody{display:block;padding:0}
 .topbarFloatingBody>.foldBody>.panel:last-child{margin-bottom:0}
@@ -711,11 +727,43 @@ input[type=range],
 .objectTimelineFloatingHeader b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
 .objectTimelineFloatingHeader small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
 .objectTimelineFloatingHeader button{width:30px;height:30px;margin:0;padding:0;font-size:20px;line-height:1;cursor:pointer}
+.objectTimelineFloatingActions{display:flex;align-items:center;gap:6px}
+.objectTimelineFloatingActions button{display:grid;place-items:center}
+.objectTimelineFloatingActions svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:22;stroke-linecap:round;stroke-linejoin:round}
+.objectTimelineRestoreIcon{display:none}
+#objectTimelineFloatingPanel.isMinimized{max-height:none;overflow:hidden}
+#objectTimelineFloatingPanel.isMinimized .objectTimelineFloatingHeader{position:static;border-bottom:0}
+#objectTimelineFloatingPanel.isMinimized .objectTimelineFloatingHeader small,#objectTimelineFloatingPanel.isMinimized #objectTimelineFloatingBody{display:none}
+#objectTimelineFloatingPanel.isMinimized .objectTimelineMinimizeIcon{display:none}
+#objectTimelineFloatingPanel.isMinimized .objectTimelineRestoreIcon{display:block}
 #objectTimelineFloatingBody{padding:10px}
 #objectTimelineFloatingBody #timelineParams{display:block!important}
 #objectTimelineFloatingBody #timelineParams>h3{display:none}
 #objectTimelineFloatingBody #timelineDropZone,#objectTimelineFloatingBody #timelineUseSelectedObjectBtn{display:none}
 #objectTimelineFloatingBody #timelineEventObject{pointer-events:none;opacity:.7}
+#cameraTimelinePanel{position:fixed;z-index:125;top:calc(var(--chrome-top) + 18px);right:18px;width:min(430px,calc(100vw - 28px));max-height:calc(100dvh - var(--chrome-top) - 36px);overflow:auto;color:var(--text);background:#171a1d;border:1px solid var(--line);border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,.5)}
+#cameraTimelinePanel[hidden]{display:none}
+.cameraTimelineHeader{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px 9px 14px;background:#171a1d;border-bottom:1px solid var(--line);cursor:move;user-select:none}
+.cameraTimelineHeader b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.cameraTimelineHeader small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+.cameraTimelineHeader button{width:30px;height:30px;margin:0;padding:0;font-size:20px;line-height:1}
+.cameraTimelineBody{padding:12px}
+.cameraViewBlock{margin-top:10px;padding:9px;border:1px solid var(--line-soft);border-radius:6px;background:var(--panel)}
+.cameraViewBlock>b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.cameraViewBlock>span{display:block;margin:4px 0 7px;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+.cameraButtonRow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.cameraButtonRow button{margin:0;padding:7px 5px;font-size:10px}
+.cameraPrimaryRow{grid-template-columns:2fr 1fr;margin-top:10px}
+.cameraCurveBlock>label{display:block;margin:8px 0 4px;color:var(--muted);font-size:10px}
+.cameraCurveBlock select{width:100%;margin:0 0 2px}
+.cameraCurveBlock .row{margin-top:7px}
+#audioSourceTimelinePanel{position:fixed;z-index:126;top:calc(var(--chrome-top) + 26px);right:26px;width:min(390px,calc(100vw - 28px));max-height:calc(100dvh - var(--chrome-top) - 44px);overflow:auto;color:var(--text);background:#171a1d;border:1px solid var(--line);border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,.5)}
+#audioSourceTimelinePanel[hidden]{display:none}
+.audioSourceTimelineHeader{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px 9px 14px;background:#171a1d;border-bottom:1px solid var(--line);cursor:move;user-select:none}
+.audioSourceTimelineHeader b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.audioSourceTimelineHeader small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+.audioSourceTimelineHeader button{width:30px;height:30px;margin:0;padding:0;font-size:20px;line-height:1}
+.audioSourceTimelineBody{padding:12px}
 #audioFloatingPanel{
   position:fixed;top:calc(var(--chrome-top) + 18px);right:18px;z-index:120;
   width:min(380px,calc(100vw - 28px));max-height:calc(100dvh - var(--chrome-top) - 36px);

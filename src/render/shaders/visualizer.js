@@ -1,3 +1,74 @@
 // VSE visualizerProg shader module. Classic script loaded before the main app script.
-const VSE_VISUALIZER_VERTEX_SHADER = "\nattribute vec2 aPos;\nvoid main(){gl_Position=vec4(aPos,0.0,1.0);}\n";
-const VSE_VISUALIZER_FRAGMENT_SHADER = "precision highp float;\nuniform vec2 uPixelRes;\nuniform vec2 uCssRes;\nuniform vec2 uOriginCss;\nuniform vec2 uSizeCss;\nuniform float uRot;\nuniform float uOpacity;\nuniform vec3 uKeyColor;\nuniform float uSelected;\nuniform float uBars;\nuniform float uGap;\nuniform sampler2D uData;\nuniform float uHasOverlay;\nuniform float uOverlayFreq;\nuniform float uOverlayThreshold;\nconst float TEX_W=128.0;\nfloat sat(float x){return clamp(x,0.0,1.0);} \nfloat box(vec2 p, vec2 b){vec2 d=abs(p)-b;return length(max(d,0.0))+min(max(d.x,d.y),0.0);} \nfloat logPos(float f){return clamp(log(max(f,20.0)/20.0)/log(20000.0/20.0),0.0,1.0);} \nvec3 over(vec3 base, vec3 col, float a){return mix(base,col,sat(a));}\nvoid main(){\n  vec2 fragCss=vec2(gl_FragCoord.x/max(uPixelRes.x,1.0)*uCssRes.x,(1.0-gl_FragCoord.y/max(uPixelRes.y,1.0))*uCssRes.y);\n  vec2 p=fragCss-uOriginCss;\n  float ca=cos(-uRot), sa=sin(-uRot);\n  vec2 q=vec2(p.x*ca-p.y*sa,p.x*sa+p.y*ca);\n  vec2 halfSize=max(uSizeCss*0.5,vec2(1.0));\n  float d=box(q,halfSize);\n  if(d>8.0){discard;}\n  float edge=1.0-smoothstep(-1.0,7.0,d);\n  vec3 col=vec3(0.01,0.018,0.012);\n  float alpha=0.46*uOpacity*edge;\n  float pad=max(4.0,min(uSizeCss.x,uSizeCss.y)*0.045);\n  vec2 inner=max(uSizeCss-vec2(pad*2.0),vec2(1.0));\n  vec2 iq=q;\n  bool insideInner=(abs(iq.x)<=inner.x*0.5 && abs(iq.y)<=inner.y*0.5);\n\n  if(insideInner){\n    // Blaues Frequenzband des ausgewählten Objekts.\n    if(uHasOverlay>0.5){\n      float cFreq=clamp(uOverlayFreq,20.0,20000.0);\n      float lo=clamp(cFreq/1.41421356,20.0,20000.0);\n      float hi=clamp(cFreq*1.41421356,20.0,20000.0);\n      float lx=-inner.x*0.5+logPos(lo)*inner.x;\n      float hx=-inner.x*0.5+logPos(hi)*inner.x;\n      float mn=min(lx,hx), mx=max(lx,hx);\n      float inBand=step(mn,iq.x)*step(iq.x,mx);\n      col=over(col,vec3(0.05,0.48,1.0),inBand*0.28*uOpacity);\n      alpha=max(alpha,inBand*0.18*uOpacity);\n      float cx=-inner.x*0.5+logPos(cFreq)*inner.x;\n      float centerLine=1.0-smoothstep(1.0,2.6,abs(iq.x-cx));\n      col=over(col,vec3(0.18,0.72,1.0),centerLine*0.62*uOpacity);\n      alpha=max(alpha,centerLine*0.55*uOpacity);\n    }\n\n    float stepW=inner.x/max(uBars,1.0);\n    float barFloat=(iq.x+inner.x*0.5)/stepW;\n    float idx=floor(barFloat);\n    float frac=fract(barFloat);\n    float barW=1.0-uGap;\n    float gapHalf=(1.0-barW)*0.5;\n    float inBar=step(gapHalf,frac)*step(frac,1.0-gapHalf)*step(0.0,idx)*step(idx,uBars-0.001);\n    vec4 data=texture2D(uData,vec2((idx+0.5)/TEX_W,0.5));\n    float level=data.r;\n    float peak=data.g;\n    float avg=data.b;\n    float fromBottom=inner.y*0.5-iq.y;\n    float normY=sat(fromBottom/max(inner.y,1.0));\n    float filled=inBar*step(normY,level);\n    vec3 green=vec3(0.10,1.00,0.18);\n    vec3 yellow=vec3(1.00,0.93,0.16);\n    vec3 red=vec3(1.00,0.16,0.06);\n    vec3 barCol=green;\n    barCol=mix(barCol,yellow,smoothstep(0.58,0.68,normY));\n    barCol=mix(barCol,red,smoothstep(0.82,0.90,normY));\n    col=over(col,barCol,filled*(0.95*uOpacity));\n    alpha=max(alpha,filled*0.95*uOpacity);\n\n    // feiner Lichtstrich am Live-Pegel\n    float liveLine=inBar*(1.0-smoothstep(1.0,2.8,abs(fromBottom-level*inner.y)))*step(0.025,level);\n    col=over(col,vec3(0.85,1.0,0.65),liveLine*0.30*uOpacity);\n    alpha=max(alpha,liveLine*0.22*uOpacity);\n\n    // Weißer Durchschnittspegel je Frequenzbalken.\n    float avgLine=inBar*(1.0-smoothstep(1.0,2.6,abs(fromBottom-avg*inner.y)));\n    col=over(col,vec3(1.0),avgLine*0.95*uOpacity);\n    alpha=max(alpha,avgLine*0.92*uOpacity);\n\n    // Roter Peak-Marker je Frequenzbalken.\n    float peakLine=inBar*(1.0-smoothstep(1.0,3.2,abs(fromBottom-peak*inner.y)))*step(0.012,peak);\n    col=over(col,vec3(1.0,0.04,0.02),peakLine*0.98*uOpacity);\n    alpha=max(alpha,peakLine*0.95*uOpacity);\n\n    // Horizontale blaue Schwelle / Musikempfindlichkeit des ausgewählten Objekts.\n    if(uHasOverlay>0.5){\n      float thresholdLine=1.0-smoothstep(1.2,3.2,abs(fromBottom-sat(uOverlayThreshold)*inner.y));\n      col=over(col,vec3(0.12,0.62,1.0),thresholdLine*0.90*uOpacity);\n      alpha=max(alpha,thresholdLine*0.88*uOpacity);\n    }\n  }\n\n  // Rahmen inklusive Auswahlmarkierung.\n  float bx=halfSize.x, by=halfSize.y;\n  float frame=max(1.0-smoothstep(1.2,3.2,abs(abs(q.x)-bx)),1.0-smoothstep(1.2,3.2,abs(abs(q.y)-by)));\n  frame*=step(abs(q.x),bx+2.5)*step(abs(q.y),by+2.5);\n  float frameA=frame*(0.28+uSelected*0.44)*uOpacity;\n  col=over(col,vec3(0.38,1.0,0.42),frameA);\n  alpha=max(alpha,frameA);\n  if(alpha<0.003){discard;}\n  gl_FragColor=vec4(col*alpha,alpha);\n}";
+const VSE_VISUALIZER_VERTEX_SHADER=`
+attribute vec2 aPos;
+void main(){gl_Position=vec4(aPos,0.0,1.0);}
+`;
+const VSE_VISUALIZER_FRAGMENT_SHADER=`
+precision highp float;
+uniform vec2 uPixelRes,uCssRes,uOriginCss,uSizeCss;
+uniform float uRot,uOpacity,uSelected,uBars,uGap,uSegmentsEnabled,uSegmentCount,uSegmentGap;
+uniform vec3 uBackgroundColor,uLowColor,uMidColor,uHighColor,uAverageColor,uPeakColor,uFrameColor;
+uniform sampler2D uData;
+uniform float uHasOverlay,uOverlayFreq,uOverlayThreshold;
+const float TEX_W=128.0;
+float sat(float x){return clamp(x,0.0,1.0);}
+float box(vec2 p,vec2 b){vec2 d=abs(p)-b;return length(max(d,0.0))+min(max(d.x,d.y),0.0);}
+float logPos(float f){return clamp(log(max(f,20.0)/20.0)/log(20000.0/20.0),0.0,1.0);}
+vec3 over(vec3 base,vec3 col,float a){return mix(base,col,sat(a));}
+void main(){
+  vec2 fragCss=vec2(gl_FragCoord.x/max(uPixelRes.x,1.0)*uCssRes.x,(1.0-gl_FragCoord.y/max(uPixelRes.y,1.0))*uCssRes.y);
+  vec2 p=fragCss-uOriginCss;
+  float ca=cos(-uRot),sa=sin(-uRot);
+  vec2 q=vec2(p.x*ca-p.y*sa,p.x*sa+p.y*ca);
+  vec2 halfSize=max(uSizeCss*.5,vec2(1.0));
+  float d=box(q,halfSize);
+  if(d>8.0)discard;
+  float edge=1.0-smoothstep(-1.0,7.0,d);
+  vec3 col=uBackgroundColor;
+  float alpha=.46*uOpacity*edge;
+  float pad=max(4.0,min(uSizeCss.x,uSizeCss.y)*.045);
+  vec2 inner=max(uSizeCss-vec2(pad*2.0),vec2(1.0));
+  vec2 iq=q;
+  bool insideInner=abs(iq.x)<=inner.x*.5&&abs(iq.y)<=inner.y*.5;
+  if(insideInner){
+    if(uHasOverlay>.5){
+      float cFreq=clamp(uOverlayFreq,20.0,20000.0);
+      float lo=clamp(cFreq/1.41421356,20.0,20000.0),hi=clamp(cFreq*1.41421356,20.0,20000.0);
+      float lx=-inner.x*.5+logPos(lo)*inner.x,hx=-inner.x*.5+logPos(hi)*inner.x;
+      float inBand=step(min(lx,hx),iq.x)*step(iq.x,max(lx,hx));
+      col=over(col,vec3(.05,.48,1.0),inBand*.28*uOpacity);alpha=max(alpha,inBand*.18*uOpacity);
+      float cx=-inner.x*.5+logPos(cFreq)*inner.x;
+      float centerLine=1.0-smoothstep(1.0,2.6,abs(iq.x-cx));
+      col=over(col,vec3(.18,.72,1.0),centerLine*.62*uOpacity);alpha=max(alpha,centerLine*.55*uOpacity);
+    }
+    float stepW=inner.x/max(uBars,1.0),barFloat=(iq.x+inner.x*.5)/stepW;
+    float idx=floor(barFloat),frac=fract(barFloat),gapHalf=uGap*.5;
+    float inBar=step(gapHalf,frac)*step(frac,1.0-gapHalf)*step(0.0,idx)*step(idx,uBars-.001);
+    vec4 data=texture2D(uData,vec2((idx+.5)/TEX_W,.5));
+    float level=data.r,peak=data.g,avg=data.b;
+    float fromBottom=inner.y*.5-iq.y,normY=sat(fromBottom/max(inner.y,1.0));
+    float segmentCell=fract(normY*max(uSegmentCount,1.0));
+    float segmentMask=step(uSegmentGap*.5,segmentCell)*step(segmentCell,1.0-uSegmentGap*.5);
+    float filled=inBar*step(normY,level)*mix(1.0,segmentMask,step(.5,uSegmentsEnabled));
+    vec3 barCol=mix(uLowColor,uMidColor,smoothstep(.58,.68,normY));
+    barCol=mix(barCol,uHighColor,smoothstep(.82,.90,normY));
+    col=over(col,barCol,filled*.95*uOpacity);alpha=max(alpha,filled*.95*uOpacity);
+    float liveLine=inBar*(1.0-smoothstep(1.0,2.8,abs(fromBottom-level*inner.y)))*step(.025,level);
+    col=over(col,mix(uMidColor,vec3(1.0),.55),liveLine*.30*uOpacity);alpha=max(alpha,liveLine*.22*uOpacity);
+    float avgLine=inBar*(1.0-smoothstep(1.0,2.6,abs(fromBottom-avg*inner.y)));
+    col=over(col,uAverageColor,avgLine*.95*uOpacity);alpha=max(alpha,avgLine*.92*uOpacity);
+    float peakLine=inBar*(1.0-smoothstep(1.0,3.2,abs(fromBottom-peak*inner.y)))*step(.012,peak);
+    col=over(col,uPeakColor,peakLine*.98*uOpacity);alpha=max(alpha,peakLine*.95*uOpacity);
+    if(uHasOverlay>.5){
+      float thresholdLine=1.0-smoothstep(1.2,3.2,abs(fromBottom-sat(uOverlayThreshold)*inner.y));
+      col=over(col,vec3(.12,.62,1.0),thresholdLine*.90*uOpacity);alpha=max(alpha,thresholdLine*.88*uOpacity);
+    }
+  }
+  float bx=halfSize.x,by=halfSize.y;
+  float frame=max(1.0-smoothstep(1.2,3.2,abs(abs(q.x)-bx)),1.0-smoothstep(1.2,3.2,abs(abs(q.y)-by)));
+  frame*=step(abs(q.x),bx+2.5)*step(abs(q.y),by+2.5);
+  float frameA=frame*(.28+uSelected*.44)*uOpacity;
+  col=over(col,uFrameColor,frameA);alpha=max(alpha,frameA);
+  if(alpha<.003)discard;
+  gl_FragColor=vec4(col*alpha,alpha);
+}`;

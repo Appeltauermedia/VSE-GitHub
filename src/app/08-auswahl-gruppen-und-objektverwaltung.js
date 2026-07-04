@@ -31,6 +31,16 @@ function objectTypeLabel(t){
   return ({light:'Lichtemitter',lightbar:'Lightbars',fog:'Nebelemitter',cloud:'Wolken',screen:'Screens',text:'Texte',waterSurface:'WaterSurface',waterFlowOverlay:'WaterFlowOverlay',mandalaVisualizer:'MandalaVisualizer',particle:'Partikeleffekte',visualizer:'Visualizer',imageParticle:'Image-to-Particle',greenscreen:'Greenscreen',imageAsset:'ImageAssets',audioSource:'AudioSources'})[t]||t||'Objekt';
 }
 function objectShortName(o){return (o&&o.name)||objectTypeLabel(o&&o.type)||'Objekt';}
+const objectManagerTypeIcons=new Map();
+function objectTypeIconMarkup(type){
+  if(!objectManagerTypeIcons.has(type)){
+    const tool=Array.from(document.querySelectorAll('#objectPalette .tool[data-type]')).find(el=>el.dataset.type===type);
+    const icon=tool&&tool.querySelector('.ico');
+    objectManagerTypeIcons.set(type,icon?icon.innerHTML:'');
+  }
+  const svg=objectManagerTypeIcons.get(type);
+  return svg?`<span class="omTypeIcon" aria-hidden="true">${svg}</span>`:'';
+}
 function selectObjectFromManager(oid){
   selectedIds.clear();
   selected=objects.find(o=>o.id===oid)||null;
@@ -48,7 +58,7 @@ function updateObjectManager(){
   if(!objectManager)return;
   if(!objects.length){objectManager.innerHTML='<div class="omEmpty">Noch keine Objekte.</div>';return;}
   const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const typeOrder=['light','lightbar','movinghead','fog','cloud','screen','waterSurface','waterFlowOverlay','mandalaVisualizer','imageAsset','audioSource','greenscreen','particle','visualizer','imageParticle'];
+  const typeOrder=['light','lightbar','movinghead','fog','cloud','screen','text','waterSurface','waterFlowOverlay','mandalaVisualizer','imageAsset','audioSource','greenscreen','particle','visualizer','imageParticle'];
   const selectedGroupId=selected&&selected.groupId?selected.groupId:null;
   const knownGroupIds=[...new Set(objects.map(o=>o.groupId).filter(Boolean))];
   let html='';
@@ -68,7 +78,7 @@ function updateObjectManager(){
           if(!items.length)continue;
           html+=`<div class="omSubSection">${esc(objectTypeLabel(t))}</div>`;
           for(const o of items){
-            html+=`<div class="omRow ${selectedIds.has(o.id)?'isSelected':''}"><div><b>${esc(objectShortName(o))}</b><div class="omMeta">Layer ${Number(o.layer??1)} · ${esc(o.id)}</div></div><button type="button" data-oid="${esc(o.id)}">Auswählen</button></div>`;
+            html+=`<div class="omRow ${selectedIds.has(o.id)?'isSelected':''}"><div><b>${objectTypeIconMarkup(o.type)}${esc(objectShortName(o))}</b><div class="omMeta">Layer ${Number(o.layer??1)} · ${esc(o.id)}</div></div><button type="button" data-oid="${esc(o.id)}">Auswählen</button></div>`;
           }
         }
         html+='</div>';
@@ -85,7 +95,7 @@ function updateObjectManager(){
     html+=`<div class="omSubSection">${esc(objectTypeLabel(t))} · ${arr.length}</div>`;
     for(const o of arr){
       const gtxt=o.groupId?` · Gruppe: ${o.groupName||o.groupId}`:'';
-      html+=`<div class="omRow ${selectedIds.has(o.id)?'isSelected':''}"><div><b>${esc(objectShortName(o))}</b><div class="omMeta">Layer ${Number(o.layer??1)}${esc(gtxt)}</div></div><button type="button" data-oid="${esc(o.id)}">Auswählen</button></div>`;
+      html+=`<div class="omRow ${selectedIds.has(o.id)?'isSelected':''}"><div><b>${objectTypeIconMarkup(o.type)}${esc(objectShortName(o))}</b><div class="omMeta">Layer ${Number(o.layer??1)}${esc(gtxt)}</div></div><button type="button" data-oid="${esc(o.id)}">Auswählen</button></div>`;
     }
   }
   if(!anyType)html+='<div class="omEmpty">Keine verwaltbaren Objekte gefunden.</div>';
@@ -117,19 +127,42 @@ function beginWaterDrawFromPalette(type){
   updateObjectManager();
   if(selectionBox)selectionBox.style.display='none';
 }
+function spawnPaletteObject(type,x=50,y=50,particleMode='free'){
+  if(!type||isWaterPaletteType(type))return null;
+  const o=newObj(type,x,y);
+  applyTypeDefaults(o,type);
+  if(o.type==='text')o.name='Text_'+id;
+  if(o.type==='particle'){
+    const mode=particleMode||'free';
+    Object.assign(o,particlePresetDefaults(mode));
+    o.particleMode=mode;o.name=mode+'_partikel_'+id;
+  }
+  if(o.type==='imageAsset')o.name='ImageAsset_'+id;
+  if(o.type==='mandalaVisualizer')o.name='MandalaVisualizer_'+id;
+  if(o.type==='audioSource')o.name='AudioSource_'+id;
+  objects.push(o);
+  select(o);
+  if(typeof updateTimelineObjectOptions==='function')updateTimelineObjectOptions();
+  return o;
+}
 document.querySelectorAll('.tool').forEach(t=>{
   if(isWaterPaletteType(t.dataset.type)){t.draggable=false;t.setAttribute('title','Anklicken, Form rechts wählen, dann Wasserfläche auf der Arbeitsfläche zeichnen.');}
   t.addEventListener('dragstart',e=>{draggedType=t.dataset.type;draggedParticleMode=t.dataset.particleMode||'free';if(isWaterPaletteType(draggedType)){e.preventDefault();return;}e.dataTransfer.setData('text/plain',draggedType);e.dataTransfer.setData('particle-mode',draggedParticleMode);});
   t.addEventListener('pointerdown',e=>{const type=t.dataset.type;if(isWaterPaletteType(type)){e.preventDefault();e.stopPropagation();beginWaterDrawFromPalette(type);}});
-  t.addEventListener('dblclick',()=>{if(t.dataset.type!=='cloud')return;const o=newObj('cloud',50,50);objects.push(o);select(o);if(typeof updateTimelineObjectOptions==='function')updateTimelineObjectOptions();});
+  t.addEventListener('dblclick',e=>{
+    const type=t.dataset.type;
+    if(!t.draggable||!type||isWaterPaletteType(type))return;
+    e.preventDefault();
+    spawnPaletteObject(type,50,50,t.dataset.particleMode||'free');
+  });
 });
-canvas.addEventListener('dragover',e=>e.preventDefault());canvas.addEventListener('drop',e=>{e.preventDefault();const r=canvas.getBoundingClientRect();let type=e.dataTransfer.getData('text/plain')||draggedType;if(isWaterPaletteType(type))return;const o=newObj(type,(e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100);if(o.type==='text'){applyTypeDefaults(o,'text');o.name='Text_'+id;}if(o.type==='particle'){const mode=e.dataTransfer.getData('particle-mode')||draggedParticleMode||'free';Object.assign(o,particlePresetDefaults(mode));o.particleMode=mode;o.name=mode+'_partikel_'+id;}
-if(o.type==='imageAsset'){o.name='ImageAsset_'+id;}
-if(o.type==='waterSurface'){o.name='WaterSurface_'+id;}
-if(o.type==='waterFlowOverlay'){o.name='WaterFlow_'+id;}
-if(o.type==='mandalaVisualizer'){o.name='MandalaVisualizer_'+id;}
-  if(o.type==='audioSource'){o.name='AudioSource_'+id;}
-objects.push(o);select(o);});
+canvas.addEventListener('dragover',e=>e.preventDefault());canvas.addEventListener('drop',e=>{
+  e.preventDefault();
+  const r=canvas.getBoundingClientRect();
+  const type=e.dataTransfer.getData('text/plain')||draggedType;
+  const mode=e.dataTransfer.getData('particle-mode')||draggedParticleMode||'free';
+  spawnPaletteObject(type,(e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100,mode);
+});
 function hit(mx,my){for(let i=objects.length-1;i>=0;i--){const o=objects[i];const sx=objCssX(o),sy=objCssY(o);if(o.type==='cloud'){const dx=mx-sx,dy=my-sy,a=-(Number(o.rotation||0))*Math.PI/180,qx=dx*Math.cos(a)-dy*Math.sin(a),qy=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(qx)<=su(o.size||180)*1.125&&Math.abs(qy)<=su(o.size||180)*.625)return o;}if(o.type==='screen'){const dx=mx-sx,dy=my-sy;const a=-(Number(o.rotation||0))*Math.PI/180;const qx=dx*Math.cos(a)-dy*Math.sin(a), qy=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(qx)<=su(o.screenWidth||260)/2+8*stageScale() && Math.abs(qy)<=su(o.screenHeight||120)/2+8*stageScale())return o;}if(o.type==='imageAsset'){const dx=mx-sx,dy=my-sy;const a=-(Number(o.rotation||0))*Math.PI/180;const qx=dx*Math.cos(a)-dy*Math.sin(a), qy=dx*Math.sin(a)+dy*Math.cos(a);const ps=imageAssetRenderSize(o);if(Math.abs(qx)<=su(ps.w)/2+8*stageScale() && Math.abs(qy)<=su(ps.h)/2+8*stageScale())return o;}if(isWaterObject(o)){const dx=mx-sx,dy=my-sy;const a=-(Number(o.rotation||0))*Math.PI/180;const qx=dx*Math.cos(a)-dy*Math.sin(a), qy=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(qx)<=su(o.waterWidth||420)/2+8*stageScale() && Math.abs(qy)<=su(o.waterHeight||180)/2+8*stageScale())return o;}if(o.type==='mandalaVisualizer'){const dx=mx-sx,dy=my-sy;const a=-(Number(o.rotation||0))*Math.PI/180;const qx=dx*Math.cos(a)-dy*Math.sin(a), qy=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(qx)<=su(o.mandalaObjWidth||420)/2+8*stageScale() && Math.abs(qy)<=su(o.mandalaObjHeight||420)/2+8*stageScale())return o;}if(o.type==='visualizer'){const dx=mx-sx,dy=my-sy;const a=-(Number(o.rotation||0))*Math.PI/180;const qx=dx*Math.cos(a)-dy*Math.sin(a), qy=dx*Math.sin(a)+dy*Math.cos(a);if(Math.abs(qx)<=su(o.visualizerWidth||520)/2+8*stageScale() && Math.abs(qy)<=su(o.visualizerHeight||180)/2+8*stageScale())return o;}if(o.type==='greenscreen'){const dx=mx-sx,dy=my-sy;const a=-(Number(o.rotation||0))*Math.PI/180;const qx=dx*Math.cos(a)-dy*Math.sin(a), qy=dx*Math.sin(a)+dy*Math.cos(a);const gs=getGreenscreenRenderSize(o);if(Math.abs(qx)<=gs.w/2+8*stageScale() && Math.abs(qy)<=gs.h/2+8*stageScale())return o;}if(Math.hypot(mx-sx,my-sy)<Math.max(16*stageScale(),su(o.size)*.32))return o;}return null;}
 const hitWithoutTextObjects=hit;
 hit=function(mx,my){
@@ -143,10 +176,13 @@ hit=function(mx,my){
 };
 function setSelectionBoxFromCanvasRect(x,y,w,h){
   if(!selectionBox)return;
-  selectionBox.style.left=x+'px';
-  selectionBox.style.top=y+'px';
-  selectionBox.style.width=w+'px';
-  selectionBox.style.height=h+'px';
+  const rect=typeof window.workspaceCanvasRectToViewportRect==='function'
+    ? window.workspaceCanvasRectToViewportRect(x,y,w,h)
+    : {x,y,w,h};
+  selectionBox.style.left=rect.x+'px';
+  selectionBox.style.top=rect.y+'px';
+  selectionBox.style.width=rect.w+'px';
+  selectionBox.style.height=rect.h+'px';
 }
 function hidePathSelectionOverlay(){
   if(!pathSelectionOverlay)return;
@@ -364,6 +400,8 @@ function stopRecordingTimer(){
 }
 function preferredRecordingMime(){
   const types=[
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp8,opus',
     'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
     'video/webm'
@@ -383,26 +421,27 @@ function startRecording(){
     const tracks=[...canvasStream.getVideoTracks()];
     let audioTrackCount=0;
 
-    if(audioState.enabled&&audioCtx){
-      ensureAudio();
-      if(audioCtx.state==='suspended') audioCtx.resume().catch(()=>{});
-      if(recordingAudioDest&&recordingAudioDest.stream){
-        const audioTracks=recordingAudioDest.stream.getAudioTracks();
-        audioTrackCount=audioTracks.length;
-        tracks.push(...audioTracks);
-      }
+    // Das Recording-Ziel muss beim Start immer existieren. Timeline-Audio kann
+    // aktiv und hoerbar sein, ohne zugleich den Analyse-Backbone zu aktivieren.
+    const recordingCtx=ensureAudio();
+    if(recordingCtx&&recordingCtx.state==='suspended') recordingCtx.resume().catch(()=>{});
+    if(recordingAudioDest&&recordingAudioDest.stream){
+      const audioTracks=recordingAudioDest.stream.getAudioTracks();
+      audioTrackCount=audioTracks.length;
+      tracks.push(...audioTracks);
     }
 
     const stream=new MediaStream(tracks);
     const mime=preferredRecordingMime();
     recordingChunks=[];
     recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:12000000,audioBitsPerSecond:192000}:{videoBitsPerSecond:12000000,audioBitsPerSecond:192000});
+    const recordingMime=recorder.mimeType||mime||'video/webm';
     recordingStartedAt=performance.now();
     recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recordingChunks.push(e.data);};
     recorder.onerror=e=>{setRecordingStatus('Recording-Fehler: '+(e.error&&e.error.message?e.error.message:'unbekannt'));};
     recorder.onstop=()=>{
       try{canvasStream.getTracks().forEach(t=>t.stop());}catch(e){}
-      const blob=new Blob(recordingChunks,{type:mime||'video/webm'});
+      const blob=new Blob(recordingChunks,{type:recordingMime});
       recordingChunks=[];
       const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
       const url=URL.createObjectURL(blob);

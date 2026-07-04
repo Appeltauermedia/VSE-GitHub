@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Virtual Scene Engine</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260703-zoom-ten-percent-reset">
+<link rel="stylesheet" href="src/styles/main.css?v=20260704-audiosource-timeline-menu">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
@@ -35,9 +35,10 @@ Was wurde bewusst nicht veraendert?
 <script src="src/render/shaders/greenscreen.js?v=20260628-chroma-toggle-2"></script>
 <script src="src/render/shaders/greenscreenShadow.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/imageAsset.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/visualizer.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/visualizer.js?v=20260704-hifi-segments"></script>
 <script src="src/render/shaders/beam.js?v=20260627-rectangle-emission-modes"></script>
 <script src="src/render/shaders/vrPlane.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/sceneView.js?v=20260704-scene-camera"></script>
 <script src="src/render/shaders/shape.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/shadow.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/ipm.js?v=20260624-scene-dot"></script>
@@ -236,7 +237,7 @@ Was wurde bewusst nicht veraendert?
       <div class="tool" draggable="true" data-type="particle" data-particle-mode="free"><b><span class="ico"><svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256"><path d="M84.27,171.73l-55.09-20.3a7.92,7.92,0,0,1,0-14.86l55.09-20.3,20.3-55.09a7.92,7.92,0,0,1,14.86,0l20.3,55.09,55.09,20.3a7.92,7.92,0,0,1,0,14.86l-55.09,20.3-20.3,55.09a7.92,7.92,0,0,1-14.86,0Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="176" y1="16" x2="176" y2="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="224" y1="72" x2="224" y2="104" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="152" y1="40" x2="200" y2="40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/><line x1="208" y1="88" x2="240" y2="88" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="24"/></svg></span><span class="txt">Partikel</span></b><small>Universelles Partikelobjekt. Der genaue Effekt wird nach dem Platzieren rechts im Objektmenü ausgewählt.</small></div>
     </div>
     <div id="timelineDock" aria-label="Timeline">
-      <div class="timelineTop"><span><b>Timeline</b> · Drei-Spur-Editor</span><span class="timelineTime"><span id="timelineCurrentTime">00:00.00</span> / <span id="timelineTotalTime">03:00.00</span></span></div>
+      <div class="timelineTop"><span><b>Timeline</b> · Vier-Spur-Editor</span><span class="timelineTime"><span id="timelineCurrentTime">00:00.00</span> / <span id="timelineTotalTime">03:00.00</span></span></div>
       <div id="timelineMediaControls" class="timelineMediaRow" title="Master-Steuerung für alle Timeline-Spuren">
         <button id="timelineMediaPlayBtn" class="timelineMediaBtn" type="button" title="Play/Pause">▶</button>
         <button id="timelineMediaStopBtn" class="timelineMediaBtn redMini" type="button" title="Stop">■</button>
@@ -257,6 +258,10 @@ Was wurde bewusst nicht veraendert?
         <div class="timelineTrack timelineTrackObjects">
           <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddObjectBtn" class="timelineAddBtn" type="button" title="Objekt-Event an aktueller Position vorbereiten" aria-label="Objekt-Event hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Objekte</b></div><span>Events / Parameter</span></div>
           <div id="timelineBar" class="timelineLane"><div id="timelineTicks" class="timelineTicks"></div><div id="timelineEvents" class="timelineClips"></div><div id="timelinePlayhead" class="timelineLanePlayhead"></div></div>
+        </div>
+        <div class="timelineTrack timelineTrackCamera">
+          <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddCameraBtn" class="timelineAddBtn" type="button" title="Kamerafahrt hinzufügen" aria-label="Kamerafahrt hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Kamera</b></div><span>Startausschnitt → Endausschnitt</span></div>
+          <div id="timelineCameraBar" class="timelineLane"><div class="timelineTicks"></div><div id="timelineCameraClips" class="timelineClips"></div><div id="timelineCameraPlayhead" class="timelineLanePlayhead"></div></div>
         </div>
       </div>
       <input id="timelineAudioFileInput" class="timelineHiddenFile" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac,.webm">
@@ -517,7 +522,7 @@ Was wurde bewusst nicht veraendert?
         <div class="row"><div><label>Scale: <span id="waterFoamScaleValue">1.50</span></label><input id="pWaterFoamScale" type="range" min="0.1" max="10" step="0.01"></div><div><label>Opacity: <span id="waterFoamOpacityValue">0.35</span></label><input id="pWaterFoamOpacity" type="range" min="0" max="1" step="0.01"></div></div>
       </div>
 <div class="type-visualizer-only panel" style="margin-top:12px">
-        <div class="mini"><b>Visualizer</b><br>Frequenzbalkenvisualizer mit logarithmischer Frequenzverteilung von 20 Hz bis 20 kHz. Farbverlauf im Vintage-Stil: Grün unten, Gelb im oberen Bereich, Rot bei hohen Pegeln. Ausgewählte Objektfrequenz = blaues Band, Objekt-Reaktionsschwelle/Musikempfindlichkeit = horizontaler blauer Strich, Durchschnittspegel je Balken = weißer Strich.</div>
+        <div class="mini"><b>Visualizer</b><br>Frequenzbalkenvisualizer mit logarithmischer Frequenzverteilung von 20 Hz bis 20 kHz. Farbverlauf, Hintergrund, Marker und Rahmen sind frei konfigurierbar. Ausgewählte Objektfrequenz = blaues Band, Objekt-Reaktionsschwelle/Musikempfindlichkeit = horizontaler blauer Strich.</div>
       </div>
       <div class="type-visualizer-only"><label>Visualizer-Modus</label><select id="pVisualizerMode"><option value="freqBars">Frequenzbalken · Vintage</option></select></div>
       <div class="type-visualizer-only row"><div><label>Visualizer-Breite: <span id="visualizerWidthValue">520</span></label><input id="pVisualizerWidth" type="range" min="80" max="1600" step="1"></div><div><label>Visualizer-Höhe: <span id="visualizerHeightValue">180</span></label><input id="pVisualizerHeight" type="range" min="40" max="700" step="1"></div></div>
@@ -526,6 +531,18 @@ Was wurde bewusst nicht veraendert?
       <div class="type-visualizer-only"><label>Balkenabstand: <span id="visualizerGapValue">0.25</span></label><input id="pVisualizerGap" type="range" min="0" max="0.6" step="0.01"></div>
       <div class="type-visualizer-only"><label>Visualizer-Transparenz: <span id="visualizerOpacityValue">0.95</span></label><input id="pVisualizerOpacity" type="range" min="0" max="1" step="0.01"></div>
       <div class="type-visualizer-only"><label>Peak-Haltezeit: <span id="visualizerPeakHoldValue">30</span> s</label><input id="pVisualizerPeakHold" type="range" min="0" max="240" step="1"></div>
+      <div class="type-visualizer-only panel" style="margin-top:12px">
+        <h3>HiFi-Rechtecksegmente</h3>
+        <label><input id="pVisualizerSegmentsEnabled" type="checkbox"> Balken als LED-Rechtecksegmente darstellen</label>
+        <div class="row"><div><label>Segmentanzahl: <span id="visualizerSegmentCountValue">16</span></label><input id="pVisualizerSegmentCount" type="range" min="4" max="48" step="1" value="16"></div><div><label>Segmentabstand: <span id="visualizerSegmentGapValue">0.18</span></label><input id="pVisualizerSegmentGap" type="range" min="0" max="0.7" step="0.01" value="0.18"></div></div>
+      </div>
+      <div class="type-visualizer-only panel" style="margin-top:12px">
+        <h3>Visualizer-Farben</h3>
+        <div class="row"><div><label>Hintergrund</label><input id="pVisualizerBackgroundColor" type="color" value="#030503"></div><div><label>Niedriger Pegel</label><input id="pVisualizerLowColor" type="color" value="#1aff2e"></div></div>
+        <div class="row"><div><label>Mittlerer Pegel</label><input id="pVisualizerMidColor" type="color" value="#ffed29"></div><div><label>Hoher Pegel</label><input id="pVisualizerHighColor" type="color" value="#ff290f"></div></div>
+        <div class="row"><div><label>Durchschnittslinie</label><input id="pVisualizerAverageColor" type="color" value="#ffffff"></div><div><label>Peak-Marker</label><input id="pVisualizerPeakColor" type="color" value="#ff0a05"></div></div>
+        <label>Rahmen</label><input id="pVisualizerFrameColor" type="color" value="#61ff6b">
+      </div>
 
       <div class="type-mandala-only panel" style="margin-top:12px">
         <h3>Mandala Visualizer</h3>
@@ -783,7 +800,13 @@ Was wurde bewusst nicht veraendert?
     <section id="objectTimelineFloatingPanel" hidden aria-label="Timelineeinstellungen für das ausgewählte Objekt">
       <div id="objectTimelineFloatingHeader" class="objectTimelineFloatingHeader">
         <div><b>Timelineeinstellungen</b><small id="objectTimelineFloatingSubtitle">Kein Objekt ausgewählt</small></div>
-        <button id="objectTimelineFloatingClose" type="button" title="Timelineeinstellungen schließen" aria-label="Timelineeinstellungen schließen">×</button>
+        <div class="objectTimelineFloatingActions">
+          <button id="objectTimelineFloatingMinimize" type="button" title="Timelineeinstellungen minimieren" aria-label="Timelineeinstellungen minimieren" aria-pressed="false">
+            <svg class="objectTimelineMinimizeIcon" viewBox="0 0 256 256" aria-hidden="true"><line x1="48" y1="128" x2="208" y2="128"></line></svg>
+            <svg class="objectTimelineRestoreIcon" viewBox="0 0 256 256" aria-hidden="true"><polyline points="160 48 208 48 208 96"></polyline><line x1="152" y1="104" x2="208" y2="48"></line><polyline points="96 208 48 208 48 160"></polyline><line x1="104" y1="152" x2="48" y2="208"></line></svg>
+          </button>
+          <button id="objectTimelineFloatingClose" type="button" title="Timelineeinstellungen schließen" aria-label="Timelineeinstellungen schließen">×</button>
+        </div>
       </div>
       <div id="objectTimelineFloatingBody"></div>
     </section>
@@ -872,24 +895,28 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/00b-menu-structure.js?v=20260627-music-reaction-controls"></script>
 <script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260703-independent-grid-color"></script>
 <script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260702-native-stage-resolution"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260703-webgl-feedback-loop"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260704-hifi-segments"></script>
 <script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260703-timeline-hundredths"></script>
-<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260702-cut-icon-restore"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260703-independent-grid-color"></script>
+<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260704-hifi-segments"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260704-hifi-segments"></script>
 <script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260703-timeline-hundredths"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260703-workspace-wheel-zoom"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260704-palette-double-click"></script>
 <script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260703-workspace-wheel-zoom"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260703-webgl-feedback-loop"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260703-timeline-hundredths"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260704-hifi-segments"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260704-camera-events"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
-<script src="src/app/14-three-track-timeline.js?v=20260703-object-timeline-drop"></script>
+<script src="src/app/14-three-track-timeline.js?v=20260704-optional-audio-backbone"></script>
 <script src="src/app/15-cloud-object.js?v=20260628-cloud-lifecycle-wind"></script>
-<script src="src/app/16-object-timeline-menu.js?v=20260703-object-timeline-floating"></script>
-<script src="src/app/17-topbar-floating-menus.js?v=20260703-topbar-floating-menus"></script>
+<script src="src/app/16-object-timeline-menu.js?v=20260704-minimize-restore"></script>
+<script src="src/app/17-topbar-floating-menus.js?v=20260704-minimize-maximize"></script>
 <script src="src/app/18-color-settings-file.js?v=20260703-color-settings-file"></script>
-<script src="src/app/19-workspace-zoom.js?v=20260703-zoom-ten-percent-reset"></script>
+<script src="src/app/19-workspace-zoom.js?v=20260704-selection-overlay-position"></script>
+<script src="src/app/20-global-undo-redo.js?v=20260704-global-history"></script>
+<script src="src/app/21-global-object-shortcuts.js?v=20260705-camera-duplicate"></script>
+<script src="src/app/22-camera-timeline.js?v=20260705-camera-clipboard"></script>
+<script src="src/app/23-audiosource-timeline-menu.js?v=20260704-optional-audio-backbone"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>
