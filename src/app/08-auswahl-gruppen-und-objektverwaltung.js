@@ -267,11 +267,16 @@ function deleteSelectedObject(ev){
   // weil genau dieser alte Sonderpfad den Hintergrund/WebGL-Zustand beschädigen konnte.
   for(const o of objects){
     if(!delSet.has(o.id))continue;
-    if(o.type==='screen')releaseScreenMedia(o);
-    else if(o.type==='imageAsset')releaseImageAsset(o);
-    else if(o.type==='audioSource')releaseAudioSource(o);
-    else if(o.type==='greenscreen')releaseGreenscreenMedia(o);
-    else if(o.type==='particle')releaseParticleImage(o);
+    // Solange Undo aktiv ist, bleiben lokale Blob-URLs und Medienelemente im
+    // Speicher. Ein sofortiges revoke/delete würde den vorherigen Snapshot
+    // irreversibel beschädigen.
+    if(!window.vseHistory){
+      if(o.type==='screen')releaseScreenMedia(o);
+      else if(o.type==='imageAsset')releaseImageAsset(o);
+      else if(o.type==='audioSource')releaseAudioSource(o);
+      else if(o.type==='greenscreen')releaseGreenscreenMedia(o);
+      else if(o.type==='particle')releaseParticleImage(o);
+    }
   }
 
   objects=objects.filter(o=>!delSet.has(o.id));
@@ -297,13 +302,14 @@ function duplicateSelectedObject(){
 }
 if(delBtn)delBtn.addEventListener('click',deleteSelectedObject);
 dupBtn.onclick=duplicateSelectedObject;
-clearBtn.onclick=()=>{objects.forEach(o=>{if(o.type==='screen')releaseScreenMedia(o);if(o.type==='imageAsset')releaseImageAsset(o);if(o.type==='audioSource')releaseAudioSource(o);if(o.type==='greenscreen')releaseGreenscreenMedia(o);if(o.type==='particle'||o.type==='imageParticle')releaseParticleImage(o);});objects=[];groups=[];select(null);syncLightUI();updateObjectManager();};
+clearBtn.onclick=()=>{objects.forEach(o=>{if(o.type==='screen')releaseScreenMedia(o);if(o.type==='imageAsset')releaseImageAsset(o);if(o.type==='audioSource')releaseAudioSource(o);if(o.type==='greenscreen')releaseGreenscreenMedia(o);if(o.type==='particle'||o.type==='imageParticle')releaseParticleImage(o);});if(window.vseScreenMediaFileRegistry instanceof Map)window.vseScreenMediaFileRegistry.clear();if(window.vseGreenscreenMediaFileRegistry instanceof Map)window.vseGreenscreenMediaFileRegistry.clear();objects=[];groups=[];select(null);syncLightUI();updateObjectManager();};
 function cleanObjectsForExport(){
   const runtimeKeys=new Set(['screenTexture','screenMediaElement','screenMediaUrl','screenCaptureStream','screenPlaylist','screenTextTexture','screenTextCanvas','screenTextBgImageElement','particleTexture','particleImageElement','particleImageUrl','imageAssetTexture','imageAssetElement','imageAssetUrl','audioSourceElement','audioSourceNode','audioSourceGain','audioSourceAnalyserTap','audioSourcePan','audioSourceMediaUrl','greenscreenTexture','greenscreenMediaElement','greenscreenMediaUrl','greenscreenStream','greenscreenTexture','greenscreenMediaElement','greenscreenMediaUrl','greenscreenStream']);
   return objects.map(o=>Object.fromEntries(Object.entries(o).filter(([k,v])=>!k.startsWith('_')&&!runtimeKeys.has(k)&&typeof v!=='function')));
 }
 let recorder=null;
 let recordingChunks=[];
+let recordingStream=null;
 let recordingStartedAt=0;
 let recordingTimerId=null;
 function setRecordingStatus(text){ if(recordStatus)recordStatus.textContent=text; }
@@ -400,10 +406,10 @@ function stopRecordingTimer(){
 }
 function preferredRecordingMime(){
   const types=[
-    'video/webm;codecs=vp9,opus',
     'video/webm;codecs=vp8,opus',
-    'video/webm;codecs=vp9',
     'video/webm;codecs=vp8',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp9',
     'video/webm'
   ];
   if(typeof MediaRecorder==='undefined')return '';
@@ -414,7 +420,14 @@ function startRecording(){
   if(!canvas.captureStream){alert('Canvas-Aufnahme wird von diesem Browser nicht unterstützt.');return;}
   if(typeof MediaRecorder==='undefined'){alert('MediaRecorder wird von diesem Browser nicht unterstützt.');return;}
   try{
+    window.vseRecordingCleanFrame=true;
     const fps=Math.max(1,Math.min(120,parseInt(recordFps&&recordFps.value?recordFps.value:'60',10)||60));
+
+    // Vor captureStream einmal ohne Editorhilfen rendern, damit bereits der
+    // allererste aufgezeichnete Frame sauber ist.
+    if(typeof updateVseFrame==='function'&&typeof renderNormalFrame==='function'){
+      const cleanOrdered=updateVseFrame();renderNormalFrame(cleanOrdered);
+    }
 
     // Canvas liefert das WebGL-Bild. Audio wird separat aus dem VSE-Audio-Backbone zugemischt.
     const canvasStream=canvas.captureStream(fps);
@@ -431,18 +444,24 @@ function startRecording(){
       tracks.push(...audioTracks);
     }
 
-    const stream=new MediaStream(tracks);
+    const stream=new MediaStream(tracks);recordingStream=stream;
     const mime=preferredRecordingMime();
     recordingChunks=[];
     recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:12000000,audioBitsPerSecond:192000}:{videoBitsPerSecond:12000000,audioBitsPerSecond:192000});
     const recordingMime=recorder.mimeType||mime||'video/webm';
     recordingStartedAt=performance.now();
     recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recordingChunks.push(e.data);};
-    recorder.onerror=e=>{setRecordingStatus('Recording-Fehler: '+(e.error&&e.error.message?e.error.message:'unbekannt'));};
+    recorder.onerror=e=>{window.vseRecordingCleanFrame=false;setRecordingStatus('Recording-Fehler: '+(e.error&&e.error.message?e.error.message:'unbekannt'));if(recordingStream)recordingStream.getVideoTracks().forEach(track=>track.stop());recordingStream=null;};
     recorder.onstop=()=>{
       try{canvasStream.getTracks().forEach(t=>t.stop());}catch(e){}
+      window.vseRecordingCleanFrame=false;
+      recordingStream=null;
       const blob=new Blob(recordingChunks,{type:recordingMime});
       recordingChunks=[];
+      if(blob.size===0){
+        if(recordStartBtn)recordStartBtn.disabled=false;if(recordStopBtn)recordStopBtn.disabled=true;
+        setRecordingStatus('Aufnahme fehlgeschlagen: Der Browser hat keine gültigen Videodaten geliefert.');recorder=null;stopRecordingTimer();return;
+      }
       const stamp=new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
@@ -451,19 +470,25 @@ function startRecording(){
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      // Große Blob-Downloads dürfen nicht widerrufen werden, bevor der Browser
+      // die Datei vollständig in seinen Downloadspeicher übernommen hat.
+      setTimeout(()=>URL.revokeObjectURL(url),300000);
       if(recordStartBtn)recordStartBtn.disabled=false;
       if(recordStopBtn)recordStopBtn.disabled=true;
       setRecordingStatus('Aufnahme gespeichert: '+Math.round(blob.size/1024/1024*10)/10+' MB · WebM'+(audioTrackCount?' · mit Audio':' · ohne aktive Audioquelle'));
       recorder=null;
       stopRecordingTimer();
     };
-    recorder.start(250);
+    // Ein-Sekunden-Cluster funktionieren auch in Browsern, die beim Recording
+    // ohne Timeslice keinen finalen Datenblock ausgeben.
+    recorder.start(1000);
     if(recordStartBtn)recordStartBtn.disabled=true;
     if(recordStopBtn)recordStopBtn.disabled=false;
     startRecordingTimer();
     setRecordingStatus('Recording läuft · '+fps+' FPS · WebGL-Canvas '+(audioTrackCount?'+ Audio':'ohne aktive Audioquelle')+' → WebM');
   }catch(err){
+    window.vseRecordingCleanFrame=false;
+    if(recordingStream){try{recordingStream.getVideoTracks().forEach(track=>track.stop());}catch(error){}recordingStream=null;}
     if(recordStartBtn)recordStartBtn.disabled=false;
     if(recordStopBtn)recordStopBtn.disabled=true;
     stopRecordingTimer();

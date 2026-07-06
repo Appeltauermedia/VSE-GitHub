@@ -7,18 +7,42 @@
   let deferredCommitTimer=0;
   let restoring=false;
 
+  const runtimeKeys=['screenTexture','screenMediaElement','screenMediaUrl','screenCaptureStream','imageAssetTexture','imageAssetElement','imageAssetUrl','particleTexture','particleImageElement','particleImageUrl','audioSourceElement','audioSourceNode','audioSourceGain','audioSourceAnalyserTap','audioSourcePan','audioSourceMediaUrl','greenscreenTexture','greenscreenMediaElement','greenscreenMediaUrl','greenscreenStream'];
+  function captureObjectRuntime(){
+    const map=new Map();
+    for(const object of objects||[]){
+      const runtime={};let found=false;
+      for(const key of runtimeKeys){if(object[key]!=null&&object[key]!==''){runtime[key]=object[key];found=true;}}
+      if(found)map.set(object.id,runtime);
+    }
+    return map;
+  }
+  function cleanAudioClip(clip){return {id:clip.id,name:clip.name,start:Number(clip.start)||0,duration:Number(clip.duration)||0,active:clip.active!==false,objectId:clip.objectId||'',sendToBackbone:!!clip.sendToBackbone};}
+  function captureAudioRuntime(){
+    const map=new Map();
+    for(const clip of timelineState.audioClips||[])map.set(clip.id,{_element:clip._element,_sourceNode:clip._sourceNode,_gainNode:clip._gainNode,_objectUrl:clip._objectUrl});
+    return map;
+  }
+
   function snapshot(){
     const data=JSON.parse(JSON.stringify(projectPackage()));
+    const audioClips=(timelineState.audioClips||[]).map(cleanAudioClip);
     return {
       data,
-      signature:JSON.stringify(data),
+      signature:JSON.stringify({data,audioClips}),
       selectedIds:Array.from(selectedIds||[]),
-      selectedId:selected&&selected.id||null
+      selectedId:selected&&selected.id||null,
+      selectedEventId:timelineState.selectedEventId||null,
+      selectedAudioClipId:timelineState.selectedAudioClipId||null,
+      selectedCameraMoveId:timelineState.selectedCameraMoveId||null,
+      objectRuntime:captureObjectRuntime(),
+      audioClips,
+      audioRuntime:captureAudioRuntime()
     };
   }
 
   function commit(){
-    clearTimeout(commitTimer);commitTimer=0;
+    clearTimeout(commitTimer);commitTimer=0;clearTimeout(deferredCommitTimer);deferredCommitTimer=0;
     if(restoring)return;
     const next=snapshot();
     const current=undoStack[undoStack.length-1];
@@ -45,7 +69,12 @@
   function restore(entry){
     restoring=true;
     try{
-      importProjectData(JSON.parse(JSON.stringify(entry.data)),{preserveLocalColors:false});
+      importProjectData(JSON.parse(JSON.stringify(entry.data)),{preserveLocalColors:false,preserveRuntimeMedia:true});
+      for(const object of objects||[]){const runtime=entry.objectRuntime&&entry.objectRuntime.get(object.id);if(runtime)Object.assign(object,runtime);}
+      timelineState.audioClips=(entry.audioClips||[]).map(clip=>Object.assign({...clip},entry.audioRuntime&&entry.audioRuntime.get(clip.id)||{}));
+      timelineState.selectedEventId=entry.selectedEventId;
+      timelineState.selectedAudioClipId=entry.selectedAudioClipId;
+      timelineState.selectedCameraMoveId=entry.selectedCameraMoveId;
       selectedIds.clear();
       entry.selectedIds.forEach(objectId=>{
         if(objects.some(object=>object.id===objectId))selectedIds.add(objectId);
@@ -54,6 +83,7 @@
         ||objects.find(object=>selectedIds.has(object.id))||null;
       if(selected&&!selectedIds.size)selectedIds.add(selected.id);
       selectSingleCore(selected);
+      updateTimelineUI();
       updateHud();
       updateObjectManager();
     }finally{
@@ -62,14 +92,14 @@
   }
 
   function undo(){
-    if(commitTimer)commit();
+    if(commitTimer||deferredCommitTimer)commit();
     if(undoStack.length<2)return;
     redoStack.push(undoStack.pop());
     restore(undoStack[undoStack.length-1]);
   }
 
   function redo(){
-    if(commitTimer)commit();
+    clearTimeout(commitTimer);commitTimer=0;clearTimeout(deferredCommitTimer);deferredCommitTimer=0;
     const entry=redoStack.pop();
     if(!entry)return;
     undoStack.push(entry);

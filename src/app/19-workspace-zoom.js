@@ -3,14 +3,14 @@
   const status=document.getElementById('workspaceZoomStatus');
   if(!viewport||!canvas)return;
 
-  scene.cameraZoom=Math.max(.2,Math.min(4,Number(scene.cameraZoom)||1));
+  scene.cameraZoom=Math.max(.2,Math.min(10,Number(scene.cameraZoom)||1));
   scene.cameraPanX=Math.max(-2,Math.min(2,Number(scene.cameraPanX)||0));
   scene.cameraPanY=Math.max(-2,Math.min(2,Number(scene.cameraPanY)||0));
   const state={zoom:scene.cameraZoom,panX:scene.cameraPanX,panY:scene.cameraPanY};
   window.workspaceViewState=state;
 
   function syncStateFromScene(){
-    state.zoom=Math.max(.2,Math.min(4,Number(scene.cameraZoom)||1));
+    state.zoom=Math.max(.2,Math.min(10,Number(scene.cameraZoom)||1));
     state.panX=Math.max(-2,Math.min(2,Number(scene.cameraPanX)||0));
     state.panY=Math.max(-2,Math.min(2,Number(scene.cameraPanY)||0));
   }
@@ -27,7 +27,7 @@
     if(typeof positionStageHudControls==='function')positionStageHudControls();
   }
   function setView(zoom,panX,panY){
-    scene.cameraZoom=Math.max(.2,Math.min(4,Number(zoom)||1));
+    scene.cameraZoom=Math.max(.2,Math.min(10,Number(zoom)||1));
     scene.cameraPanX=Math.max(-2,Math.min(2,Number(panX)||0));
     scene.cameraPanY=Math.max(-2,Math.min(2,Number(panY)||0));
     applyView();
@@ -80,7 +80,7 @@
     event.preventDefault();
     syncStateFromScene();
     const direction=event.deltaY<0?1:-1;
-    const nextZoom=Math.max(.2,Math.min(4,Math.round((state.zoom+direction*.1)*10)/10));
+    const nextZoom=Math.max(.2,Math.min(10,Math.round((state.zoom+direction*.1)*10)/10));
     if(nextZoom===state.zoom)return;
     const p=viewportPoint(event);
     const sourceX=(p.x-state.panX)/state.zoom;

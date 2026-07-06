@@ -22,7 +22,7 @@ function importProjectData(data,options={}){
   const preservedObjectIconColor=/^#[0-9a-f]{6}$/i.test(String(scene.objectIconColor||''))?String(scene.objectIconColor).toLowerCase():'#eef6ff';
   const preservedGridColor=/^#[0-9a-f]{6}$/i.test(String(scene.gridColor||''))?String(scene.gridColor).toLowerCase():'#526e99';
   if(!data||!Array.isArray(data.objects))throw new Error('Keine gültige VSE-Projektdatei.');
-  objects.forEach(o=>{if(o.type==='screen')releaseScreenMedia(o);if(o.type==='imageAsset')releaseImageAsset(o);if(o.type==='audioSource')releaseAudioSource(o);if(o.type==='greenscreen')releaseGreenscreenMedia(o);if(o.type==='particle'||o.type==='imageParticle')releaseParticleImage(o);});
+  if(!options.preserveRuntimeMedia){objects.forEach(o=>{if(o.type==='screen')releaseScreenMedia(o);if(o.type==='imageAsset')releaseImageAsset(o);if(o.type==='audioSource')releaseAudioSource(o);if(o.type==='greenscreen')releaseGreenscreenMedia(o);if(o.type==='particle'||o.type==='imageParticle')releaseParticleImage(o);});if(window.vseScreenMediaFileRegistry instanceof Map)window.vseScreenMediaFileRegistry.clear();if(window.vseGreenscreenMediaFileRegistry instanceof Map)window.vseGreenscreenMediaFileRegistry.clear();}
   objects=[]; selected=null;
   scene.gridSpacing=100;
   scene.gridColor='#526e99';
@@ -34,7 +34,9 @@ function importProjectData(data,options={}){
   }
   scene.gridSpacing=Math.max(10,Math.min(500,Math.round(Number(scene.gridSpacing)||100)));
   scene.gridColor=/^#[0-9a-f]{6}$/i.test(String(scene.gridColor||''))?String(scene.gridColor).toLowerCase():'#526e99';
+  scene.backgroundSetsStageSize=!!scene.backgroundSetsStageSize;
   setStageResolution(scene.stageWidth||1920,scene.stageHeight||1080);
+  if(backgroundSetsStageSize)backgroundSetsStageSize.checked=scene.backgroundSetsStageSize;
   if(showGrid)showGrid.checked=!!scene.showGrid;
   if(typeof syncObjectIconColor==='function')syncObjectIconColor();
   if(typeof syncGridSpacingUi==='function')syncGridSpacingUi(scene.gridSpacing);
@@ -64,6 +66,7 @@ function importProjectData(data,options={}){
   groups=Array.isArray(data.groups)?data.groups.filter(Boolean).map(group=>({...group})):[];
   objects=(data.objects||[]).filter(raw=>raw).map(raw=>ensureTypeDefaults({...raw}));
   const maxId=objects.reduce((m,o)=>Math.max(m,Number(String(o.id||'').replace(/\D/g,''))||0),0); if(maxId>=id)id=maxId+1;
-  objects.forEach(o=>{restoreScreenImage(o);restoreScreenTextBackgroundImage(o);restoreParticleImage(o);if(o.type==='imageAsset')loadImageAssetFromData(o,o.imageAssetData,o.imageAssetName||'importiertes Bild');if(o.type==='greenscreen'){o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';}});
+  objects.forEach(o=>{restoreScreenImage(o);restoreScreenTextBackgroundImage(o);restoreParticleImage(o);if(o.type==='imageAsset')loadImageAssetFromData(o,o.imageAssetData,o.imageAssetName||'importiertes Bild');if(o.type==='greenscreen'&&!o.greenscreenMediaData){o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';}});
+  if(typeof restoreEmbeddedProjectMedia==='function')restoreEmbeddedProjectMedia(data);
   select(objects[0]||null); syncLightUI(); updateHud(); updateObjectManager(); const outEl=document.getElementById('out'); if(outEl) outEl.value=JSON.stringify(projectPackage(),null,2);
 }

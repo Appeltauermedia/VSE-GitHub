@@ -102,8 +102,8 @@ if(timelineDock)timelineDock.addEventListener('click',e=>{
   }
 });
 if(timelineWidthInput)timelineWidthInput.addEventListener('input',()=>{timelineState.widthPercent=Number(timelineWidthInput.value)||100;updateTimelineUI();});
-if(timelineDurationInput)timelineDurationInput.addEventListener('input',()=>{timelineState.manualDuration=true;timelineState.duration=Number(timelineDurationInput.value)||180;updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());});
-if(timelineUseMediaDurationBtn)timelineUseMediaDurationBtn.onclick=()=>{const d=getTimelineMediaDuration();if(d>0){timelineState.manualDuration=false;timelineState.duration=Math.ceil(d);updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());}else alert('Keine aktuelle Audio-/Videodauer gefunden.');};
+if(timelineDurationInput)timelineDurationInput.addEventListener('input',()=>{timelineState.manualDuration=true;timelineState.duration=Math.max(1,Number(timelineDurationInput.value)||180);updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());});
+if(timelineUseMediaDurationBtn)timelineUseMediaDurationBtn.onclick=()=>{const d=getTimelineMediaDuration();timelineState.manualDuration=false;timelineState.duration=Math.max(180,Math.ceil(d||0));updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());};
 if(timelineUseSelectedObjectBtn)timelineUseSelectedObjectBtn.onclick=()=>{const value=timelineCurrentSelectionValue();if(value&&timelineEventObject){updateTimelineObjectOptions();timelineEventObject.value=value;}};
 if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineCopyEventBtn)timelineCopyEventBtn.onclick=copyTimelineEvent;
@@ -202,9 +202,10 @@ function resetTimelineParticleTriggers(){
 }
 function applyTimelineEvents(){
   if(!timelineState||!Array.isArray(timelineState.events)||!timelineState.events.length){
-    objects.forEach(o=>{if(o)o._timelineHidden=false;});
+    objects.forEach(o=>{if(o){o._timelineHidden=false;o._timelineFade=1;}});
     return;
   }
+  objects.forEach(o=>{if(o)o._timelineFade=1;});
   ensureTimelineBaseSnapshots();
   const t=Math.max(0,currentTimelineTime());
   const timelineWentBack=timelineParticleTriggerLastTime!==null&&t<timelineParticleTriggerLastTime-0.001;
@@ -248,6 +249,13 @@ function applyTimelineEvents(){
     if(action==='activate'){
       for(const o of targets){
         if(dur>0){o._timelineHidden=!inWindow;}else{o._timelineHidden=false;}
+        if(inWindow&&ev.timelineAssetKind==='screen-media'&&o.type==='screen'){
+          const local=Math.max(0,t-start),remaining=Math.max(0,start+dur-t);
+          let fade=1;
+          if(ev.fadeInEnabled&&Number(ev.fadeInDuration)>0)fade=Math.min(fade,local/Number(ev.fadeInDuration));
+          if(ev.fadeOutEnabled&&Number(ev.fadeOutDuration)>0)fade=Math.min(fade,remaining/Number(ev.fadeOutDuration));
+          o._timelineFade=Math.max(0,Math.min(1,fade));
+        }
       }
       if((dur<=0||inWindow)&&ev.snapshot&&ev.timelineAssetKind!=='screen-media'&&ev.timelineAssetKind!=='scene')applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);
       const particleActivationActive=dur<=0||inWindow;

@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Virtual Scene Engine</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260704-audiosource-timeline-menu">
+<link rel="stylesheet" href="src/styles/main.css?v=20260707-audio-icon-rail">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
@@ -28,10 +28,10 @@ Was wurde bewusst nicht veraendert?
 <script src="src/render/shaders/fog.js?v=20260702-fog-gravity-gap"></script>
 <script src="src/render/shaders/cloud.js?v=20260628-cloud-lifecycle-wind"></script>
 <script src="src/render/shaders/water.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/background.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/background.js?v=20260705-remove-panorama"></script>
 <script src="src/render/shaders/mandala.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/pointGlow.js?v=20260627-rectangle-emission-modes"></script>
-<script src="src/render/shaders/screen.js?v=20260624-scene-dot"></script>
+<script src="src/render/shaders/screen.js?v=20260705-screen-depth-rotation"></script>
 <script src="src/render/shaders/greenscreen.js?v=20260628-chroma-toggle-2"></script>
 <script src="src/render/shaders/greenscreenShadow.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/imageAsset.js?v=20260624-scene-dot"></script>
@@ -55,9 +55,13 @@ Was wurde bewusst nicht veraendert?
       </summary>
       <div class="foldBody">
         <div class="panel">
-          <button id="importBtn" type="button">Scene importieren (.scene)</button>
+          <button id="importBtn" type="button">Scene-Projektordner importieren</button>
+          <input id="importProjectFolder" type="file" webkitdirectory directory multiple style="display:none">
+          <button id="importLegacyBtn" type="button">Alte Scene-Datei importieren</button>
           <input id="importFile" type="file" accept=".scene,.json,application/json" style="display:none">
-          <button class="green" id="exportBtn" type="button">Scene exportieren (.scene)</button>
+          <button class="green" id="saveProjectBtn" type="button">Speichern</button>
+          <button class="green" id="exportBtn" type="button">Scene als Projektordner exportieren</button>
+          <p class="mini">Erstellt im gewählten Site-Ordner einen Projektordner mit <b>scene.scene</b> und einem separaten <b>media</b>-Ordner. Beim Import werden die Medien automatisch wieder eingesetzt.</p>
           <button class="red" id="clearBtn" type="button">Arbeitsfläche leeren</button>
           <div class="panel" style="margin-top:12px">
             <h3>Objekt-Icons</h3>
@@ -123,6 +127,8 @@ Was wurde bewusst nicht veraendert?
             <div><label>Breite</label><input id="stageWidth" type="number" min="320" max="7680" step="1" value="1920"></div>
             <div><label>Höhe</label><input id="stageHeight" type="number" min="180" max="4320" step="1" value="1080"></div>
           </div>
+          <label class="checkrow"><input id="backgroundSetsStageSize" type="checkbox"><span>Hintergrundbild gibt Bühnenmaße vor</span></label>
+          <p class="mini">Übernimmt Breite und Höhe des geladenen Hintergrundbildes als Bühnenauflösung.</p>
           <button id="setScreenResBtn" type="button">Aktuelle Bildschirmauflösung übernehmen</button>
           <label>Hintergrundabdunkelung: <span id="screenDimValue">0.00</span></label><input id="screenDim" type="range" min="0" max="0.95" step="0.01" value="0">
           <label>Musik-Aufhellung: <span id="screenBrightenValue">0.00</span></label><input id="screenBrighten" type="range" min="0" max="1" step="0.01" value="0">
@@ -208,9 +214,6 @@ Was wurde bewusst nicht veraendert?
       </div>
     </details>
 
-    <button id="audioMenuBtn" class="topbarIconButton" type="button" title="Audioeinstellungen" aria-label="Audioeinstellungen" aria-expanded="false" aria-controls="audioFloatingPanel">
-      <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="180" cy="164" r="28"></circle><circle cx="52" cy="196" r="28"></circle><line x1="208" y1="72" x2="80" y2="104"></line><polyline points="80 196 80 56 208 24 208 164"></polyline></svg>
-    </button>
     <div class="topbarBrand" aria-label="Virtual Scene Engine 2.0">VSE 2.0</div>
 
   </aside>
@@ -239,10 +242,11 @@ Was wurde bewusst nicht veraendert?
     <div id="timelineDock" aria-label="Timeline">
       <div class="timelineTop"><span><b>Timeline</b> · Vier-Spur-Editor</span><span class="timelineTime"><span id="timelineCurrentTime">00:00.00</span> / <span id="timelineTotalTime">03:00.00</span></span></div>
       <div id="timelineMediaControls" class="timelineMediaRow" title="Master-Steuerung für alle Timeline-Spuren">
-        <button id="timelineMediaPlayBtn" class="timelineMediaBtn" type="button" title="Play/Pause">▶</button>
-        <button id="timelineMediaStopBtn" class="timelineMediaBtn redMini" type="button" title="Stop">■</button>
-        <button id="timelineMediaBackBtn" class="timelineMediaBtn" type="button" title="5 Sekunden zurück">‹</button>
-        <button id="timelineMediaForwardBtn" class="timelineMediaBtn" type="button" title="5 Sekunden vor">›</button>
+        <button id="timelineMediaPlayBtn" class="timelineMediaBtn" type="button" title="Play/Pause" aria-label="Play/Pause"><svg class="timelinePhosphorIcon" data-phosphor-icon="play" viewBox="0 0 256 256" aria-hidden="true"><polygon points="72 40 216 128 72 216 72 40"></polygon></svg></button>
+        <button id="timelineMediaStopBtn" class="timelineMediaBtn redMini" type="button" title="Stop" aria-label="Stop"><svg class="timelinePhosphorIcon" data-phosphor-icon="stop" viewBox="0 0 256 256" aria-hidden="true"><rect x="48" y="48" width="160" height="160" rx="16"></rect></svg></button>
+        <button id="timelineMediaBackBtn" class="timelineMediaBtn" type="button" title="5 Sekunden zurück" aria-label="5 Sekunden zurück"><svg class="timelinePhosphorIcon" data-phosphor-icon="rewind" viewBox="0 0 256 256" aria-hidden="true"><polygon points="112 64 32 128 112 192 112 64"></polygon><polygon points="224 64 144 128 224 192 224 64"></polygon></svg></button>
+        <button id="timelineMediaForwardBtn" class="timelineMediaBtn" type="button" title="5 Sekunden vor" aria-label="5 Sekunden vor"><svg class="timelinePhosphorIcon" data-phosphor-icon="fast-forward" viewBox="0 0 256 256" aria-hidden="true"><polygon points="32 64 112 128 32 192 32 64"></polygon><polygon points="144 64 224 128 144 192 144 64"></polygon></svg></button>
+        <button id="timelineMediaSplitControlBtn" class="timelineMediaBtn" type="button" title="Ausgewählten Clip am Marker teilen" aria-label="Clip teilen"><svg class="timelinePhosphorIcon" data-phosphor-icon="scissors" viewBox="0 0 256 256" aria-hidden="true"><circle cx="68" cy="68" r="28"></circle><circle cx="68" cy="188" r="28"></circle><line x1="91" y1="84" x2="216" y2="168"></line><line x1="91" y1="172" x2="216" y2="88"></line></svg></button>
         <input id="timelineMediaSeek" type="range" min="0" max="180000" step="10" value="0" title="Timeline-Zeit steuern">
         <span id="timelineMediaName" class="timelineMediaTitle">Master-Zeit</span>
       </div>
@@ -260,7 +264,7 @@ Was wurde bewusst nicht veraendert?
           <div id="timelineBar" class="timelineLane"><div id="timelineTicks" class="timelineTicks"></div><div id="timelineEvents" class="timelineClips"></div><div id="timelinePlayhead" class="timelineLanePlayhead"></div></div>
         </div>
         <div class="timelineTrack timelineTrackCamera">
-          <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddCameraBtn" class="timelineAddBtn" type="button" title="Kamerafahrt hinzufügen" aria-label="Kamerafahrt hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Kamera</b></div><span>Startausschnitt → Endausschnitt</span></div>
+          <div class="timelineTrackLabel"><div class="timelineTrackHeading"><button id="timelineAddCameraBtn" class="timelineAddBtn" type="button" title="Kamerafahrt oder Mehrpunkt-Pfad hinzufügen" aria-label="Kamerafahrt oder Mehrpunkt-Pfad hinzufügen"><svg viewBox="0 0 256 256" aria-hidden="true"><line x1="40" y1="128" x2="216" y2="128"></line><line x1="128" y1="40" x2="128" y2="216"></line></svg></button><b>Kamera</b></div><span>Fahrt / Mehrpunkt-Pfad</span></div>
           <div id="timelineCameraBar" class="timelineLane"><div class="timelineTicks"></div><div id="timelineCameraClips" class="timelineClips"></div><div id="timelineCameraPlayhead" class="timelineLanePlayhead"></div></div>
         </div>
       </div>
@@ -282,6 +286,9 @@ Was wurde bewusst nicht veraendert?
   <button id="objectTimelineMenuBtn" type="button" aria-controls="objectTimelineFloatingPanel" aria-expanded="false" title="Timelineeinstellungen" aria-label="Timelineeinstellungen">
     <svg viewBox="0 0 256 256" aria-hidden="true"><rect x="32" y="56" width="192" height="144" rx="16"></rect><line x1="72" y1="56" x2="72" y2="200"></line><line x1="184" y1="56" x2="184" y2="200"></line><line x1="32" y1="104" x2="72" y2="104"></line><line x1="184" y1="104" x2="224" y2="104"></line><line x1="32" y1="152" x2="72" y2="152"></line><line x1="184" y1="152" x2="224" y2="152"></line><polyline points="104 152 104 120 136 104 136 136 160 120"></polyline></svg>
   </button>
+  <button id="audioMenuBtn" class="topbarIconButton" type="button" title="Audioeinstellungen" aria-label="Audioeinstellungen" aria-expanded="false" aria-controls="audioFloatingPanel">
+    <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="180" cy="164" r="28"></circle><circle cx="52" cy="196" r="28"></circle><line x1="208" y1="72" x2="80" y2="104"></line><polyline points="80 196 80 56 208 24 208 164"></polyline></svg>
+  </button>
     <!-- Rechte Eigenschaften- und Projektleiste -->
 <aside id="right">
     <h3>Objektparameter</h3>
@@ -299,8 +306,17 @@ Was wurde bewusst nicht veraendert?
       <div class="panel">
         <p class="mini">Die Timeline läuft mit einer eigenen Master-Zeit und funktioniert auch ohne Audio. Audio, Screen-Medien und Objekt-Events besitzen getrennte Spuren.</p>
         <label style="display:none">Timeline-Breite: <span id="timelineWidthValue">100%</span></label><input id="timelineWidth" type="range" min="40" max="100" step="1" value="100" style="display:none">
-        <label>Dauer: <span id="timelineDurationValue">03:00</span></label><input id="timelineDuration" type="range" min="5" max="1800" step="1" value="180">
+        <label>Dauer in Sekunden: <span id="timelineDurationValue">03:00</span></label><input id="timelineDuration" type="number" min="1" step="1" value="180">
         <button id="timelineUseMediaDurationBtn" type="button">Dauer aus längstem Audio/Video übernehmen</button>
+      </div>
+      <div class="panel" id="timelineMediaEditPanel" style="display:none">
+        <h3>Ausgewähltes Medium</h3>
+        <button id="timelineSplitMediaBtn" type="button">An Markerposition teilen</button>
+        <p class="mini">Die Griffe vorne und hinten trimmen den Clip. Herausgezogene Bereiche bleiben erhalten und können wieder bis zur vollen Medienlänge aufgezogen werden.</p>
+        <label><input id="timelineFadeInEnabled" type="checkbox"> Von Schwarz einblenden</label>
+        <label>Einblenddauer: <span id="timelineFadeInDurationValue">1.00 s</span></label><input id="timelineFadeInDuration" type="range" min="0" max="10" step="0.05" value="1">
+        <label><input id="timelineFadeOutEnabled" type="checkbox"> Zu Schwarz ausblenden</label>
+        <label>Ausblenddauer: <span id="timelineFadeOutDurationValue">1.00 s</span></label><input id="timelineFadeOutDuration" type="range" min="0" max="10" step="0.05" value="1">
       </div>
       <div class="panel">
         <h3>Event</h3>
@@ -427,11 +443,12 @@ Was wurde bewusst nicht veraendert?
         <label>Shadow Color</label><input id="pShadowColor" type="color" value="#000000">
         <p class="mini">Leichte Fake-Shadows: Oval ist am schnellsten, Shape nutzt vorhandene Alpha/Silhouette wenn sinnvoll, Screen Rectangle ist für Flächen gedacht.</p>
       </div>
-      <div id="screenTimelineDurationRow" class="panel" style="display:none;margin-top:12px"><h3>Timeline-Medium</h3><label>Timeline-Dauer (Screen / Scene)</label><input id="pScreenTimelineDuration" type="number" min="0.1" max="1800" step="0.1" value="5"></div>
+      <div id="screenTimelineDurationRow" class="panel" style="display:none;margin-top:12px"><h3>Timeline-Medium</h3><label>Timeline-Dauer (Screen / Scene)</label><input id="pScreenTimelineDuration" type="number" min="0.1" step="0.1" value="5"></div>
 <div class="type-screen-only panel" style="margin-top:12px">
         <div class="mini"><b>Screen</b><br>Screen-Objekte sind Bühnenflächen auf frei definierbaren Layern. Sie können als Farbfläche, Audio-Panel, Pulse-Screen oder als Träger für geladene Bilder und Videos laufen.</div>
       </div>
       <div class="type-screen-only type-text-only row"><div><label>Breite: <span id="screenWidthValue">260</span></label><input id="pScreenWidth" type="range" min="40" max="1920" step="1"></div><div><label>Höhe: <span id="screenHeightValue">120</span></label><input id="pScreenHeight" type="range" min="20" max="1080" step="1"></div></div>
+      <div class="type-screen-only"><label>Z-Tiefenrotation / Perspektive: <span id="screenDepthRotationValue">0°</span></label><input id="pScreenDepthRotation" type="range" min="-75" max="75" step="1" value="0"></div>
       <div class="type-screen-only type-text-only"><label style="display:flex;align-items:center;gap:8px"><input id="pScreenKeepAspect" type="checkbox" checked> Seitenverhältnis beim Skalieren beibehalten</label></div>
       <div class="type-screen-only"><label>Screen-Modus</label><select id="pScreenMode"><option value="solid">Farbfläche</option><option value="audio">Audio-Balken</option><option value="pulse">Pulse-Screen</option><option value="image">Bild</option><option value="video">Video</option><option value="engine">Engine-Ausschnitt</option><option value="text">Text</option><option value="mp3cover">Aktuelles MP3-Cover</option></select></div>
       <div class="type-screen-only type-text-only screen-text-settings">
@@ -485,7 +502,9 @@ Was wurde bewusst nicht veraendert?
       </div>
       <div class="type-screen-only"><label>Screen-Helligkeit: <span id="screenBrightnessValue">1.00</span></label><input id="pScreenBrightness" type="range" min="0" max="2" step="0.01"></div>
       <div class="type-screen-only"><label>Screen-Deckkraft: <span id="screenOpacityValue">1.00</span></label><input id="pScreenOpacity" type="range" min="0" max="1" step="0.01"></div>
-      <div class="type-screen-only"><label>LED-/Rasterstruktur: <span id="screenScanlinesValue">0.30</span></label><input id="pScreenScanlines" type="range" min="0" max="1" step="0.01"></div>
+      <label class="type-screen-only checkrow"><input id="pScreenLedSimulation" type="checkbox"><span>LED-Simulation aktivieren</span></label>
+      <div class="type-screen-only"><label>Stärke der LED-/Rasterstruktur: <span id="screenScanlinesValue">0.30</span></label><input id="pScreenScanlines" type="range" min="0" max="1" step="0.01" disabled></div>
+      <label class="type-screen-only checkrow"><input id="pScreenAudioEnabled" type="checkbox" checked><span>Audioreaktivität aktivieren</span></label>
       <div class="type-screen-only"><label>Audio-Reaktion Screen: <span id="screenAudioValue">0.50</span></label><input id="pScreenAudio" type="range" min="0" max="2" step="0.01"></div>
       <div class="type-screen-only"><label>Screen-Zweitfarbe</label><input id="pScreenAltColor" type="color"></div>
       <div class="type-screen-only"><label>Farbwechsel-Geschwindigkeit: <span id="screenAltSpeedValue">0.25</span></label><input id="pScreenAltSpeed" type="range" min="0" max="5" step="0.01"></div>
@@ -890,32 +909,32 @@ Was wurde bewusst nicht veraendert?
   <div id="recordHudTime" class="recTime">00:00</div>
 </div>
 <!-- ===== JavaScript / Applikationslogik ===== -->
-<script src="src/io/sceneIO.js?v=20260703-preserve-global-colors"></script>
+<script src="src/io/sceneIO.js?v=20260706-screen-video-export"></script>
 <script src="src/app/00a-hoisted-functions.js?v=20260624-scene-dot"></script>
-<script src="src/app/00b-menu-structure.js?v=20260627-music-reaction-controls"></script>
-<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260703-independent-grid-color"></script>
+<script src="src/app/00b-menu-structure.js?v=20260705-screen-depth-rotation"></script>
+<script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260705-background-stage-size"></script>
 <script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260702-native-stage-resolution"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260704-hifi-segments"></script>
-<script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260703-timeline-hundredths"></script>
-<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260704-hifi-segments"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260704-hifi-segments"></script>
-<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260703-timeline-hundredths"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260705-screen-planar-perspective"></script>
+<script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260705-stable-play-pause"></script>
+<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260705-screen-depth-rotation"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260705-clean-recording-frame"></script>
+<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260705-infinite-timeline"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260704-palette-double-click"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260703-workspace-wheel-zoom"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260704-hifi-segments"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260704-camera-events"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260706-screen-video-export"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260706-screen-video-export"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260706-screen-video-export"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260705-screen-depth-rotation"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
-<script src="src/app/14-three-track-timeline.js?v=20260704-optional-audio-backbone"></script>
+<script src="src/app/14-three-track-timeline.js?v=20260705-delete-selected-timeline-item"></script>
 <script src="src/app/15-cloud-object.js?v=20260628-cloud-lifecycle-wind"></script>
 <script src="src/app/16-object-timeline-menu.js?v=20260704-minimize-restore"></script>
 <script src="src/app/17-topbar-floating-menus.js?v=20260704-minimize-maximize"></script>
 <script src="src/app/18-color-settings-file.js?v=20260703-color-settings-file"></script>
-<script src="src/app/19-workspace-zoom.js?v=20260704-selection-overlay-position"></script>
-<script src="src/app/20-global-undo-redo.js?v=20260704-global-history"></script>
-<script src="src/app/21-global-object-shortcuts.js?v=20260705-camera-duplicate"></script>
-<script src="src/app/22-camera-timeline.js?v=20260705-camera-clipboard"></script>
+<script src="src/app/19-workspace-zoom.js?v=20260705-remove-panorama"></script>
+<script src="src/app/20-global-undo-redo.js?v=20260705-timeline-integrity"></script>
+<script src="src/app/21-global-object-shortcuts.js?v=20260705-delete-selected-timeline-item"></script>
+<script src="src/app/22-camera-timeline.js?v=20260705-timeline-integrity"></script>
 <script src="src/app/23-audiosource-timeline-menu.js?v=20260704-optional-audio-backbone"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>

@@ -25,7 +25,7 @@ if(timelineAddEventBtn){
 // durch ältere Timeline-Funktionen bzw. ausgelassene Screen-Daten unvollständig bleiben.
 const TIMELINE_SCREEN_KEYS=[
   'x','y','layer','size','intensity','rotation','color','music','thresholdBelow','life','audioFreq',
-  'screenWidth','screenHeight','screenMode','screenFrameMode','screenBrightness','screenOpacity','screenScanlines','screenAudio','screenAltColor','screenAltSpeed','screenAltAmount',
+  'screenWidth','screenHeight','screenDepthRotation','screenMode','screenFrameMode','screenBrightness','screenOpacity','screenLedSimulation','screenScanlines','screenAudioEnabled','screenAudio','screenAltColor','screenAltSpeed','screenAltAmount',
   'screenMediaType','screenMediaName','screenMediaData','screenMediaEmbedded','screenMediaFit','screenFlipX','screenFlipY','screenVideoAudio','screenVideoVolume','screenMediaAspect',
   'screenTextSource','screenText','screenTextMode','screenTextFont','screenTextSize','screenTextColor','screenTextBold','screenTextItalic','screenTextUnderline','screenTextAlign','screenTextLineHeight','screenTextSpeed','screenTextBgMode','screenTextBgColor','screenTextBgOpacity','screenTextBgFit','screenTextBgImageName','screenTextBgImageData',
   'screenAmbilight','screenAmbilightStrength','screenEngineX','screenEngineY','screenEngineW','screenEngineH'

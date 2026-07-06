@@ -69,10 +69,16 @@
   function cutCameraMove(){
     const move=activeCameraMove();
     if(!move||!copyCameraMove())return false;
+    return deleteCameraMove();
+  }
+
+  function deleteCameraMove(){
+    const move=activeCameraMove();
+    if(!move)return false;
     timelineState.events=timelineState.events.filter(event=>event.id!==move.id);
     timelineState.selectedCameraMoveId='';
     if(window.vseCameraTimeline&&window.vseCameraTimeline.close)window.vseCameraTimeline.close();
-    updateTimelineUI();commitHistory();
+    updateTimelineUI();if(window.vseCameraTimeline&&window.vseCameraTimeline.afterDelete)window.vseCameraTimeline.afterDelete();commitHistory();
     return true;
   }
 
@@ -176,6 +182,18 @@
   }
 
   document.addEventListener('keydown',event=>{
+    if((event.key!=='Delete'&&event.key!=='Del')||isTypingTarget(event.target))return;
+    if(activeCameraMove()){
+      event.preventDefault();event.stopImmediatePropagation();deleteCameraMove();return;
+    }
+    const markedTimelineElement=document.querySelector('#timelineDock .timelineAudioClip.isSelected,#timelineDock .timelineScreenClip.isSelected,#timelineDock .timelineEvent.isSelected');
+    const timelineAssetSelected=timelineState&&(timelineState.selectedEventId||timelineState.selectedAudioClipId)&&(timelineState.selected===true||!!markedTimelineElement);
+    if(timelineAssetSelected&&typeof window.deleteSelectedTimelineAsset==='function'){
+      event.preventDefault();event.stopImmediatePropagation();window.deleteSelectedTimelineAsset();commitHistory();
+    }
+  },true);
+
+  document.addEventListener('keydown',event=>{
     if(!(event.ctrlKey||event.metaKey)||event.altKey||event.shiftKey||isTypingTarget(event.target))return;
     const key=String(event.key).toLowerCase();
     const commands={g:groupObjects,u:ungroupObjects,c:copyActive,x:cutActive,v:pasteActive,d:duplicateActive,a:selectAllObjects};
@@ -186,5 +204,5 @@
     command();
   },true);
 
-  window.vseObjectClipboard={copy:copyActive,cut:cutActive,paste:pasteActive,selectAll:selectAllObjects};
+  window.vseObjectClipboard={copy:copyActive,cut:cutActive,paste:pasteActive,selectAll:selectAllObjects,deleteCameraMove};
 })();

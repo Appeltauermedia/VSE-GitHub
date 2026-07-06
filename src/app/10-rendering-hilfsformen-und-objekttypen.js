@@ -143,7 +143,7 @@ function getScreenMediaAspect(o){
   return aspect>0?aspect:1;
 }
 function initTexture(){const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([0,0,0,255]));return tex;}
-function releaseScreenMedia(o){if(!o)return;if(o.screenCaptureStream){try{o.screenCaptureStream.getTracks().forEach(t=>t.stop());}catch(e){}}if(o.screenMediaUrl){try{URL.revokeObjectURL(o.screenMediaUrl);}catch(e){}}if(o.screenMediaElement&&o.screenMediaElement.pause)try{o.screenMediaElement.pause();}catch(e){}if(o.screenMediaElement&&o.screenMediaElement.srcObject)try{o.screenMediaElement.srcObject=null;}catch(e){}o.screenTexture=null;o.screenMediaElement=null;o.screenMediaUrl='';o.screenCaptureStream=null;o.screenMediaType='none';o.screenMediaName='';o.screenMediaData=null;o.screenMediaEmbedded=false;o.screenMediaAspect=1;o._ambilightColor=null;o._ambilightLastSample=0;}
+function releaseScreenMedia(o){if(!o)return;if(o.screenCaptureStream){try{o.screenCaptureStream.getTracks().forEach(t=>t.stop());}catch(e){}}if(o.screenMediaUrl){try{URL.revokeObjectURL(o.screenMediaUrl);}catch(e){}}if(window.vseScreenMediaFileRegistry instanceof Map&&o.id)window.vseScreenMediaFileRegistry.delete(o.id);if(o.screenMediaElement&&o.screenMediaElement.pause)try{o.screenMediaElement.pause();}catch(e){}if(o.screenMediaElement&&o.screenMediaElement.srcObject)try{o.screenMediaElement.srcObject=null;}catch(e){}o.screenTexture=null;o.screenMediaElement=null;o.screenMediaUrl='';o.screenCaptureStream=null;o.screenMediaType='none';o.screenMediaName='';o.screenMediaData=null;o.screenMediaEmbedded=false;o.screenMediaAspect=1;o._screenMediaSourceFile=null;o._screenMediaExportPromise=null;o._ambilightColor=null;o._ambilightLastSample=0;}
 
 
 function updateGreenscreenAudioRouting(o){
@@ -182,11 +182,12 @@ function releaseGreenscreenMedia(o){
   if(!o)return;
   if(o.greenscreenStream){try{o.greenscreenStream.getTracks().forEach(t=>t.stop());}catch(e){}}
   if(o.greenscreenMediaUrl){try{URL.revokeObjectURL(o.greenscreenMediaUrl);}catch(e){}}
+  if(window.vseGreenscreenMediaFileRegistry instanceof Map&&o.id)window.vseGreenscreenMediaFileRegistry.delete(o.id);
   if(o.greenscreenMediaElement&&o.greenscreenMediaElement.pause)try{o.greenscreenMediaElement.pause();}catch(e){}
   if(o.greenscreenAudioGain){try{o.greenscreenAudioGain.disconnect();}catch(e){}}
   if(o.greenscreenAudioNode){try{o.greenscreenAudioNode.disconnect();}catch(e){}}
   if(o.greenscreenMediaElement&&o.greenscreenMediaElement.srcObject)try{o.greenscreenMediaElement.srcObject=null;}catch(e){}
-  o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';o.greenscreenMediaAspect=16/9;o.greenscreenAudioNode=null;o.greenscreenAudioGain=null;
+  o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';o.greenscreenMediaAspect=16/9;o.greenscreenAudioNode=null;o.greenscreenAudioGain=null;o._greenscreenMediaSourceFile=null;
 }
 function attachGreenscreenVideoElement(o,video,tex,type,name){
   o.greenscreenTexture=tex;o.greenscreenMediaElement=video;o.greenscreenMediaType=type;o.greenscreenMediaName=name||type;o.greenscreenOpacity=o.greenscreenOpacity??1;
@@ -202,6 +203,9 @@ function loadGreenscreenVideo(o,file){
   const tex=initTexture();
   const url=URL.createObjectURL(file);
   o.greenscreenMediaUrl=url;
+  o._greenscreenMediaSourceFile=file;
+  window.vseGreenscreenMediaFileRegistry=window.vseGreenscreenMediaFileRegistry instanceof Map?window.vseGreenscreenMediaFileRegistry:new Map();
+  window.vseGreenscreenMediaFileRegistry.set(o.id,file);
   const video=document.createElement('video');
   video.src=url;
   attachGreenscreenVideoElement(o,video,tex,'video',file.name);
@@ -319,13 +323,17 @@ function loadScreenMedia(o,file,type,fromPlaylist=false){
   o.screenMediaUrl=url;
   o.screenMediaType=type;
   o.screenMediaName=file.name;
+  o._screenMediaSourceFile=file;
+  window.vseScreenMediaFileRegistry=window.vseScreenMediaFileRegistry instanceof Map?window.vseScreenMediaFileRegistry:new Map();
+  window.vseScreenMediaFileRegistry.set(o.id,file);
   o.screenMediaData=null;
   o.screenMediaEmbedded=false;
-  if(type==='image'){
+  o._screenMediaExportPromise=new Promise(resolve=>{
     const exportReader=new FileReader();
-    exportReader.onload=()=>{o.screenMediaData=exportReader.result;o.screenMediaEmbedded=true;};
-    exportReader.readAsDataURL(file);
-  }
+    exportReader.onload=()=>{o.screenMediaData=exportReader.result;o.screenMediaEmbedded=true;resolve(o.screenMediaData);};
+    exportReader.onerror=()=>{console.warn('Screen-Medium konnte nicht für den Export vorgelesen werden.',exportReader.error);resolve(null);};
+    if(type==='image')exportReader.readAsDataURL(file);else resolve(null);
+  });
   o.screenMediaFit='cover';
   o.screenFlipX=o.screenFlipX??false;
   o.screenFlipY=o.screenFlipY??false;
@@ -423,7 +431,7 @@ function screenAltMix(o){
     const phase=performance.now()/1000*speed*Math.PI*2+(Number((o.id||'').replace(/\D/g,''))||0)*0.327;
     t=((Math.sin(phase)+1)*0.5)*amount;
   }
-  if(audioState.enabled&&amount>0){
+  if(o.screenAudioEnabled!==false&&audioState.enabled&&amount>0){
     const oa=objectAudio(o);
     t=clamp01(t + oa.level*audioState.sensitivity*Number(o.screenAudio??0.5)*amount);
   }
@@ -911,7 +919,7 @@ function renderEngineSceneTexture(ordered){
   drawBackground();
   gl.enable(gl.BLEND);
   drawBackgroundDim();
-  if(scene.showGrid) drawGrid();
+  if(scene.showGrid&&!window.vseRecordingCleanFrame) drawGrid();
   split.front.forEach(e=>{
     // Engine-Ausschnitt-Screens werden in der Quelltextur bewusst ausgelassen,
     // damit kein rekursiver Spiegel-im-Spiegel-Effekt oder leerer Feedback-Frame entsteht.
@@ -1131,11 +1139,14 @@ function drawScreen(o){
   gl.uniform2f(screenLoc.originCss,objCssX(o)+wind.cssX*0.18,objCssY(o)+wind.cssY*0.18);
   gl.uniform2f(screenLoc.sizeCss,su(o.screenWidth||260),su(o.screenHeight||120));
   gl.uniform1f(screenLoc.rot,Number(o.rotation||0)*Math.PI/180);
+  gl.uniform1f(screenLoc.depthRotation,Math.max(-75,Math.min(75,Number(o.screenDepthRotation)||0)));
   gl.uniform1f(screenLoc.opacity,Number(o.screenOpacity??1));
   gl.uniform1f(screenLoc.dim,sceneDimmingForTarget('screen',o));
-  gl.uniform1f(screenLoc.brightness,Number(o.screenBrightness??1)*(Number(o.intensity??1)));
-  gl.uniform1f(screenLoc.scanlines,Number(o.screenScanlines??0.3));
-  gl.uniform1f(screenLoc.audioReaction,Number(o.screenAudio??0.5)*audioState.sensitivity);
+  gl.uniform1f(screenLoc.brightness,Number(o.screenBrightness??1)*(Number(o.intensity??1))*Math.max(0,Math.min(1,Number(o._timelineFade??1))));
+  // Ohne LED-Simulation bleibt das Medium unverändert und wird direkt mit
+  // linearer Texturfilterung in der vollen verfügbaren Auflösung dargestellt.
+  gl.uniform1f(screenLoc.scanlines,o.screenLedSimulation?Number(o.screenScanlines??0.3):0);
+  gl.uniform1f(screenLoc.audioReaction,o.screenAudioEnabled===false?0:Number(o.screenAudio??0.5)*audioState.sensitivity);
   gl.uniform1f(screenLoc.time,performance.now()/1000);
   { const oa=objectAudio(o); gl.uniform4f(screenLoc.audio,oa.level,oa.bass,oa.mid,oa.high); }
   gl.uniform3f(screenLoc.color,c[0],c[1],c[2]);
@@ -1983,12 +1994,12 @@ function renderFinalSceneBase(ordered){
   drawBackground();
   gl.enable(gl.BLEND);
   drawBackgroundDim(); // Scene-Abdunkelung nutzt die aktivierten Ziele.
-  if(scene.showGrid) drawGrid(); // Arbeitsgitter liegt visuell auf Layer 0, wird aber nicht exportiert. Hintergrundbild ist konzeptionell Layer 0.
+  if(scene.showGrid&&!window.vseRecordingCleanFrame) drawGrid(); // Arbeitsgitter liegt visuell auf Layer 0, wird aber nicht exportiert. Hintergrundbild ist konzeptionell Layer 0.
   renderOrderedObjects(split.front);
 }
 
 function drawSelectedReferenceMarkers(){
-  if(document.body.classList.contains('menuless'))return;
+  if(window.vseRecordingCleanFrame||document.body.classList.contains('menuless'))return;
   const markerPoints=circlePoints(28);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
@@ -2209,7 +2220,7 @@ function renderSceneViewSource(ordered){
 }
 function drawSceneViewPass(sourceTex,target=null){
   const w=target?target.w:canvas.width,h=target?target.h:canvas.height;
-  const zoom=Math.max(.2,Math.min(4,Number(scene.cameraZoom)||1));
+  const zoom=Math.max(.2,Math.min(10,Number(scene.cameraZoom)||1));
   const panX=Math.max(-2,Math.min(2,Number(scene.cameraPanX)||0));
   const panY=Math.max(-2,Math.min(2,Number(scene.cameraPanY)||0));
   gl.bindFramebuffer(gl.FRAMEBUFFER,target?target.fbo:null);

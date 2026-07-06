@@ -51,7 +51,13 @@ function updateTimelineMediaControls(){
     timelineMediaSeek.max=has?Math.round(dur*1000):1000;
     timelineMediaSeek.value=has?Math.round(cur*1000):0;
   }
-  if(timelineMediaPlayBtn)timelineMediaPlayBtn.textContent=has&&!el.paused?'⏸':'▶';
+  if(timelineMediaPlayBtn){
+    const iconState=has&&!el.paused?'pause':'play';
+    if(timelineMediaPlayBtn.dataset.timelineIcon!==iconState){
+      timelineMediaPlayBtn.innerHTML=iconState==='pause'?'<svg class="timelinePhosphorIcon" data-phosphor-icon="pause" viewBox="0 0 256 256" aria-hidden="true"><rect x="56" y="40" width="56" height="176" rx="8"></rect><rect x="144" y="40" width="56" height="176" rx="8"></rect></svg>':'<svg class="timelinePhosphorIcon" data-phosphor-icon="play" viewBox="0 0 256 256" aria-hidden="true"><polygon points="72 40 216 128 72 216 72 40"></polygon></svg>';
+      timelineMediaPlayBtn.dataset.timelineIcon=iconState;
+    }
+  }
   if(timelineMediaName)timelineMediaName.textContent=has?String(media.name||media.type||'Medium'):'Kein Medium';
   if(has&&!timelineState.manualDuration&&Math.abs((timelineState.duration||0)-Math.ceil(dur))>0.5){
     timelineState.duration=Math.max(5,Math.ceil(dur));

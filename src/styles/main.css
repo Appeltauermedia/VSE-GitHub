@@ -46,9 +46,11 @@
   #timelinePlayhead::before{content:'';position:absolute;top:0;left:-4px;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #ff4d5f}
   body.menuless #timelineDock{display:none}
 
-  .timelineMediaRow{display:grid;grid-template-columns:auto auto auto auto 1fr auto;gap:5px;align-items:center;margin:2px 0 3px;min-height:18px}
+  .timelineMediaRow{display:grid;grid-template-columns:auto auto auto auto auto 1fr auto;gap:5px;align-items:center;margin:2px 0 3px;min-height:18px}
   .timelineMediaBtn{width:22px;height:18px;margin:0;padding:0;border-radius:7px;font-size:10px;line-height:1;background:#14253b;border:1px solid #244363;color:#e7f1ff;font-weight:800}
   .timelineMediaBtn.redMini{background:#30141b;border-color:#5a2732}
+  .timelineMediaBtn:disabled{opacity:.38;cursor:not-allowed}
+  .timelinePhosphorIcon{display:block;width:13px;height:13px;margin:auto;fill:none;stroke:currentColor;stroke-width:18;stroke-linecap:round;stroke-linejoin:round}
   #timelineMediaSeek{height:18px;padding:0;margin:0;accent-color:#75dfff}
   .timelineMediaLabel{font-size:10px;color:#9fb0c6;font-variant-numeric:tabular-nums;white-space:nowrap;min-width:40px;text-align:right}
   .timelineMediaTitle{font-size:10px;color:#cfe0f8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
@@ -66,8 +68,13 @@
   .timelineClips{position:absolute;inset:0}
   .timelineClip{position:absolute;top:3px;height:14px;min-width:3px;border-radius:3px;padding:1px 5px;font-size:9px;line-height:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:grab;touch-action:none;user-select:none}
   .timelineClip.isDragging{cursor:grabbing;filter:brightness(1.25);z-index:8}
+  .timelineTrimHandle{position:absolute;z-index:3;top:-1px;bottom:-1px;width:7px;background:rgba(255,255,255,.35);cursor:ew-resize;touch-action:none}
+  .timelineTrimHandle.start{left:-1px;border-radius:3px 0 0 3px}
+  .timelineTrimHandle.end{right:-1px;border-radius:0 3px 3px 0}
+  .timelineClip.isSelected .timelineTrimHandle{background:rgba(255,255,255,.78)}
   .timelineAudioClip{background:rgba(87,203,155,.28);border:1px solid rgba(94,225,167,.72);color:#d9ffed}
   .timelineScreenClip{background:rgba(170,112,255,.27);border:1px solid rgba(190,145,255,.76);color:#f0e5ff}
+  .timelineScreenClipPending{border-style:dashed;cursor:pointer}
   .timelineCameraClip{background:rgba(61,174,255,.28);border:1px solid rgba(89,196,255,.82);color:#e1f6ff}
   .timelineCameraClip.isSelected{box-shadow:0 0 0 1px #bceeff,0 0 10px rgba(61,174,255,.5)}
   .timelineLanePlayhead{position:absolute;z-index:5;top:0;bottom:0;width:2px;background:#ff4d5f;box-shadow:0 0 8px rgba(255,60,70,.72);left:0;pointer-events:none}
@@ -294,7 +301,7 @@ header{display:none}
   color:var(--text);
   box-shadow:-14px 0 30px rgba(0,0,0,.18);
 }
-#rightPanelToggle,#objectTimelineMenuBtn{
+#rightPanelToggle,#objectTimelineMenuBtn,#audioMenuBtn{
   position:fixed;
   top:calc(var(--chrome-top) + 12px);
   right:calc(var(--right-panel) + 10px);
@@ -303,6 +310,7 @@ header{display:none}
   place-items:center;
   width:38px;
   height:38px;
+  margin:0;
   padding:8px;
   color:var(--object-icon-color);
   background:#22262a;
@@ -312,8 +320,9 @@ header{display:none}
   transition:right .2s ease,background .15s ease,border-color .15s ease;
 }
 #objectTimelineMenuBtn{top:calc(var(--chrome-top) + 58px)}
-#rightPanelToggle:hover,#objectTimelineMenuBtn:hover{background:#2b3035;border-color:#59616a}
-#rightPanelToggle svg,#objectTimelineMenuBtn svg{
+#audioMenuBtn{top:calc(var(--chrome-top) + 104px)}
+#rightPanelToggle:hover,#objectTimelineMenuBtn:hover,#audioMenuBtn:hover,#audioMenuBtn[aria-expanded="true"]{background:#2b3035;border-color:#59616a}
+#rightPanelToggle svg,#objectTimelineMenuBtn svg,#audioMenuBtn svg{
   width:21px;
   height:21px;
   fill:none;
@@ -346,7 +355,7 @@ body.rightPanelCollapsed #right{
   overflow:hidden;
   pointer-events:none;
 }
-body.rightPanelCollapsed #rightPanelToggle,body.rightPanelCollapsed #objectTimelineMenuBtn{right:10px;background:#2b3035}
+body.rightPanelCollapsed #rightPanelToggle,body.rightPanelCollapsed #objectTimelineMenuBtn,body.rightPanelCollapsed #audioMenuBtn{right:10px;background:#2b3035}
 body.audioDockCollapsed #right{
   padding-bottom:calc(var(--audio-analyzer-dock-h) + 76px);
 }
@@ -748,6 +757,7 @@ input[type=range],
 .cameraTimelineHeader small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
 .cameraTimelineHeader button{width:30px;height:30px;margin:0;padding:0;font-size:20px;line-height:1}
 .cameraTimelineBody{padding:12px}
+.cameraChoosePath{margin:8px 0 2px;font-weight:700}
 .cameraViewBlock{margin-top:10px;padding:9px;border:1px solid var(--line-soft);border-radius:6px;background:var(--panel)}
 .cameraViewBlock>b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
 .cameraViewBlock>span{display:block;margin:4px 0 7px;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
@@ -757,6 +767,11 @@ input[type=range],
 .cameraCurveBlock>label{display:block;margin:8px 0 4px;color:var(--muted);font-size:10px}
 .cameraCurveBlock select{width:100%;margin:0 0 2px}
 .cameraCurveBlock .row{margin-top:7px}
+.cameraPathPointList{display:grid;gap:5px;margin:8px 0}
+.cameraPathPoint{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--line-soft);border-radius:5px;background:#111417;font-size:10px}
+.cameraPathPoint span{overflow:hidden;color:var(--muted);font-variant-numeric:tabular-nums;text-overflow:ellipsis;white-space:nowrap}
+.cameraPathPoint button{width:auto;margin:0;padding:5px 7px;font-size:9px}
+#cameraPathSettings>.checkrow{display:flex;margin:8px 0 0}
 #audioSourceTimelinePanel{position:fixed;z-index:126;top:calc(var(--chrome-top) + 26px);right:26px;width:min(390px,calc(100vw - 28px));max-height:calc(100dvh - var(--chrome-top) - 44px);overflow:auto;color:var(--text);background:#171a1d;border:1px solid var(--line);border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,.5)}
 #audioSourceTimelinePanel[hidden]{display:none}
 .audioSourceTimelineHeader{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px 9px 14px;background:#171a1d;border-bottom:1px solid var(--line);cursor:move;user-select:none}
@@ -811,6 +826,7 @@ body.menuless #app>aside:not(#right),
 body.menuless #right,
 body.menuless #rightPanelToggle,
 body.menuless #objectTimelineMenuBtn,
+body.menuless #audioMenuBtn,
 body.menuless .topbarFloatingPanel,
 body.menuless #objectPalette,
 body.menuless #timelineDock{

@@ -69,6 +69,7 @@
     moveField(primary,'stagePreset');
     const stageWidth=el('stageWidth');
     if(stageWidth&&stageWidth.parentElement&&stageWidth.parentElement.parentElement&&stageWidth.parentElement.parentElement.classList.contains('row'))moveNode(primary,stageWidth.parentElement.parentElement);
+    moveField(primary,'backgroundSetsStageSize');
     moveButton(primary,'setScreenResBtn');
     moveField(primary,'showGrid');
     moveButton(primary,'hideMenusBtn');
@@ -102,10 +103,11 @@
     params.insertBefore(source,primary.nextSibling);
 
     const appearance=makePanel('Sekundär - Darstellung','',false);
-    ['pIntensity','pOpacity','pGlow','pScreenBrightness','pScreenOpacity','pScreenScanlines','pImageAssetOpacity','pGreenscreenOpacity','pWaterOpacity','pVisualizerOpacity','pMandalaObjOpacity','pLife'].forEach(id=>moveField(appearance,id));
+    ['pIntensity','pOpacity','pGlow','pScreenBrightness','pScreenOpacity','pScreenLedSimulation','pScreenScanlines','pImageAssetOpacity','pGreenscreenOpacity','pWaterOpacity','pVisualizerOpacity','pMandalaObjOpacity','pLife'].forEach(id=>moveField(appearance,id));
     insertAfter(source,appearance);
 
     const reaction=makePanel('Musikreaktion - Frequenz und Threshold','',true);
+    moveField(reaction,'pScreenAudioEnabled');
     moveField(reaction,'pScreenAudio');
     moveField(reaction,'pMusic');
     const thresholdBelow=el('pThresholdBelow');
@@ -144,7 +146,7 @@
 
   function moveObjectDimensions(panel){
     [
-      'pScreenWidth','pScreenHeight','pScreenKeepAspect',
+      'pScreenWidth','pScreenHeight','pScreenKeepAspect','pScreenDepthRotation',
       'pLightEmitterShape','pLightRectangleEmission','pLightEmitterLength','pLightEmitterWidth','pLightEmitterHeight','pLightEmitterKeepAspect',
       'pImageAssetWidth','pImageAssetHeight','pImageAssetKeepAspect',
       'pGreenscreenWidth','pGreenscreenHeight','pGreenscreenKeepAspect','pGreenscreenSwapAspect',

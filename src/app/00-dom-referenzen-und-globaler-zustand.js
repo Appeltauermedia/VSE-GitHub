@@ -55,6 +55,7 @@ const vrScreenSegments=document.getElementById('vrScreenSegments');
 const stagePreset=document.getElementById('stagePreset');
 const stageWidthInput=document.getElementById('stageWidth');
 const stageHeightInput=document.getElementById('stageHeight');
+const backgroundSetsStageSize=document.getElementById('backgroundSetsStageSize');
 const setScreenResBtn=document.getElementById('setScreenResBtn');
 const mandalaEnabled=document.getElementById('mandalaEnabled');
 const mandalaSegments=document.getElementById('mandalaSegments');
