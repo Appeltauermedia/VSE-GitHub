@@ -98,11 +98,11 @@
   #empty{color:#8798b1;line-height:1.45;margin-top:20px}.type-light-only,.type-lightbar-only,.type-movinghead-only,.type-fog-only,.type-cloud-only,.type-screen-only,.type-text-only,.type-particle-only,.type-particle-common,.type-imageparticle-only,.type-imageasset-only,.type-audiosource-only,.type-greenscreen-only,.type-shadow-only,.type-water-only,.type-watersurface-only,.type-waterflow-only,.type-mandala-only{display:none} textarea{width:100%;height:150px;background:#080d15;color:#cfe5ff;border:1px solid #26364f;border-radius:12px;margin-top:12px;padding:10px;font-family:Consolas,monospace;font-size:12px}
 
 .cloudBasicPanel{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:6px;background:#14171a}
-.cloudBasicPanel #cloudExpertOpen{position:fixed;z-index:91;top:calc(var(--chrome-top) + 58px);right:12px;width:calc(var(--right-panel) - 24px);box-shadow:0 8px 20px rgba(0,0,0,.28)}
 .cloudExpertPanel{position:fixed;z-index:95;right:calc(var(--right-panel) + 18px);top:calc(var(--chrome-top) + 18px);width:min(390px,calc(100vw - var(--right-panel) - 48px));max-height:calc(100dvh - var(--chrome-top) - 36px);overflow:auto;padding:14px;border:1px solid #4b525a;border-radius:8px;background:#181b1e;box-shadow:0 20px 48px rgba(0,0,0,.48)}
 .cloudExpertPanel[hidden]{display:none}.cloudExpertHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}.cloudExpertHeader small{display:block;color:var(--muted);margin-top:2px}.cloudExpertHeader button{width:32px;height:32px;padding:0;font-size:22px;line-height:1}
-body.cloudExpertOpen #cloudExpertPanel{display:block!important}
 body.rightPanelCollapsed .cloudExpertPanel{right:18px;width:min(390px,calc(100vw - 36px))}
+#objectParamFloatingBody .cloudExpertPanel{position:static;width:auto;max-height:none;overflow:visible;padding:10px;margin:0;border-color:#333d48;background:#14181d;box-shadow:none}
+#objectParamFloatingBody .cloudExpertHeader button{display:none}
 #params.cloudObjectSelected .cloudHideInBasic{display:none!important}
   .panel{border:1px solid #25344c;background:rgba(6,10,18,.35);border-radius:14px;padding:12px;margin:12px 0}
   .mini{font-size:12px;color:#93a6c0;line-height:1.35}.meter{height:8px;border:1px solid #23334a;background:#070b12;border-radius:999px;overflow:hidden;margin:7px 0 2px}.meter>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,#3cc6ff,#f6fbff)}
@@ -301,7 +301,7 @@ header{display:none}
   color:var(--text);
   box-shadow:-14px 0 30px rgba(0,0,0,.18);
 }
-#rightPanelToggle,#objectTimelineMenuBtn,#audioMenuBtn{
+#rightPanelToggle,#objectTimelineMenuBtn,#objectParamMenuBtn,#audioMenuBtn{
   position:fixed;
   top:calc(var(--chrome-top) + 12px);
   right:calc(var(--right-panel) + 10px);
@@ -320,9 +320,10 @@ header{display:none}
   transition:right .2s ease,background .15s ease,border-color .15s ease;
 }
 #objectTimelineMenuBtn{top:calc(var(--chrome-top) + 58px)}
-#audioMenuBtn{top:calc(var(--chrome-top) + 104px)}
-#rightPanelToggle:hover,#objectTimelineMenuBtn:hover,#audioMenuBtn:hover,#audioMenuBtn[aria-expanded="true"]{background:#2b3035;border-color:#59616a}
-#rightPanelToggle svg,#objectTimelineMenuBtn svg,#audioMenuBtn svg{
+#objectParamMenuBtn{top:calc(var(--chrome-top) + 104px)}
+#audioMenuBtn{top:calc(var(--chrome-top) + 150px)}
+#rightPanelToggle:hover,#objectTimelineMenuBtn:hover,#objectParamMenuBtn:hover,#audioMenuBtn:hover,#objectTimelineMenuBtn[aria-expanded="true"],#objectParamMenuBtn[aria-expanded="true"],#audioMenuBtn[aria-expanded="true"]{background:#2b3035;border-color:#59616a}
+#rightPanelToggle svg,#objectTimelineMenuBtn svg,#objectParamMenuBtn svg,#audioMenuBtn svg{
   width:21px;
   height:21px;
   fill:none;
@@ -355,7 +356,7 @@ body.rightPanelCollapsed #right{
   overflow:hidden;
   pointer-events:none;
 }
-body.rightPanelCollapsed #rightPanelToggle,body.rightPanelCollapsed #objectTimelineMenuBtn,body.rightPanelCollapsed #audioMenuBtn{right:10px;background:#2b3035}
+body.rightPanelCollapsed #rightPanelToggle,body.rightPanelCollapsed #objectTimelineMenuBtn,body.rightPanelCollapsed #objectParamMenuBtn,body.rightPanelCollapsed #audioMenuBtn{right:10px;background:#2b3035}
 body.audioDockCollapsed #right{
   padding-bottom:calc(var(--audio-analyzer-dock-h) + 76px);
 }
@@ -750,6 +751,26 @@ input[type=range],
 #objectTimelineFloatingBody #timelineParams>h3{display:none}
 #objectTimelineFloatingBody #timelineDropZone,#objectTimelineFloatingBody #timelineUseSelectedObjectBtn{display:none}
 #objectTimelineFloatingBody #timelineEventObject{pointer-events:none;opacity:.7}
+#objectParamFloatingPanel{
+  position:fixed;z-index:86;top:calc(var(--chrome-top) + 104px);right:58px;width:min(430px,calc(100vw - 76px));max-height:calc(100dvh - var(--chrome-top) - 76px);overflow:auto;
+  color:var(--text);background:rgba(13,17,22,.98);border:1px solid var(--line);border-radius:10px;box-shadow:0 20px 54px rgba(0,0,0,.48)
+}
+#objectParamFloatingPanel[hidden]{display:none}
+.objectParamFloatingHeader{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;background:#151a20;border-bottom:1px solid var(--line);cursor:move;user-select:none}
+.objectParamFloatingHeader b{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.objectParamFloatingHeader small{display:block;margin-top:2px;color:var(--muted);font-size:10px}
+.objectParamFloatingHeader button{width:30px;height:30px;margin:0;padding:0;font-size:20px;line-height:1;cursor:pointer}
+.objectParamFloatingActions{display:flex;align-items:center;gap:6px}
+.objectParamFloatingActions button{display:grid;place-items:center}
+.objectParamFloatingActions svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:22;stroke-linecap:round;stroke-linejoin:round}
+.objectParamRestoreIcon{display:none}
+#objectParamFloatingPanel.isMinimized{max-height:none;overflow:hidden}
+#objectParamFloatingPanel.isMinimized .objectParamFloatingHeader{position:static;border-bottom:0}
+#objectParamFloatingPanel.isMinimized .objectParamFloatingHeader small,#objectParamFloatingPanel.isMinimized #objectParamFloatingBody{display:none}
+#objectParamFloatingPanel.isMinimized .objectParamMinimizeIcon{display:none}
+#objectParamFloatingPanel.isMinimized .objectParamRestoreIcon{display:block}
+#objectParamFloatingBody{padding:10px}
+#objectParamFloatingBody>details.menuTier:first-child{margin-top:0}
 #cameraTimelinePanel{position:fixed;z-index:125;top:calc(var(--chrome-top) + 18px);right:18px;width:min(430px,calc(100vw - 28px));max-height:calc(100dvh - var(--chrome-top) - 36px);overflow:auto;color:var(--text);background:#171a1d;border:1px solid var(--line);border-radius:8px;box-shadow:0 20px 48px rgba(0,0,0,.5)}
 #cameraTimelinePanel[hidden]{display:none}
 .cameraTimelineHeader{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px 9px 14px;background:#171a1d;border-bottom:1px solid var(--line);cursor:move;user-select:none}
@@ -825,6 +846,7 @@ body.menuless #app{display:block}
 body.menuless #app>aside:not(#right),
 body.menuless #right,
 body.menuless #rightPanelToggle,
+body.menuless #objectParamMenuBtn,
 body.menuless #objectTimelineMenuBtn,
 body.menuless #audioMenuBtn,
 body.menuless .topbarFloatingPanel,

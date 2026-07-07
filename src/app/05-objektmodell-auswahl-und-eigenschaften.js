@@ -120,6 +120,7 @@ function selectSingleCore(o){
   selected=o;
   empty.style.display=o?'none':'block';
   params.style.display=o?'block':'none';
+  if(typeof syncObjectParamFloatingSelection==='function')syncObjectParamFloatingSelection();
   if(!o){updateParticleTriggerButton();return;}
   ensureObjectAspect(o);
   if(objectKeepAspectInput)objectKeepAspectInput.checked=o.objectKeepAspect!==false;
@@ -465,8 +466,9 @@ function selectSingleCore(o){
   fields.Music.value=o.music;
   if(fields.ThresholdBelow)fields.ThresholdBelow.checked=!!o.thresholdBelow;
   updateAudioFreqUI(o);
-  fields.Life.value=o.life;
+  if(fields.Life)fields.Life.value=o.life;
   syncTypeUI();
+  if(typeof syncObjectParamFloatingSelection==='function')syncObjectParamFloatingSelection();
   updateParticleTriggerButton();
 }
 function isSelected(o){return !window.vseRecordingCleanFrame&&!!(o&&selectedIds.has(o.id));}
@@ -1346,8 +1348,19 @@ bgColor.addEventListener('input',()=>background.color=bgColor.value);
 bgMode.addEventListener('input',()=>background.mode=bgMode.value);
 bgOpacity.addEventListener('input',()=>{background.opacity=parseFloat(bgOpacity.value);bgOpacityValue.textContent=background.opacity.toFixed(2);});
 bgZoom.addEventListener('input',()=>{background.zoom=parseFloat(bgZoom.value);bgZoomValue.textContent=background.zoom.toFixed(2);});
-bgFile.addEventListener('change',()=>{const f=bgFile.files&&bgFile.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{background.imageName=f.name;background.imageData=r.result;bgImageData=r.result;makeBgTexture(img);applyBackgroundSizeToStage(img);};img.src=r.result;};r.readAsDataURL(f);});
-clearBgBtn.onclick=()=>{background.imageName=null;background.imageData=null;bgImageData=null;if(bgTex){gl.deleteTexture(bgTex);bgTex=null;}bgImageSize=[0,0];bgFile.value='';};
+function syncBackgroundPanUi(){
+  background.panX=Math.max(-1,Math.min(1,Number(background.panX)||0));
+  background.panY=Math.max(-1,Math.min(1,Number(background.panY)||0));
+  if(bgPanX)bgPanX.value=background.panX;
+  if(bgPanY)bgPanY.value=background.panY;
+  const xValue=document.getElementById('bgPanXValue'),yValue=document.getElementById('bgPanYValue');
+  if(xValue)xValue.textContent=Math.round(background.panX*100)+'%';
+  if(yValue)yValue.textContent=Math.round(background.panY*100)+'%';
+}
+if(bgPanX)bgPanX.addEventListener('input',()=>{background.panX=parseFloat(bgPanX.value)||0;syncBackgroundPanUi();});
+if(bgPanY)bgPanY.addEventListener('input',()=>{background.panY=parseFloat(bgPanY.value)||0;syncBackgroundPanUi();});
+bgFile.addEventListener('change',()=>{const f=bgFile.files&&bgFile.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{background.imageName=f.name;background.imageData=r.result;background.mode='cover';background.panX=0;background.panY=0;if(bgMode)bgMode.value='cover';syncBackgroundPanUi();bgImageData=r.result;makeBgTexture(img);applyBackgroundSizeToStage(img);};img.src=r.result;};r.readAsDataURL(f);});
+clearBgBtn.onclick=()=>{background.imageName=null;background.imageData=null;background.panX=0;background.panY=0;syncBackgroundPanUi();bgImageData=null;if(bgTex){gl.deleteTexture(bgTex);bgTex=null;}bgImageSize=[0,0];bgFile.value='';};
 function bgCaptureShapeLabel(){const s=getBgCaptureShape();return s==='circle'?'Kreis / Ellipse':s==='path'?'Freier Pfad':'Rechteck';}
 if(bgCaptureShape)bgCaptureShape.addEventListener('change',()=>{if(bgToImageAssetStatus)bgToImageAssetStatus.textContent='Ausschnittform: '+bgCaptureShapeLabel()+'.';});
 if(bgCaptureSource)bgCaptureSource.addEventListener('change',()=>{if(bgToImageAssetStatus)bgToImageAssetStatus.textContent=getBgCaptureSource()==='stage'?'Ausschnittquelle: Bühne mit Objekten.':'Ausschnittquelle: Nur Hintergrund.';});

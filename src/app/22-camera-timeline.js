@@ -7,13 +7,22 @@
   const playhead=byId('timelineCameraPlayhead');
   if(!addButton||!lane||!clips||!playhead)return;
 
-  const wholeView=()=>({zoom:1,panX:0,panY:0});
+  const wholeView=()=>({zoom:1,panX:0,panY:0,bgPanX:0,bgPanY:0});
   const currentView=()=>({
     zoom:Math.max(.2,Math.min(10,Number(scene.cameraZoom)||1)),
     panX:Math.max(-2,Math.min(2,Number(scene.cameraPanX)||0)),
-    panY:Math.max(-2,Math.min(2,Number(scene.cameraPanY)||0))
+    panY:Math.max(-2,Math.min(2,Number(scene.cameraPanY)||0)),
+    bgPanX:Math.max(-1,Math.min(1,Number(background&&background.panX)||0)),
+    bgPanY:Math.max(-1,Math.min(1,Number(background&&background.panY)||0))
   });
-  const cloneView=view=>({zoom:Number(view.zoom)||1,panX:Number(view.panX)||0,panY:Number(view.panY)||0});
+  const cloneView=view=>({zoom:Number(view.zoom)||1,panX:Number(view.panX)||0,panY:Number(view.panY)||0,bgPanX:Number(view.bgPanX)||0,bgPanY:Number(view.bgPanY)||0});
+  const mixView=(from,to,t)=>({
+    zoom:from.zoom+(to.zoom-from.zoom)*t,
+    panX:from.panX+(to.panX-from.panX)*t,
+    panY:from.panY+(to.panY-from.panY)*t,
+    bgPanX:from.bgPanX+(to.bgPanX-from.bgPanX)*t,
+    bgPanY:from.bgPanY+(to.bgPanY-from.bgPanY)*t
+  });
   const cameraMoves=()=>timelineState.events.filter(event=>event&&event.timelineAssetKind==='camera').sort((a,b)=>(Number(a.time)||0)-(Number(b.time)||0));
   const timelineDuration=()=>Math.max(5,Number(timelineState.duration)||180);
   const clampTime=value=>Math.max(0,Math.min(timelineDuration(),Number(value)||0));
@@ -23,7 +32,7 @@
   panel.innerHTML=`
     <div class="cameraTimelineHeader"><div><b>Kamerafahrt</b><small>Start- und Endausschnitt</small></div><button id="cameraTimelineClose" type="button" aria-label="Kameramenü schließen">×</button></div>
     <div class="cameraTimelineBody">
-      <p class="mini">Ansicht mit Strg+Mausrad und Strg+Ziehen einstellen und anschließend als Ausschnitt übernehmen.</p>
+      <p class="mini">Ansicht mit Strg+Mausrad, Strg+Ziehen oder Hintergrund-Ziehen einstellen und anschließend als Ausschnitt übernehmen.</p>
       <button id="cameraChoosePath" class="cameraChoosePath" type="button">Mehrpunkt-Pfad erstellen</button>
       <div class="row"><div><label>Startzeit (s)</label><input id="cameraTimelineStartTime" type="number" min="0" step="0.01"></div><div><label>Dauer (s)</label><input id="cameraTimelineDuration" type="number" min="0.1" step="0.1" value="5"></div></div>
       <div class="cameraViewBlock"><b>Startausschnitt</b><span id="cameraStartInfo"></span><div class="cameraButtonRow"><button id="cameraCaptureStart" type="button">Aktuelle Ansicht</button><button id="cameraWholeStart" type="button">Gesamte Fläche</button><button id="cameraPreviewStart" type="button">Anzeigen</button></div></div>
@@ -60,7 +69,7 @@
   let editingId='',startView=wholeView(),endView=wholeView(),pathPoints=[];
 
   function viewLabel(view){
-    return Math.round(view.zoom*100)+'% · X '+view.panX.toFixed(2)+' · Y '+view.panY.toFixed(2);
+    return Math.round(view.zoom*100)+'% · X '+view.panX.toFixed(2)+' · Y '+view.panY.toFixed(2)+' · BG '+Math.round((Number(view.bgPanX)||0)*100)+'%';
   }
   function refreshPanel(){
     startInfo.textContent=viewLabel(startView);endInfo.textContent=viewLabel(endView);
@@ -79,6 +88,11 @@
     scene.cameraZoom=Math.max(.2,Math.min(10,Number(view.zoom)||1));
     scene.cameraPanX=Math.max(-2,Math.min(2,Number(view.panX)||0));
     scene.cameraPanY=Math.max(-2,Math.min(2,Number(view.panY)||0));
+    if(background){
+      background.panX=Math.max(-1,Math.min(1,Number(view.bgPanX)||0));
+      background.panY=Math.max(-1,Math.min(1,Number(view.bgPanY)||0));
+      if(typeof syncBackgroundPanUi==='function')syncBackgroundPanUi();
+    }
     if(typeof syncWorkspaceView==='function')syncWorkspaceView();
   }
   function openPanel(move=null){
@@ -206,10 +220,10 @@
       const segment=Math.min(segmentCount-1,Math.floor(position));
       const localRaw=position-segment,local=localRaw*localRaw*(3-2*localRaw);
       const from=points[segment],to=(segment===points.length-1)?points[0]:points[segment+1];
-      return {zoom:from.zoom+(to.zoom-from.zoom)*local,panX:from.panX+(to.panX-from.panX)*local,panY:from.panY+(to.panY-from.panY)*local};
+      return mixView(from,to,local);
     }
     const t=type==='circle'?(1-Math.cos(rawT*Math.PI*2))*.5:rawT*rawT*(3-2*rawT);
-    const view={zoom:a.zoom+(b.zoom-a.zoom)*t,panX:a.panX+(b.panX-a.panX)*t,panY:a.panY+(b.panY-a.panY)*t};
+    const view=mixView(cloneView(a),cloneView(b),t);
     if(type==='circle'&&rawT>0&&rawT<1){
       const stageW=Math.max(1,Number(scene.stageWidth||stageState.w)||1920);
       const radius=Math.max(0,Number(active.cameraCircleRadius??200));

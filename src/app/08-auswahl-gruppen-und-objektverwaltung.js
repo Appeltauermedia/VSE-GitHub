@@ -233,9 +233,199 @@ function createWaterObjectFromDraw(cut){
   waterDrawDrag=null;
   select(o);
 }
-canvas.addEventListener('pointerdown',e=>{const r=canvas.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;if(waterDrawMode){const shape=waterShapeToCaptureShape(waterDrawMode.draft&&waterDrawMode.draft.waterShape);waterDrawDrag={shape,startMx:mx,startMy:my,lastMx:mx,lastMy:my,points:shape==='path'?[{x:mx,y:my}]:[]};if(shape==='path'){if(selectionBox)selectionBox.style.display='none';updatePathSelectionOverlay(waterDrawDrag.points,false);}else if(selectionBox){hidePathSelectionOverlay();selectionBox.style.display='block';selectionBox.style.borderRadius=waterShapeSelectionRadius(waterDrawMode.draft&&waterDrawMode.draft.waterShape);setSelectionBoxFromCanvasRect(mx,my,0,0);}canvas.setPointerCapture(e.pointerId);return;}if(bgCaptureMode){const shape=getBgCaptureShape();bgCaptureDrag={shape,startMx:mx,startMy:my,lastMx:mx,lastMy:my,points:shape==='path'?[{x:mx,y:my}]:[]};if(shape==='path'){if(selectionBox)selectionBox.style.display='none';updatePathSelectionOverlay(bgCaptureDrag.points,false);}else if(selectionBox){hidePathSelectionOverlay();selectionBox.style.display='block';selectionBox.style.borderRadius=shape==='circle'?'999px':'6px';setSelectionBoxFromCanvasRect(mx,my,0,0);}canvas.setPointerCapture(e.pointerId);return;}const o=hit(mx,my);if(o){if(e.shiftKey)select(o,true);else if(!selectedIds.has(o.id))select(o,false);else selected=o;let arr=getSelectedObjects();if(arr.length<2&&o.groupId)arr=objects.filter(x=>x.groupId===o.groupId);arr=arr.filter(x=>!(x.type==='mandalaVisualizer'&&x.mandalaObjLocked)&&!(x.type==='cloud'&&x.cloudLocked));drag={type:'move',startMx:mx,startMy:my,items:arr.map(x=>({o:x,x:Number(x.x||0),y:Number(x.y||0)}))};canvas.setPointerCapture(e.pointerId);}else{hidePathSelectionOverlay();selectionDrag={startMx:mx,startMy:my,lastMx:mx,lastMy:my,add:e.shiftKey};if(selectionBox){selectionBox.style.display='block';setSelectionBoxFromCanvasRect(mx,my,0,0);}canvas.setPointerCapture(e.pointerId);}});
-canvas.addEventListener('pointermove',e=>{const r=canvas.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;if(waterDrawDrag){waterDrawDrag.lastMx=mx;waterDrawDrag.lastMy=my;if(waterDrawDrag.shape==='path'){const pts=waterDrawDrag.points;const last=pts[pts.length-1];if(!last||Math.hypot(mx-last.x,my-last.y)>2)pts.push({x:mx,y:my});updatePathSelectionOverlay(pts,false);}else if(selectionBox){const pts=[{x:waterDrawDrag.startMx,y:waterDrawDrag.startMy},{x:mx,y:my}];const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;setSelectionBoxFromCanvasRect(x,y,w,h);}return;}if(bgCaptureDrag){bgCaptureDrag.lastMx=mx;bgCaptureDrag.lastMy=my;if(bgCaptureDrag.shape==='path'){const pts=bgCaptureDrag.points;const last=pts[pts.length-1];if(!last||Math.hypot(mx-last.x,my-last.y)>2)pts.push({x:mx,y:my});updatePathSelectionOverlay(pts,false);}else if(selectionBox){const pts=[{x:bgCaptureDrag.startMx,y:bgCaptureDrag.startMy},{x:mx,y:my}];const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;setSelectionBoxFromCanvasRect(x,y,w,h);}return;}if(drag&&drag.type==='move'){const beforeImageAssetFollow=captureGroupedImageAssetPositions();const dx=(mx-drag.startMx)/r.width*100,dy=(my-drag.startMy)/r.height*100;for(const it of drag.items){it.o.x=it.x+dx;it.o.y=it.y+dy;}syncGroupedAudioSourcesWithImageAssets(beforeImageAssetFollow);if(selected)selectSingleCore(selected);updateHud();return;}if(selectionDrag){selectionDrag.lastMx=mx;selectionDrag.lastMy=my;if(selectionBox){const x=Math.min(selectionDrag.startMx,mx),y=Math.min(selectionDrag.startMy,my),w=Math.abs(mx-selectionDrag.startMx),h=Math.abs(my-selectionDrag.startMy);setSelectionBoxFromCanvasRect(x,y,w,h);}}});
-canvas.addEventListener('pointerup',()=>{if(waterDrawDrag){const capture=waterDrawDrag;const pts=capture.shape==='path'?capture.points:[{x:capture.startMx,y:capture.startMy},{x:capture.lastMx,y:capture.lastMy}];const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;if(selectionBox){selectionBox.style.display='none';selectionBox.style.borderRadius='6px';}hidePathSelectionOverlay();const cut={x,y,w,h,shape:capture.shape,points:capture.shape==='path'?capture.points.map(p=>({x:p.x,y:p.y})):null};waterDrawDrag=null;if(w>4&&h>4&&(cut.shape!=='path'||(cut.points&&cut.points.length>2)))createWaterObjectFromDraw(cut);return;}if(bgCaptureDrag){const capture=bgCaptureDrag;const pts=capture.shape==='path'?capture.points:[{x:capture.startMx,y:capture.startMy},{x:capture.lastMx,y:capture.lastMy}];const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;if(selectionBox){selectionBox.style.display='none';selectionBox.style.borderRadius='6px';}hidePathSelectionOverlay();const cut={x,y,w,h,shape:capture.shape,points:capture.shape==='path'?capture.points.map(p=>({x:p.x,y:p.y})):null};bgCaptureDrag=null;bgCaptureMode=false;setBgCaptureButtonState(false);if(w>4&&h>4&&(cut.shape!=='path'||(cut.points&&cut.points.length>2)))createImageAssetFromBackgroundRect(cut).catch(err=>{console.error(err);alert('Ausschnitt konnte nicht erzeugt werden.');});return;}if(selectionDrag){const x=Math.min(selectionDrag.startMx,selectionDrag.lastMx),y=Math.min(selectionDrag.startMy,selectionDrag.lastMy),w=Math.abs(selectionDrag.lastMx-selectionDrag.startMx),h=Math.abs(selectionDrag.lastMy-selectionDrag.startMy);if(selectionBox)selectionBox.style.display='none';hidePathSelectionOverlay();if(w>4&&h>4)selectRect({x,y,w,h},selectionDrag.add);else if(!selectionDrag.add)select(null);selectionDrag=null;}drag=null;});
+function isObjectReferencePointHit(o,mx,my){
+  if(!o||!selectedIds.has(o.id))return false;
+  const radius=Math.max(7*stageScale(),5);
+  return Math.hypot(mx-objCssX(o),my-objCssY(o))<=radius;
+}
+function movableSelectionFor(o){
+  let arr=getSelectedObjects();
+  if(arr.length<2&&o&&o.groupId)arr=objects.filter(x=>x.groupId===o.groupId);
+  return arr.filter(x=>!(x.type==='mandalaVisualizer'&&x.mandalaObjLocked)&&!(x.type==='cloud'&&x.cloudLocked));
+}
+function beginMoveDrag(o,mx,my){
+  const arr=movableSelectionFor(o);
+  drag={type:'move',startMx:mx,startMy:my,items:arr.map(x=>({o:x,x:Number(x.x||0),y:Number(x.y||0)}))};
+}
+function backgroundPanMetrics(){
+  const cw=Math.max(1,canvas.clientWidth||canvas.width||1);
+  const ch=Math.max(1,canvas.clientHeight||canvas.height||1);
+  const iw=Math.max(1,Array.isArray(bgImageSize)?Number(bgImageSize[0])||0:0);
+  const ih=Math.max(1,Array.isArray(bgImageSize)?Number(bgImageSize[1])||0:0);
+  const zoom=Math.max(.001,Number(background&&background.zoom)||1);
+  const mode=(background&&background.mode)||'cover';
+  let drawW=cw,drawH=ch;
+  if(mode==='stretch'){
+    drawW=cw/zoom;drawH=ch/zoom;
+  }else{
+    const canvasRatio=cw/ch,imgRatio=iw/ih;
+    const sc=(mode==='contain'?Math.min(canvasRatio/imgRatio,1):Math.max(canvasRatio/imgRatio,1))/zoom;
+    drawW=(imgRatio*sc/canvasRatio)*cw;
+    drawH=sc*ch;
+  }
+  return {maxX:Math.max(0,(drawW-cw)*.5),maxY:Math.max(0,(drawH-ch)*.5)};
+}
+function canDragBackgroundPan(){
+  return !!(background&&background.imageData&&Array.isArray(bgImageSize)&&bgImageSize[0]&&bgImageSize[1]);
+}
+function beginBackgroundPanDrag(mx,my){
+  drag={type:'backgroundPan',startMx:mx,startMy:my,startPanX:Number(background.panX)||0,startPanY:Number(background.panY)||0,moved:false,metrics:backgroundPanMetrics()};
+}
+canvas.addEventListener('pointerdown',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(waterDrawMode){
+    const shape=waterShapeToCaptureShape(waterDrawMode.draft&&waterDrawMode.draft.waterShape);
+    waterDrawDrag={shape,startMx:mx,startMy:my,lastMx:mx,lastMy:my,points:shape==='path'?[{x:mx,y:my}]:[]};
+    if(shape==='path'){if(selectionBox)selectionBox.style.display='none';updatePathSelectionOverlay(waterDrawDrag.points,false);}
+    else if(selectionBox){hidePathSelectionOverlay();selectionBox.style.display='block';selectionBox.style.borderRadius=waterShapeSelectionRadius(waterDrawMode.draft&&waterDrawMode.draft.waterShape);setSelectionBoxFromCanvasRect(mx,my,0,0);}
+    canvas.setPointerCapture(e.pointerId);return;
+  }
+  if(bgCaptureMode){
+    const shape=getBgCaptureShape();
+    bgCaptureDrag={shape,startMx:mx,startMy:my,lastMx:mx,lastMy:my,points:shape==='path'?[{x:mx,y:my}]:[]};
+    if(shape==='path'){if(selectionBox)selectionBox.style.display='none';updatePathSelectionOverlay(bgCaptureDrag.points,false);}
+    else if(selectionBox){hidePathSelectionOverlay();selectionBox.style.display='block';selectionBox.style.borderRadius=shape==='circle'?'999px':'6px';setSelectionBoxFromCanvasRect(mx,my,0,0);}
+    canvas.setPointerCapture(e.pointerId);return;
+  }
+  const o=hit(mx,my);
+  if(o){
+    const clickedSelectedReference=!e.shiftKey&&isObjectReferencePointHit(o,mx,my);
+    if(e.shiftKey)select(o,true);
+    else if(!selectedIds.has(o.id))select(o,false);
+    else selected=o;
+    if(clickedSelectedReference){
+      drag={type:'referenceDeselect',object:o,startMx:mx,startMy:my,moved:false};
+    }else{
+      beginMoveDrag(o,mx,my);
+    }
+    canvas.setPointerCapture(e.pointerId);
+  }else{
+    hidePathSelectionOverlay();
+    if(!e.shiftKey&&canDragBackgroundPan()){
+      beginBackgroundPanDrag(mx,my);
+      if(selectionBox)selectionBox.style.display='none';
+    }else{
+      selectionDrag={startMx:mx,startMy:my,lastMx:mx,lastMy:my,add:e.shiftKey};
+      if(selectionBox){selectionBox.style.display='block';setSelectionBoxFromCanvasRect(mx,my,0,0);}
+    }
+    canvas.setPointerCapture(e.pointerId);
+  }
+});
+canvas.addEventListener('pointermove',e=>{
+  const r=canvas.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  if(waterDrawDrag){
+    waterDrawDrag.lastMx=mx;waterDrawDrag.lastMy=my;
+    if(waterDrawDrag.shape==='path'){
+      const pts=waterDrawDrag.points;const last=pts[pts.length-1];
+      if(!last||Math.hypot(mx-last.x,my-last.y)>2)pts.push({x:mx,y:my});
+      updatePathSelectionOverlay(pts,false);
+    }else if(selectionBox){
+      const pts=[{x:waterDrawDrag.startMx,y:waterDrawDrag.startMy},{x:mx,y:my}];
+      const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+      const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+      setSelectionBoxFromCanvasRect(x,y,w,h);
+    }
+    return;
+  }
+  if(bgCaptureDrag){
+    bgCaptureDrag.lastMx=mx;bgCaptureDrag.lastMy=my;
+    if(bgCaptureDrag.shape==='path'){
+      const pts=bgCaptureDrag.points;const last=pts[pts.length-1];
+      if(!last||Math.hypot(mx-last.x,my-last.y)>2)pts.push({x:mx,y:my});
+      updatePathSelectionOverlay(pts,false);
+    }else if(selectionBox){
+      const pts=[{x:bgCaptureDrag.startMx,y:bgCaptureDrag.startMy},{x:mx,y:my}];
+      const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+      const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+      setSelectionBoxFromCanvasRect(x,y,w,h);
+    }
+    return;
+  }
+  if(drag&&drag.type==='referenceDeselect'){
+    if(Math.hypot(mx-drag.startMx,my-drag.startMy)>3){
+      const source=drag.object;
+      beginMoveDrag(source,drag.startMx,drag.startMy);
+    }else{
+      return;
+    }
+  }
+  if(drag&&drag.type==='move'){
+    const beforeImageAssetFollow=captureGroupedImageAssetPositions();
+    const dx=(mx-drag.startMx)/r.width*100,dy=(my-drag.startMy)/r.height*100;
+    for(const it of drag.items){it.o.x=it.x+dx;it.o.y=it.y+dy;}
+    syncGroupedAudioSourcesWithImageAssets(beforeImageAssetFollow);
+    if(selected)selectSingleCore(selected);
+    updateHud();
+    return;
+  }
+  if(drag&&drag.type==='backgroundPan'){
+    const dx=mx-drag.startMx,dy=my-drag.startMy;
+    if(Math.hypot(dx,dy)>2)drag.moved=true;
+    if(drag.moved){
+      const metrics=drag.metrics||backgroundPanMetrics();
+      if(metrics.maxX>0)background.panX=Math.max(-1,Math.min(1,drag.startPanX-dx/metrics.maxX));
+      if(metrics.maxY>0)background.panY=Math.max(-1,Math.min(1,drag.startPanY-dy/metrics.maxY));
+      if(typeof syncBackgroundPanUi==='function')syncBackgroundPanUi();
+    }
+    return;
+  }
+  if(selectionDrag){
+    selectionDrag.lastMx=mx;selectionDrag.lastMy=my;
+    if(selectionBox){
+      const x=Math.min(selectionDrag.startMx,mx),y=Math.min(selectionDrag.startMy,my),w=Math.abs(mx-selectionDrag.startMx),h=Math.abs(my-selectionDrag.startMy);
+      setSelectionBoxFromCanvasRect(x,y,w,h);
+    }
+  }
+});
+canvas.addEventListener('pointerup',()=>{
+  if(waterDrawDrag){
+    const capture=waterDrawDrag;
+    const pts=capture.shape==='path'?capture.points:[{x:capture.startMx,y:capture.startMy},{x:capture.lastMx,y:capture.lastMy}];
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    if(selectionBox){selectionBox.style.display='none';selectionBox.style.borderRadius='6px';}
+    hidePathSelectionOverlay();
+    const cut={x,y,w,h,shape:capture.shape,points:capture.shape==='path'?capture.points.map(p=>({x:p.x,y:p.y})):null};
+    waterDrawDrag=null;
+    if(w>4&&h>4&&(cut.shape!=='path'||(cut.points&&cut.points.length>2)))createWaterObjectFromDraw(cut);
+    return;
+  }
+  if(bgCaptureDrag){
+    const capture=bgCaptureDrag;
+    const pts=capture.shape==='path'?capture.points:[{x:capture.startMx,y:capture.startMy},{x:capture.lastMx,y:capture.lastMy}];
+    const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+    const x=Math.min(...xs),y=Math.min(...ys),w=Math.max(...xs)-x,h=Math.max(...ys)-y;
+    if(selectionBox){selectionBox.style.display='none';selectionBox.style.borderRadius='6px';}
+    hidePathSelectionOverlay();
+    const cut={x,y,w,h,shape:capture.shape,points:capture.shape==='path'?capture.points.map(p=>({x:p.x,y:p.y})):null};
+    bgCaptureDrag=null;bgCaptureMode=false;setBgCaptureButtonState(false);
+    if(w>4&&h>4&&(cut.shape!=='path'||(cut.points&&cut.points.length>2)))createImageAssetFromBackgroundRect(cut).catch(err=>{console.error(err);alert('Ausschnitt konnte nicht erzeugt werden.');});
+    return;
+  }
+  if(drag&&drag.type==='referenceDeselect'){
+    select(null);
+    drag=null;
+    return;
+  }
+  if(drag&&drag.type==='backgroundPan'){
+    const moved=!!drag.moved;
+    drag=null;
+    if(!moved)select(null);
+    else if(window.vseHistory)window.vseHistory.commit();
+    return;
+  }
+  if(selectionDrag){
+    const x=Math.min(selectionDrag.startMx,selectionDrag.lastMx),y=Math.min(selectionDrag.startMy,selectionDrag.lastMy),w=Math.abs(selectionDrag.lastMx-selectionDrag.startMx),h=Math.abs(selectionDrag.lastMy-selectionDrag.startMy);
+    if(selectionBox)selectionBox.style.display='none';
+    hidePathSelectionOverlay();
+    if(w>4&&h>4)selectRect({x,y,w,h},selectionDrag.add);
+    else if(!selectionDrag.add)select(null);
+    selectionDrag=null;
+  }
+  drag=null;
+});
 function restoreBackgroundTextureIfNeeded(snapshot){
   // Objektlöschen darf niemals Layer 0 / Hintergrund anfassen.
   // Falls ein WebGL-Zustand oder eine alte Release-Funktion den Hintergrund aus dem Speicher zieht,

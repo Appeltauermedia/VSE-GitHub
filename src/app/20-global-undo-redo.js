@@ -17,7 +17,7 @@
     }
     return map;
   }
-  function cleanAudioClip(clip){return {id:clip.id,name:clip.name,start:Number(clip.start)||0,duration:Number(clip.duration)||0,active:clip.active!==false,objectId:clip.objectId||'',sendToBackbone:!!clip.sendToBackbone};}
+  function cleanAudioClip(clip){return {id:clip.id,name:clip.name,start:Number(clip.start)||0,duration:Number(clip.duration)||0,audioOffset:Number(clip.audioOffset)||0,audioSourceDuration:Number(clip.audioSourceDuration)||0,active:clip.active!==false,objectId:clip.objectId||'',sendToBackbone:!!clip.sendToBackbone};}
   function captureAudioRuntime(){
     const map=new Map();
     for(const clip of timelineState.audioClips||[])map.set(clip.id,{_element:clip._element,_sourceNode:clip._sourceNode,_gainNode:clip._gainNode,_objectUrl:clip._objectUrl});

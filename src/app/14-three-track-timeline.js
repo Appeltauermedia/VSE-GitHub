@@ -34,6 +34,7 @@
     const ctx=ensureAudio();
     const element=document.createElement('audio');
     const objectUrl=URL.createObjectURL(file);
+    const requestedDuration=finiteDuration(clip&&clip.duration,0);
     element.preload='auto';element.src=objectUrl;element.volume=audioVolume?Number(audioVolume.value||1):1;
     clip._element=element;clip._objectUrl=objectUrl;
     await new Promise((resolve,reject)=>{
@@ -42,7 +43,9 @@
       const cleanup=()=>{element.removeEventListener('loadedmetadata',done);element.removeEventListener('error',fail);};
       element.addEventListener('loadedmetadata',done);element.addEventListener('error',fail);element.load();
     });
-    clip.duration=Math.max(.1,Number(element.duration)||5);
+    clip.audioOffset=Math.max(0,Number(clip.audioOffset)||0);
+    clip.audioSourceDuration=Math.max(.1,Number(element.duration)||finiteDuration(clip.audioSourceDuration,5));
+    clip.duration=requestedDuration?Math.max(.1,Math.min(requestedDuration,clip.audioSourceDuration-clip.audioOffset)):clip.audioSourceDuration;
     clip._sourceNode=ctx.createMediaElementSource(element);
     clip._gainNode=ctx.createGain();clip._gainNode.gain.value=1;
     clip._sourceNode.connect(clip._gainNode);
@@ -54,7 +57,10 @@
   window.vseCreateTimelineAudioRuntime=createTimelineAudioRuntime;
   const mediaElements=()=>{
     const list=[];
-    timelineState.audioClips.filter(clip=>clip&&clip.active!==false&&clip._element).forEach(clip=>list.push({el:clip._element,start:Number(clip.start)||0,duration:Number(clip.duration)||Number(clip._element.duration)||0,clip}));
+    timelineState.audioClips.filter(clip=>clip&&clip.active!==false&&clip._element).forEach(clip=>{
+      ensureAudioEditState(clip);
+      list.push({el:clip._element,start:Number(clip.start)||0,duration:Number(clip.duration)||Number(clip._element.duration)||0,offset:Number(clip.audioOffset)||0,sourceDuration:Number(clip.audioSourceDuration)||Number(clip._element.duration)||0,clip});
+    });
     return list;
   };
 
@@ -72,18 +78,25 @@
   };
 
   function syncMediaTime(time,play){
-    for(const item of mediaElements()){
+    const timelineMedia=mediaElements();
+    for(const item of timelineMedia){
       const el=item.el,mediaDuration=Number(item.duration)||Number(el.duration)||0;
       const localTime=time-Number(item.start||0);
       const inRange=localTime>=0&&(!mediaDuration||localTime<mediaDuration);
-      const target=Math.max(0,Math.min(localTime,mediaDuration||localTime));
+      const target=Math.max(0,Math.min(localTime+Number(item.offset||0),Number(item.sourceDuration)||mediaDuration||localTime));
       if(inRange&&Math.abs((Number(el.currentTime)||0)-target)>.2){
         try{el.currentTime=target;}catch(error){}
       }
       if(item.clip){
-        if(item.clip.objectId)el.muted=!(play&&inRange);
-        else if(item.clip._gainNode)item.clip._gainNode.gain.value=play&&inRange?1:0;
-        if(play){if(el.paused)Promise.resolve(el.play()).catch(()=>{});}
+        const elementHasActiveClip=timelineMedia.some(other=>{
+          if(!other||other.el!==el)return false;
+          const otherDuration=Number(other.duration)||Number(other.el.duration)||0;
+          const otherLocal=time-Number(other.start||0);
+          return otherLocal>=0&&(!otherDuration||otherLocal<otherDuration);
+        });
+        if(item.clip.objectId)el.muted=!(play&&elementHasActiveClip);
+        else if(item.clip._gainNode)item.clip._gainNode.gain.value=play&&elementHasActiveClip?1:0;
+        if(play&&elementHasActiveClip){if(el.paused)Promise.resolve(el.play()).catch(()=>{});}
         else if(!el.paused)el.pause();
       }else if(play&&inRange){
         if(el.paused)Promise.resolve(el.play()).catch(()=>{});
@@ -187,26 +200,37 @@
     ev.fadeInDuration=Math.max(0,Number(ev.fadeInDuration??1));ev.fadeOutDuration=Math.max(0,Number(ev.fadeOutDuration??1));
     return ev;
   }
+  function ensureAudioEditState(clip){
+    if(!clip)return clip;
+    clip.audioOffset=Math.max(0,Number(clip.audioOffset)||0);
+    clip.duration=finiteDuration(clip.duration,finiteDuration(clip._element&&clip._element.duration,5));
+    clip.audioSourceDuration=Math.max(.1,finiteDuration(clip.audioSourceDuration,finiteDuration(clip._element&&clip._element.duration,clip.audioOffset+clip.duration)));
+    if(clip.audioOffset+clip.duration>clip.audioSourceDuration)clip.duration=Math.max(.1,clip.audioSourceDuration-clip.audioOffset);
+    return clip;
+  }
   function selectedMediaEvent(){return ensureMediaEditState((timelineState.events||[]).find(ev=>ev&&ev.id===timelineState.selectedEventId&&ev.timelineAssetKind==='screen-media'));}
-  function addTrimHandles(clip,lane,ev){
-    if(!clip||!lane||!ev||ev.timelineAssetKind!=='screen-media')return;
-    ensureMediaEditState(ev);
+  function selectedAudioClip(){return ensureAudioEditState((timelineState.audioClips||[]).find(clip=>clip&&clip.id===timelineState.selectedAudioClipId));}
+  function addTimelineTrimHandles(clip,lane,item,options){
+    if(!clip||!lane||!item)return;
+    const startKey=options.startKey,offsetKey=options.offsetKey,sourceDurationKey=options.sourceDurationKey,signatureKey=options.signatureKey,render=options.render;
+    options.ensure(item);
     const attach=(side)=>{
       const handle=document.createElement('span');handle.className='timelineTrimHandle '+side;handle.title=side==='start'?'Clip-Anfang trimmen':'Clip-Ende trimmen';clip.appendChild(handle);
       handle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();});
       handle.addEventListener('pointerdown',event=>{
         if(event.button!==0)return;event.preventDefault();event.stopPropagation();
-        const rect=lane.getBoundingClientRect(),originX=event.clientX,oldStart=Number(ev.time)||0,oldDuration=Math.max(.1,Number(ev.duration)||.1),oldEnd=oldStart+oldDuration;
-        const sourceStart=oldStart-ev.mediaOffset,maxEnd=oldStart+(ev.mediaSourceDuration-ev.mediaOffset);
+        const rect=lane.getBoundingClientRect(),originX=event.clientX,oldStart=Number(item[startKey])||0,oldDuration=Math.max(.1,Number(item.duration)||.1),oldEnd=oldStart+oldDuration;
+        const sourceStart=oldStart-Number(item[offsetKey]||0),maxEnd=oldStart+(Number(item[sourceDurationKey]||oldDuration)-Number(item[offsetKey]||0));
         const move=moveEvent=>{
           const delta=(moveEvent.clientX-originX)/Math.max(1,rect.width)*duration();
           if(side==='start'){
-            const next=Math.max(sourceStart,Math.min(oldEnd-.1,snapTimelineTime(oldStart+delta,ev.id,lane)));
-            ev.time=next;ev.mediaOffset=next-sourceStart;ev.duration=oldEnd-next;
+            const next=Math.max(sourceStart,Math.min(oldEnd-.1,snapTimelineTime(oldStart+delta,item.id,lane)));
+            item[startKey]=next;item[offsetKey]=next-sourceStart;item.duration=oldEnd-next;
           }else{
-            const next=Math.max(oldStart+.1,Math.min(maxEnd,snapTimelineTime(oldEnd+delta,ev.id,lane)));ev.duration=next-oldStart;
+            const next=Math.max(oldStart+.1,Math.min(maxEnd,snapTimelineTime(oldEnd+delta,item.id,lane)));item.duration=next-oldStart;
           }
-          lastMediaSignature='';renderScreenMediaTrack();
+          if(signatureKey==='audio')lastAudioSignature='';else lastMediaSignature='';
+          render();
         };
         const up=()=>{document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);updateTimelineUI();if(window.vseHistory)window.vseHistory.commit();};
         document.addEventListener('pointermove',move);document.addEventListener('pointerup',up,{once:true});
@@ -214,17 +238,34 @@
     };
     attach('start');attach('end');
   }
+  function addTrimHandles(clip,lane,ev){
+    if(!ev||ev.timelineAssetKind!=='screen-media')return;
+    addTimelineTrimHandles(clip,lane,ev,{startKey:'time',offsetKey:'mediaOffset',sourceDurationKey:'mediaSourceDuration',signatureKey:'media',ensure:ensureMediaEditState,render:renderScreenMediaTrack});
+  }
+  function addAudioTrimHandles(clip,lane,audioClip){
+    addTimelineTrimHandles(clip,lane,audioClip,{startKey:'start',offsetKey:'audioOffset',sourceDurationKey:'audioSourceDuration',signatureKey:'audio',ensure:ensureAudioEditState,render:renderAudioTrack});
+  }
 
   const mediaEditPanel=byId('timelineMediaEditPanel'),splitMediaButton=byId('timelineSplitMediaBtn'),splitMediaControlButton=byId('timelineMediaSplitControlBtn');
   const fadeInEnabled=byId('timelineFadeInEnabled'),fadeInDuration=byId('timelineFadeInDuration'),fadeInDurationValue=byId('timelineFadeInDurationValue');
   const fadeOutEnabled=byId('timelineFadeOutEnabled'),fadeOutDuration=byId('timelineFadeOutDuration'),fadeOutDurationValue=byId('timelineFadeOutDurationValue');
   function syncMediaEditPanel(){
-    const ev=selectedMediaEvent();if(mediaEditPanel)mediaEditPanel.style.display=ev?'block':'none';
-    if(!ev){if(splitMediaButton)splitMediaButton.disabled=true;if(splitMediaControlButton)splitMediaControlButton.disabled=true;return;}
-    fadeInEnabled.checked=ev.fadeInEnabled;fadeOutEnabled.checked=ev.fadeOutEnabled;fadeInDuration.value=ev.fadeInDuration;fadeOutDuration.value=ev.fadeOutDuration;
-    fadeInDuration.disabled=!ev.fadeInEnabled;fadeOutDuration.disabled=!ev.fadeOutEnabled;
-    fadeInDurationValue.textContent=ev.fadeInDuration.toFixed(2)+' s';fadeOutDurationValue.textContent=ev.fadeOutDuration.toFixed(2)+' s';
-    const marker=currentTimelineTime(),disabled=marker<=Number(ev.time)+.001||marker>=Number(ev.time)+Number(ev.duration)-.001;
+    const ev=selectedMediaEvent(),audioClip=selectedAudioClip(),activeClip=ev||audioClip;
+    if(mediaEditPanel)mediaEditPanel.style.display=activeClip?'block':'none';
+    if(!activeClip){if(splitMediaButton)splitMediaButton.disabled=true;if(splitMediaControlButton)splitMediaControlButton.disabled=true;return;}
+    const panelTitle=mediaEditPanel&&mediaEditPanel.querySelector('h3');
+    if(panelTitle)panelTitle.textContent=audioClip&&!ev?'Ausgewähltes Audio':'Ausgewähltes Medium';
+    if(splitMediaButton)splitMediaButton.textContent=audioClip&&!ev?'Audio an Markerposition teilen':'An Markerposition teilen';
+    const fadeControls=[fadeInEnabled,fadeInDuration,fadeOutEnabled,fadeOutDuration].filter(Boolean);
+    fadeControls.forEach(input=>{const label=input.closest&&input.closest('label');if(label)label.style.display=ev?'block':'none';else input.style.display=ev?'':'none';});
+    if(fadeInDurationValue&&fadeInDurationValue.parentElement)fadeInDurationValue.parentElement.style.display=ev?'':'none';
+    if(fadeOutDurationValue&&fadeOutDurationValue.parentElement)fadeOutDurationValue.parentElement.style.display=ev?'':'none';
+    if(ev){
+      fadeInEnabled.checked=ev.fadeInEnabled;fadeOutEnabled.checked=ev.fadeOutEnabled;fadeInDuration.value=ev.fadeInDuration;fadeOutDuration.value=ev.fadeOutDuration;
+      fadeInDuration.disabled=!ev.fadeInEnabled;fadeOutDuration.disabled=!ev.fadeOutEnabled;
+      fadeInDurationValue.textContent=ev.fadeInDuration.toFixed(2)+' s';fadeOutDurationValue.textContent=ev.fadeOutDuration.toFixed(2)+' s';
+    }
+    const marker=currentTimelineTime(),clipStart=Number(ev?ev.time:audioClip.start)||0,clipDuration=Number(activeClip.duration)||0,disabled=marker<=clipStart+.001||marker>=clipStart+clipDuration-.001;
     if(splitMediaButton)splitMediaButton.disabled=disabled;if(splitMediaControlButton)splitMediaControlButton.disabled=disabled;
   }
   function splitSelectedMedia(){
@@ -233,8 +274,18 @@
     const second={...ev,snapshot:ev.snapshot};second.id='tl_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*999999);second.time=marker;second.duration=oldDuration-local;second.mediaOffset=ev.mediaOffset+local;
     ev.duration=local;timelineState.events.push(second);timelineState.selectedEventId=second.id;lastMediaSignature='';updateTimelineUI();if(window.vseHistory)window.vseHistory.commit();
   }
-  if(splitMediaButton)splitMediaButton.onclick=splitSelectedMedia;
-  if(splitMediaControlButton){splitMediaControlButton.disabled=true;splitMediaControlButton.onclick=e=>{e.stopPropagation();splitSelectedMedia();};}
+  function splitSelectedAudio(){
+    const clip=selectedAudioClip(),marker=currentTimelineTime();if(!clip)return;
+    const local=marker-(Number(clip.start)||0),oldDuration=Math.max(.1,Number(clip.duration)||.1);if(local<=.001||local>=oldDuration-.001)return;
+    const second={...clip};second.id='audio_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*999999);second.start=marker;second.duration=oldDuration-local;second.audioOffset=Number(clip.audioOffset||0)+local;
+    clip.duration=local;timelineState.audioClips.push(second);timelineState.selectedAudioClipId=second.id;timelineState.selectedEventId=null;lastAudioSignature='';updateTimelineUI();syncMediaTime(currentTimelineTime(),timelineState.playing);if(window.vseHistory)window.vseHistory.commit();
+  }
+  function splitSelectedTimelineClip(){
+    if(selectedAudioClip())splitSelectedAudio();
+    else splitSelectedMedia();
+  }
+  if(splitMediaButton)splitMediaButton.onclick=splitSelectedTimelineClip;
+  if(splitMediaControlButton){splitMediaControlButton.disabled=true;splitMediaControlButton.onclick=e=>{e.stopPropagation();splitSelectedTimelineClip();};}
   [[fadeInEnabled,'fadeInEnabled'],[fadeOutEnabled,'fadeOutEnabled']].forEach(([input,key])=>input&&input.addEventListener('input',()=>{const ev=selectedMediaEvent();if(!ev)return;ev[key]=input.checked;syncMediaEditPanel();}));
   [[fadeInDuration,'fadeInDuration'],[fadeOutDuration,'fadeOutDuration']].forEach(([input,key])=>input&&input.addEventListener('input',()=>{const ev=selectedMediaEvent();if(!ev)return;ev[key]=Math.max(0,Number(input.value)||0);syncMediaEditPanel();}));
 
@@ -247,18 +298,20 @@
     const active=audioClips.filter(item=>item&&item.active!==false);
     const has=active.length>0;
     const label=has?(active.length===1?active[0].name:(active.length+' Audiodateien')):'Kein Audio';
-    const signature=JSON.stringify({duration:duration(),selected:timelineState.selectedAudioClipId,clips:audioClips.map(item=>[item.id,item.name,item.start,item.duration,item.active,item.objectId])});
+    const signature=JSON.stringify({duration:duration(),selected:timelineState.selectedAudioClipId,clips:audioClips.map(item=>[item.id,item.name,item.start,item.duration,item.audioOffset,item.audioSourceDuration,item.active,item.objectId])});
     if(signature===lastAudioSignature)return;
     lastAudioSignature=signature;
     clips.innerHTML='';
     if(name)name.textContent=label;
     audioClips.forEach(item=>{
+      ensureAudioEditState(item);
       const left=Math.max(0,Math.min(100,(Number(item.start)||0)/duration()*100));
       const width=Math.max(1.2,Math.min(100-left,(Number(item.duration)||5)/duration()*100));
       const clip=addClip(clips,'timelineAudioClip '+(item.id===timelineState.selectedAudioClipId?'isSelected':''),left,width,item.name,formatTimelineTime(item.start)+' · '+formatTimelineTime(item.duration));
       if(clip)clip.dataset.audioClipId=item.id;
       makeTimelineClipDraggable(clip,byId('timelineAudioBar'),()=>item.start,value=>{item.start=value;lastAudioSignature='';syncMediaTime(currentTimelineTime(),timelineState.playing);},item.id,()=>item.duration);
-      if(clip)clip.onclick=event=>{event.stopPropagation();timelineState.selectedCameraMoveId='';window.vseActiveClipboardScope='timeline';timelineState.selectedAudioClipId=item.id;timelineState.selectedEventId=null;lastAudioSignature='';selectTimeline();};
+      addAudioTrimHandles(clip,byId('timelineAudioBar'),item);
+      if(clip)clip.onclick=event=>{event.stopPropagation();timelineState.selectedCameraMoveId='';window.vseActiveClipboardScope='timeline';timelineState.selectedAudioClipId=item.id;timelineState.selectedEventId=null;lastAudioSignature='';selectTimeline();syncMediaEditPanel();};
     });
   }
   function renderScreenMediaTrack(){
@@ -405,7 +458,7 @@
     applyTypeDefaults(audioObject,'audioSource');
     audioObject.name=(file.name||'Audio').replace(/\.[^.]+$/,'');
     objects.push(audioObject);
-    const clip={id:'audio_'+Date.now().toString(36),name:file.name,start,duration:provisionalDuration,active:true,objectId:audioObject.id,sendToBackbone:false};
+    const clip={id:'audio_'+Date.now().toString(36),name:file.name,start,duration:provisionalDuration,audioOffset:0,audioSourceDuration:provisionalDuration,active:true,objectId:audioObject.id,sendToBackbone:false};
     timelineState.audioClips.push(clip);
     try{
       loadAudioSourceFile(audioObject,file);
@@ -417,6 +470,7 @@
         clip._element.addEventListener('loadedmetadata',done);clip._element.addEventListener('error',fail);clip._element.load();
       });
       clip.duration=Math.max(.1,Number(clip._element.duration)||provisionalDuration);
+      clip.audioSourceDuration=clip.duration;
     }catch(error){
       timelineState.audioClips=timelineState.audioClips.filter(item=>item!==clip);
       releaseAudioSource(audioObject);objects=objects.filter(item=>item!==audioObject);throw error;
@@ -542,10 +596,16 @@
       timelineState.selectedAudioClipId=null;
       if(clip&&clip.objectId){
         const audioObject=objects.find(item=>item.id===clip.objectId);
-        if(audioObject)releaseAudioSource(audioObject);
-        objects=objects.filter(item=>item.id!==clip.objectId);selectedIds.delete(clip.objectId);if(selected&&selected.id===clip.objectId)selected=null;
+        const stillUsed=(timelineState.audioClips||[]).some(item=>item&&item.objectId===clip.objectId);
+        if(!stillUsed){
+          if(audioObject)releaseAudioSource(audioObject);
+          objects=objects.filter(item=>item.id!==clip.objectId);selectedIds.delete(clip.objectId);if(selected&&selected.id===clip.objectId)selected=null;
+        }
         clip._element=null;
-      }else if(clip)releaseTimelineAudioClip(clip);
+      }else if(clip){
+        const runtimeStillUsed=(timelineState.audioClips||[]).some(item=>item&&(item._element&&item._element===clip._element||item._objectUrl&&item._objectUrl===clip._objectUrl));
+        if(!runtimeStillUsed)releaseTimelineAudioClip(clip);
+      }
       lastAudioSignature='';updateTimelineUI();updateObjectManager();updateHud();return;
     }
     if(!event)return;

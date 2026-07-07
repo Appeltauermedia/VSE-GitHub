@@ -5,7 +5,7 @@ function loop(){
   renderNormalFrame(ordered);
   if(!vrState.active)requestAnimationFrame(loop);
 }
-bgOpacityValue.textContent=background.opacity.toFixed(2);bgZoomValue.textContent=background.zoom.toFixed(2);screenDimValue.textContent=scene.screenDim.toFixed(2);screenBrightenValue.textContent=scene.screenBrighten.toFixed(2);if(backlightPassValue)backlightPassValue.textContent=Number(scene.backlightPass||0).toFixed(2);syncVrViewerUi();syncMandalaUi();audioSensValue.textContent=audioState.sensitivity.toFixed(2);updateBpmDisplayVisibility();updateTimelineUI();loop();syncLightUI();updateObjectManager();
+bgOpacityValue.textContent=background.opacity.toFixed(2);bgZoomValue.textContent=background.zoom.toFixed(2);if(typeof syncBackgroundPanUi==='function')syncBackgroundPanUi();screenDimValue.textContent=scene.screenDim.toFixed(2);screenBrightenValue.textContent=scene.screenBrighten.toFixed(2);if(backlightPassValue)backlightPassValue.textContent=Number(scene.backlightPass||0).toFixed(2);syncVrViewerUi();syncMandalaUi();audioSensValue.textContent=audioState.sensitivity.toFixed(2);updateBpmDisplayVisibility();updateTimelineUI();loop();syncLightUI();updateObjectManager();
 
 
 // --- VSE 196: Timeline - mehrere Events zuverlässig anlegen ---

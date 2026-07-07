@@ -423,8 +423,10 @@ async function importSceneProjectFiles(fileList){
   if(typeof syncObjectIconColor==='function')syncObjectIconColor();
 }
 function applyBackgroundFromData(data){
-  Object.assign(background,{layer:0,color:'#05070c',mode:'cover',opacity:1,zoom:1,imageName:null,imageData:null},data||{});
+  Object.assign(background,{layer:0,color:'#05070c',mode:'cover',opacity:1,zoom:1,panX:0,panY:0,imageName:null,imageData:null},data||{});
   if(!['cover','contain','stretch'].includes(background.mode))background.mode='cover';
+  background.panX=Math.max(-1,Math.min(1,Number(background.panX)||0));
+  background.panY=Math.max(-1,Math.min(1,Number(background.panY)||0));
   if(bgTex){try{gl.deleteTexture(bgTex);}catch(e){}} bgTex=null; bgImageSize=[0,0]; bgImageData=null;
   if(background.imageData){
     const img=new Image();
@@ -433,6 +435,7 @@ function applyBackgroundFromData(data){
   }
   bgColor.value=background.color||'#05070c'; bgMode.value=background.mode||'cover'; bgOpacity.value=Number(background.opacity??1); bgZoom.value=Number(background.zoom??1);
   bgOpacityValue.textContent=Number(background.opacity??1).toFixed(2); bgZoomValue.textContent=Number(background.zoom??1).toFixed(2);
+  if(typeof syncBackgroundPanUi==='function')syncBackgroundPanUi();
 }
 
 function restoreScreenTextBackgroundImage(o){
@@ -588,6 +591,8 @@ function getBackgroundDrawRectStage(imgW,imgH){
     const scale=scale0*zoom;
     dw=imgW*scale; dh=imgH*scale; dx=(sw-dw)/2; dy=(sh-dh)/2;
   }
+  dx-=Math.max(-1,Math.min(1,Number(background.panX)||0))*Math.max(0,(dw-sw)/2);
+  dy-=Math.max(-1,Math.min(1,Number(background.panY)||0))*Math.max(0,(dh-sh)/2);
   return {dx,dy,dw,dh,sw,sh};
 }
 function traceBgCaptureMaskPath(ctx,shape,x,y,w,h,points){
@@ -672,6 +677,8 @@ function restoreBgCaptureUndo(){
   if(selected&&selected.id===undo.assetId)selected=null;
   Object.assign(background,undo.background||{});
   if(!['cover','contain','stretch'].includes(background.mode))background.mode='cover';
+  background.panX=Math.max(-1,Math.min(1,Number(background.panX)||0));
+  background.panY=Math.max(-1,Math.min(1,Number(background.panY)||0));
   bgImageData=undo.bgImageData||null;
   bgImageSize=Array.isArray(undo.bgImageSize)?undo.bgImageSize.slice():[0,0];
   if(bgTex){try{gl.deleteTexture(bgTex);}catch(e){}} bgTex=null;
@@ -682,6 +689,7 @@ function restoreBgCaptureUndo(){
   }
   bgColor.value=background.color||'#05070c'; bgMode.value=background.mode||'cover'; bgOpacity.value=Number(background.opacity??1); bgZoom.value=Number(background.zoom??1);
   bgOpacityValue.textContent=Number(background.opacity??1).toFixed(2); bgZoomValue.textContent=Number(background.zoom??1).toFixed(2);
+  if(typeof syncBackgroundPanUi==='function')syncBackgroundPanUi();
   select(objects[0]||null);
   syncLightUI();
   updateHud();
@@ -787,8 +795,11 @@ async function createImageAssetFromBackgroundRect(rectCss){
     }
     background.mode='stretch';
     background.zoom=1;
+    background.panX=0;
+    background.panY=0;
     if(bgMode)bgMode.value='stretch';
     if(bgZoom){bgZoom.value=1;bgZoomValue.textContent='1.00';}
+    if(typeof syncBackgroundPanUi==='function')syncBackgroundPanUi();
     refreshBackgroundImageData(bgCanvas.toDataURL('image/png'),'Hintergrund_mit_Ausschnitt.png');
     bgCaptureUndo={assetId:o.id,...previousBg};
   }else{

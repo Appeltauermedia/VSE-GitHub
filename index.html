@@ -20,7 +20,7 @@ Was wurde bewusst nicht veraendert?
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Virtual Scene Engine</title>
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260707-audio-icon-rail">
+<link rel="stylesheet" href="src/styles/main.css?v=20260707-cloud-expert-inline">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
@@ -28,7 +28,7 @@ Was wurde bewusst nicht veraendert?
 <script src="src/render/shaders/fog.js?v=20260702-fog-gravity-gap"></script>
 <script src="src/render/shaders/cloud.js?v=20260628-cloud-lifecycle-wind"></script>
 <script src="src/render/shaders/water.js?v=20260624-scene-dot"></script>
-<script src="src/render/shaders/background.js?v=20260705-remove-panorama"></script>
+<script src="src/render/shaders/background.js?v=20260707-background-drag-camera"></script>
 <script src="src/render/shaders/mandala.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/pointGlow.js?v=20260627-rectangle-emission-modes"></script>
 <script src="src/render/shaders/screen.js?v=20260705-screen-depth-rotation"></script>
@@ -193,6 +193,7 @@ Was wurde bewusst nicht veraendert?
           <label>Bildmodus</label><select id="bgMode"><option value="cover">Cover</option><option value="contain">Contain</option><option value="stretch">Stretch</option></select>
           <label>Bild-Transparenz: <span id="bgOpacityValue">1.00</span></label><input id="bgOpacity" type="range" min="0" max="1" step="0.01" value="1">
           <label>Bild-Zoom: <span id="bgZoomValue">1.00</span></label><input id="bgZoom" type="range" min="0.25" max="3" step="0.01" value="1">
+          <div class="row"><div><label>Ausschnitt X: <span id="bgPanXValue">0%</span></label><input id="bgPanX" type="range" min="-1" max="1" step="0.01" value="0"></div><div><label>Ausschnitt Y: <span id="bgPanYValue">0%</span></label><input id="bgPanY" type="range" min="-1" max="1" step="0.01" value="0"></div></div>
           <button id="clearBgBtn" type="button">Hintergrund entfernen</button>
           <p class="mini">Das Hintergrundbild ist fest als Layer 0 definiert. Alle Werkbank-Objekte liegen darüber.</p>
         </div>
@@ -286,6 +287,9 @@ Was wurde bewusst nicht veraendert?
   <button id="objectTimelineMenuBtn" type="button" aria-controls="objectTimelineFloatingPanel" aria-expanded="false" title="Timelineeinstellungen" aria-label="Timelineeinstellungen">
     <svg viewBox="0 0 256 256" aria-hidden="true"><rect x="32" y="56" width="192" height="144" rx="16"></rect><line x1="72" y1="56" x2="72" y2="200"></line><line x1="184" y1="56" x2="184" y2="200"></line><line x1="32" y1="104" x2="72" y2="104"></line><line x1="184" y1="104" x2="224" y2="104"></line><line x1="32" y1="152" x2="72" y2="152"></line><line x1="184" y1="152" x2="224" y2="152"></line><polyline points="104 152 104 120 136 104 136 136 160 120"></polyline></svg>
   </button>
+  <button id="objectParamMenuBtn" type="button" aria-controls="objectParamFloatingPanel" aria-expanded="false" title="Objektparameter-Details" aria-label="Objektparameter-Details">
+    <svg viewBox="0 0 256 256" aria-hidden="true"><line x1="48" y1="64" x2="208" y2="64"></line><circle cx="92" cy="64" r="22"></circle><line x1="48" y1="128" x2="208" y2="128"></line><circle cx="164" cy="128" r="22"></circle><line x1="48" y1="192" x2="208" y2="192"></line><circle cx="116" cy="192" r="22"></circle></svg>
+  </button>
   <button id="audioMenuBtn" class="topbarIconButton" type="button" title="Audioeinstellungen" aria-label="Audioeinstellungen" aria-expanded="false" aria-controls="audioFloatingPanel">
     <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="180" cy="164" r="28"></circle><circle cx="52" cy="196" r="28"></circle><line x1="208" y1="72" x2="80" y2="104"></line><polyline points="80 196 80 56 208 24 208 164"></polyline></svg>
   </button>
@@ -351,7 +355,6 @@ Was wurde bewusst nicht veraendert?
         <label><input id="pCloudLocked" type="checkbox"> Position sperren</label>
         <div class="row"><div><label>Breite: <span data-cloud-value="Width">360</span></label><input id="pCloudWidth" type="range" min="40" max="1920" step="1" value="360"></div><div><label>Höhe: <span data-cloud-value="Height">220</span></label><input id="pCloudHeight" type="range" min="30" max="1080" step="1" value="220"></div></div>
         <label>Transparenz: <span data-cloud-value="Opacity">0.78</span></label><input id="pCloudOpacity" type="range" min="0" max="1" step="0.01" value="0.78">
-        <button id="cloudExpertOpen" type="button" onclick="document.getElementById('cloudExpertPanel').hidden=false;document.body.classList.add('cloudExpertOpen')">Cloud-Expertenmenü öffnen</button>
       </div>
       <div class="type-light-only"><label>Schwenkgeschwindigkeit: <span id="panSpeedValue">0.00</span></label><input id="pPanSpeed" type="range" min="0" max="30" step="0.01"></div>
       <div class="type-light-only"><label>Schwenkwinkel ±: <span id="panAngleValue">0°</span></label><input id="pPanAngle" type="range" min="0" max="180" step="1"></div>
@@ -790,7 +793,6 @@ Was wurde bewusst nicht veraendert?
         Mitten → Punkt-Glow<br>
         Musikreaktion → wahlweise oberhalb oder unterhalb der Reaktionsschwelle aktiv. Schwenken → nur bei freigegebener Musikreaktion aktiv. Geschwindigkeit und Winkel legen die maximale Bewegung fest.</div>
       </div>
-      <label>Lebensdauer / Hold</label><input id="pLife" type="range" min="0" max="10" step="0.1">
 
       <div class="panel" style="margin-top:12px">
         <h3>Gruppierung</h3>
@@ -828,6 +830,19 @@ Was wurde bewusst nicht veraendert?
         </div>
       </div>
       <div id="objectTimelineFloatingBody"></div>
+    </section>
+    <section id="objectParamFloatingPanel" hidden aria-label="Objektparameter-Details">
+      <div id="objectParamFloatingHeader" class="objectParamFloatingHeader">
+        <div><b>Objektparameter</b><small id="objectParamFloatingSubtitle">Kein Objekt ausgewählt</small></div>
+        <div class="objectParamFloatingActions">
+          <button id="objectParamFloatingMinimize" type="button" title="Objektparameter minimieren" aria-label="Objektparameter minimieren" aria-pressed="false">
+            <svg class="objectParamMinimizeIcon" viewBox="0 0 256 256" aria-hidden="true"><line x1="48" y1="128" x2="208" y2="128"></line></svg>
+            <svg class="objectParamRestoreIcon" viewBox="0 0 256 256" aria-hidden="true"><polyline points="160 48 208 48 208 96"></polyline><line x1="152" y1="104" x2="208" y2="48"></line><polyline points="96 208 48 208 48 160"></polyline><line x1="104" y1="152" x2="48" y2="208"></line></svg>
+          </button>
+          <button id="objectParamFloatingClose" type="button" title="Objektparameter schließen" aria-label="Objektparameter schließen">×</button>
+        </div>
+      </div>
+      <div id="objectParamFloatingBody"></div>
     </section>
     <section id="audioFloatingPanel" hidden aria-label="Audioeinstellungen">
       <div id="audioFloatingHeader" class="audioFloatingHeader">
@@ -888,8 +903,8 @@ Was wurde bewusst nicht veraendert?
     </section>
     </section>
 </div>
-<section id="cloudExpertPanel" class="cloudExpertPanel" hidden aria-label="Cloud Expertenmenü">
-  <div class="cloudExpertHeader"><div><b>Cloud · Experten</b><small>Prozedurale WebGL-Wolke</small></div><button id="cloudExpertClose" type="button" aria-label="Schließen" onclick="document.getElementById('cloudExpertPanel').hidden=true;document.body.classList.remove('cloudExpertOpen')">×</button></div>
+<section id="cloudExpertPanel" class="type-cloud-only cloudExpertPanel" aria-label="Cloud Details">
+  <div class="cloudExpertHeader"><div><b>Cloud · Experten</b><small>Prozedurale WebGL-Wolke</small></div></div>
   <label>Wolkentyp</label><select id="pCloudPreset"><option value="cumulus">Cumulus</option><option value="stratus">Stratus</option><option value="fog">Nebelwolke</option><option value="storm">Gewitterwolke</option><option value="smoke">Rauchwolke</option></select>
   <div class="row"><div><label>Dichte <span data-cloud-value="Density">0.82</span></label><input id="pCloudDensity" type="range" min="0" max="1.5" step="0.01"></div><div><label>Weichheit <span data-cloud-value="Softness">0.72</span></label><input id="pCloudSoftness" type="range" min="0" max="1" step="0.01"></div></div>
   <div class="row"><div><label>Farbe</label><input id="pCloudColor" type="color" value="#f4f7ff"></div><div><label>Helligkeit <span data-cloud-value="Brightness">1.08</span></label><input id="pCloudBrightness" type="range" min="0.1" max="2" step="0.01"></div></div>
@@ -911,30 +926,30 @@ Was wurde bewusst nicht veraendert?
 <!-- ===== JavaScript / Applikationslogik ===== -->
 <script src="src/io/sceneIO.js?v=20260706-screen-video-export"></script>
 <script src="src/app/00a-hoisted-functions.js?v=20260624-scene-dot"></script>
-<script src="src/app/00b-menu-structure.js?v=20260705-screen-depth-rotation"></script>
+<script src="src/app/00b-menu-structure.js?v=20260707-remove-life-hold"></script>
 <script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260705-background-stage-size"></script>
 <script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260702-native-stage-resolution"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260705-screen-planar-perspective"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260707-background-pan-crop"></script>
 <script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260705-stable-play-pause"></script>
-<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260705-screen-depth-rotation"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260705-clean-recording-frame"></script>
+<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260707-background-pan-crop"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260707-remove-life-hold"></script>
 <script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260705-infinite-timeline"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260706-screen-video-export"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260706-screen-video-export"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260707-background-drag-camera"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260707-background-pan-crop"></script>
 <script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260706-screen-video-export"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260705-screen-depth-rotation"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260707-background-pan-crop"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
 <script src="src/app/14-three-track-timeline.js?v=20260705-delete-selected-timeline-item"></script>
-<script src="src/app/15-cloud-object.js?v=20260628-cloud-lifecycle-wind"></script>
+<script src="src/app/15-cloud-object.js?v=20260707-cloud-expert-inline"></script>
 <script src="src/app/16-object-timeline-menu.js?v=20260704-minimize-restore"></script>
 <script src="src/app/17-topbar-floating-menus.js?v=20260704-minimize-maximize"></script>
 <script src="src/app/18-color-settings-file.js?v=20260703-color-settings-file"></script>
 <script src="src/app/19-workspace-zoom.js?v=20260705-remove-panorama"></script>
 <script src="src/app/20-global-undo-redo.js?v=20260705-timeline-integrity"></script>
 <script src="src/app/21-global-object-shortcuts.js?v=20260705-delete-selected-timeline-item"></script>
-<script src="src/app/22-camera-timeline.js?v=20260705-timeline-integrity"></script>
+<script src="src/app/22-camera-timeline.js?v=20260707-background-drag-camera"></script>
 <script src="src/app/23-audiosource-timeline-menu.js?v=20260704-optional-audio-backbone"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>

@@ -12,6 +12,7 @@ uniform vec2 uCanvas;
 uniform float uOpacity;
 uniform int uMode;
 uniform float uZoom;
+uniform vec2 uPan;
 uniform vec3 uBgColor;
 uniform float uBgAlpha;
 uniform float uDim;
@@ -27,15 +28,22 @@ void main(){
   if(uMode==0){
     float sc=max(cu.x/iu.x,cu.y/iu.y)/max(uZoom,0.001);
     vec2 draw=iu*sc/cu;
-    p=(uv-0.5)/draw+0.5;
+    vec2 visible=1.0/draw;
+    vec2 maxShift=max(vec2(0.0),(vec2(1.0)-visible)*0.5);
+    p=(uv-0.5)/draw+0.5+uPan*maxShift;
   }else if(uMode==1){
     float sc=min(cu.x/iu.x,cu.y/iu.y)/max(uZoom,0.001);
     vec2 draw=iu*sc/cu;
-    p=(uv-0.5)/draw+0.5;
+    vec2 visible=1.0/draw;
+    vec2 maxShift=max(vec2(0.0),(vec2(1.0)-visible)*0.5);
+    p=(uv-0.5)/draw+0.5+uPan*maxShift;
   }else{
-    p=(uv-0.5)/max(uZoom,0.001)+0.5;
+    float zoom=max(uZoom,0.001);
+    float maxShift=max(0.0,(1.0-(1.0/zoom))*0.5);
+    p=(uv-0.5)/zoom+0.5+uPan*maxShift;
   }
-  if(p.x<0.0||p.x>1.0||p.y<0.0||p.y>1.0){gl_FragColor=vec4(base,uBgAlpha);return;}
+if(uMode==1 && (p.x<0.0||p.x>1.0||p.y<0.0||p.y>1.0)){gl_FragColor=vec4(base,uBgAlpha);return;}
+p=clamp(p,vec2(0.0),vec2(1.0));
   vec4 img=texture2D(uTex,p);
   vec3 col=mix(base,img.rgb,img.a*uOpacity);
   col=mix(col,vec3(0.0),uDim);
