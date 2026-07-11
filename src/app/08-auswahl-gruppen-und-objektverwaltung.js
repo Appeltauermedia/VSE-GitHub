@@ -28,7 +28,7 @@ function dissolveGroup(){const arr=getSelectedObjects();const gids=new Set(arr.m
 function transformSelection(scale=1,rotDeg=0){let arr=getSelectedObjects();if(arr.length<2&&selected&&selected.groupId)arr=objects.filter(o=>o.groupId===selected.groupId);if(!arr.length)return;const c=groupCenter(arr),a=rotDeg*Math.PI/180;for(const o of arr){const dx=Number(o.x||0)-c.x,dy=Number(o.y||0)-c.y;const nx=(dx*scale)*Math.cos(a)-(dy*scale)*Math.sin(a);const ny=(dx*scale)*Math.sin(a)+(dy*scale)*Math.cos(a);o.x=c.x+nx;o.y=c.y+ny;o.size=Math.max(1,Number(o.size||40)*scale);if(o.type==='screen'){o.screenWidth=Math.max(1,Number(o.screenWidth||260)*scale);o.screenHeight=Math.max(1,Number(o.screenHeight||120)*scale);}if(o.type==='text'){o.screenWidth=Math.max(1,Number(o.screenWidth||520)*scale);o.screenHeight=Math.max(1,Number(o.screenHeight||180)*scale);}
     if(o.type==='imageAsset'){o.imageAssetWidth=Math.max(1,Number(o.imageAssetWidth||240)*scale);o.imageAssetHeight=Math.max(1,Number(o.imageAssetHeight||160)*scale);}if(isWaterObject(o)){o.waterWidth=Math.max(1,Number(o.waterWidth||420)*scale);o.waterHeight=Math.max(1,Number(o.waterHeight||180)*scale);}if(o.type==='mandalaVisualizer'){o.mandalaObjWidth=Math.max(1,Number(o.mandalaObjWidth||420)*scale);o.mandalaObjHeight=Math.max(1,Number(o.mandalaObjHeight||420)*scale);}if(o.type==='visualizer'){o.visualizerWidth=Math.max(1,Number(o.visualizerWidth||520)*scale);o.visualizerHeight=Math.max(1,Number(o.visualizerHeight||180)*scale);}if(o.type==='greenscreen'){o.greenscreenWidth=Math.max(1,Number(o.greenscreenWidth||480)*scale);o.greenscreenHeight=Math.max(1,Number(o.greenscreenHeight||270)*scale);}if(o.type==='cloud'){o.cloudWidth=Math.max(40,Number(o.cloudWidth||360)*scale);o.cloudHeight=Math.max(30,Number(o.cloudHeight||220)*scale);}if(o.type==='particle'){o.particleEmitterLength=Math.max(1,Number(o.particleEmitterLength||120)*scale);}o.rotation=((Number(o.rotation||0)+rotDeg)%360+360)%360;}if(selected)selectSingleCore(selected);updateHud();updateObjectManager();}
 function objectTypeLabel(t){
-  return ({light:'Lichtemitter',lightbar:'Lightbars',fog:'Nebelemitter',cloud:'Wolken',screen:'Screens',text:'Texte',waterSurface:'WaterSurface',waterFlowOverlay:'WaterFlowOverlay',mandalaVisualizer:'MandalaVisualizer',particle:'Partikeleffekte',visualizer:'Visualizer',imageParticle:'Image-to-Particle',greenscreen:'Greenscreen',imageAsset:'ImageAssets',audioSource:'AudioSources'})[t]||t||'Objekt';
+  return ({light:'Lichtemitter',lightbar:'Lightbars',fog:'Nebelemitter',cloud:'Wolken',screen:'Screens',text:'Texte',waterSurface:'WaterSurface',waterFlowOverlay:'WaterFlowOverlay',mandalaVisualizer:'MandalaVisualizer',particle:'Partikeleffekte',visualizer:'Visualizer',imageParticle:'Image-to-Particle',greenscreen:'Greenscreen',imageAsset:'ImageAssets',audioSource:'AudioSources',inputManager:'Input Manager'})[t]||t||'Objekt';
 }
 function objectShortName(o){return (o&&o.name)||objectTypeLabel(o&&o.type)||'Objekt';}
 const objectManagerTypeIcons=new Map();
@@ -58,7 +58,7 @@ function updateObjectManager(){
   if(!objectManager)return;
   if(!objects.length){objectManager.innerHTML='<div class="omEmpty">Noch keine Objekte.</div>';return;}
   const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const typeOrder=['light','lightbar','movinghead','fog','cloud','screen','text','waterSurface','waterFlowOverlay','mandalaVisualizer','imageAsset','audioSource','greenscreen','particle','visualizer','imageParticle'];
+  const typeOrder=['light','lightbar','movinghead','fog','cloud','screen','text','waterSurface','waterFlowOverlay','mandalaVisualizer','imageAsset','audioSource','inputManager','greenscreen','particle','visualizer','imageParticle'];
   const selectedGroupId=selected&&selected.groupId?selected.groupId:null;
   const knownGroupIds=[...new Set(objects.map(o=>o.groupId).filter(Boolean))];
   let html='';
@@ -140,6 +140,7 @@ function spawnPaletteObject(type,x=50,y=50,particleMode='free'){
   if(o.type==='imageAsset')o.name='ImageAsset_'+id;
   if(o.type==='mandalaVisualizer')o.name='MandalaVisualizer_'+id;
   if(o.type==='audioSource')o.name='AudioSource_'+id;
+  if(o.type==='inputManager')o.name='InputManager_'+id;
   objects.push(o);
   select(o);
   if(typeof updateTimelineObjectOptions==='function')updateTimelineObjectOptions();

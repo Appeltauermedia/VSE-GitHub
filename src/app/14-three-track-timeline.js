@@ -70,6 +70,27 @@
   timelineState.lastClockTime=performance.now();
 
   currentTimelineTime=function(){return clampTime(timelineState.currentTime);};
+  window.vseTimelineSync={
+    getState(){
+      return {
+        currentTime:clampTime(timelineState.currentTime),
+        duration:duration(),
+        playing:!!timelineState.playing,
+        lastClockTime:timelineState.lastClockTime||performance.now()
+      };
+    },
+    seek(time){
+      seekTimelineMedia(time);
+      return this.getState();
+    },
+    setPlaying(playing){
+      timelineState.playing=!!playing;
+      timelineState.lastClockTime=performance.now();
+      syncMediaTime(currentTimelineTime(),timelineState.playing);
+      updateTimelinePlayhead();
+      return this.getState();
+    }
+  };
   getTimelineMediaDuration=function(){
     const lengths=[];
     (timelineState.audioClips||[]).filter(Boolean).forEach(clip=>lengths.push((Number(clip.start)||0)+finiteDuration(clip.duration,finiteDuration(clip._element&&clip._element.duration,0))));

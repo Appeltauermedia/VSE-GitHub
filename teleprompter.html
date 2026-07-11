@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VSE Teleprompter</title>
+<link rel="stylesheet" href="src/styles/teleprompter.css?v=20260710-props-toggle">
+</head>
+<body>
+<div id="teleprompterApp">
+  <main id="prompterStage" aria-label="Teleprompter Arbeitsfläche">
+    <textarea id="prompterText" spellcheck="false" placeholder="Teleprompter-Text eingeben..."></textarea>
+  </main>
+
+  <aside id="prompterProps" aria-label="Teleprompter Eigenschaften">
+    <div class="propHeader">
+      <b>Teleprompter</b>
+      <span id="prompterSyncState">Asynchron</span>
+    </div>
+
+    <section class="panel">
+      <h3>Textelement</h3>
+      <button id="prompterNewBtn" class="green" type="button">Neu</button>
+      <button id="prompterPushBtn" type="button">Aktuellen Text in Timeline pushen</button>
+      <label>Titel</label><input id="prompterTitle" type="text">
+      <label>Startposition: <span id="prompterStartValue">00:00.00</span></label><input id="prompterStart" type="range" min="0" max="180" step="0.01" value="0">
+      <label>Dauer: <span id="prompterDurationValue">10.00 s</span></label><input id="prompterDuration" type="range" min="0.1" max="180" step="0.1" value="10">
+      <div class="row">
+        <input id="prompterStartNumber" type="number" min="0" step="0.01" value="0" title="Start in Sekunden">
+        <input id="prompterDurationNumber" type="number" min="0.1" step="0.1" value="10" title="Dauer in Sekunden">
+      </div>
+      <div class="row">
+        <button id="prompterDeleteBtn" class="red" type="button">Löschen</button>
+        <button id="prompterDuplicateBtn" type="button">Duplizieren</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>Datei</h3>
+      <label>TXT importieren</label><input id="prompterImportFile" type="file" accept=".txt,text/plain">
+      <button id="prompterExportBtn" type="button">Aktuelles Element als .txt exportieren</button>
+    </section>
+
+    <section class="panel">
+      <h3>Format</h3>
+      <label>Schriftart</label>
+      <select id="prompterFontFamily">
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Georgia, serif">Georgia</option>
+        <option value="'Times New Roman', serif">Times New Roman</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="system-ui, sans-serif">System</option>
+      </select>
+      <label>Schriftgröße: <span id="prompterFontSizeValue">64 px</span></label><input id="prompterFontSize" type="range" min="18" max="180" step="1" value="64">
+      <label>Schriftfarbe</label><input id="prompterTextColor" type="color" value="#f4f7ff">
+      <label>Hintergrundfarbe</label><input id="prompterBgColor" type="color" value="#05070c">
+    </section>
+
+    <section class="panel">
+      <h3>Steuerung</h3>
+      <label class="checkrow"><input id="prompterSyncMain" type="checkbox"><span>Mit Main-Timeline synchronisieren</span></label>
+      <label class="checkrow"><input id="prompterControllerEnabled" type="checkbox" checked><span>Controller-Eingaben verwenden</span></label>
+      <p class="mini">Controller: Gamepad A = Play/Pause, B = Stop, LB/RB = vorheriges/nächstes Element. Tastatur: Strg+Leertaste, Strg+ArrowLeft, Strg+ArrowRight, Strg+Backspace.</p>
+    </section>
+
+    <section class="panel">
+      <h3>Elemente</h3>
+      <div id="prompterList" class="prompterList"></div>
+    </section>
+  </aside>
+
+  <section id="prompterTimeline" aria-label="Teleprompter Timeline">
+    <div class="timelineTop">
+      <span><b>Teleprompter Timeline</b></span>
+      <span class="timelineTime"><span id="prompterCurrentTime">00:00.00</span> / <span id="prompterTotalTime">03:00.00</span></span>
+    </div>
+    <div class="timelineControls">
+      <button id="prompterPlayBtn" class="timelineBtn" type="button" title="Play/Pause" aria-label="Play/Pause"><svg viewBox="0 0 256 256" aria-hidden="true"><polygon points="72 40 216 128 72 216 72 40"></polygon></svg></button>
+      <button id="prompterStopBtn" class="timelineBtn redMini" type="button" title="Stop" aria-label="Stop"><svg viewBox="0 0 256 256" aria-hidden="true"><rect x="48" y="48" width="160" height="160" rx="16"></rect></svg></button>
+      <button id="prompterPrevBtn" class="timelineBtn" type="button" title="Vorheriges Element" aria-label="Vorheriges Element"><svg viewBox="0 0 256 256" aria-hidden="true"><polygon points="112 64 32 128 112 192 112 64"></polygon><line x1="208" y1="64" x2="208" y2="192"></line></svg></button>
+      <button id="prompterNextBtn" class="timelineBtn" type="button" title="Nächstes Element" aria-label="Nächstes Element"><svg viewBox="0 0 256 256" aria-hidden="true"><polygon points="144 64 224 128 144 192 144 64"></polygon><line x1="48" y1="64" x2="48" y2="192"></line></svg></button>
+      <input id="prompterSeek" type="range" min="0" max="180000" step="10" value="0" title="Teleprompter-Zeit">
+      <span id="prompterActiveName" class="timelineTitle">Kein Element</span>
+    </div>
+    <div class="timelineTrack">
+      <div class="timelineTrackLabel"><b>Text</b><span>Prompter-Elemente</span></div>
+      <div id="prompterLane" class="timelineLane"><div class="timelineTicks"></div><div id="prompterClips"></div><div id="prompterPlayhead"></div></div>
+    </div>
+  </section>
+  <button id="prompterPropsToggle" type="button" aria-controls="prompterProps" aria-expanded="true" title="Eigenschaften einklappen">
+    <svg viewBox="0 0 256 256" aria-hidden="true">
+      <line x1="128" y1="80" x2="232" y2="80"></line>
+      <line x1="24" y1="80" x2="72" y2="80"></line>
+      <circle cx="100" cy="80" r="28"></circle>
+      <line x1="184" y1="176" x2="232" y2="176"></line>
+      <line x1="24" y1="176" x2="128" y2="176"></line>
+      <circle cx="156" cy="176" r="28"></circle>
+    </svg>
+  </button>
+</div>
+<script src="src/app/26-vse-color-controls.js?v=20260710-colorpicker-pro"></script>
+<script src="src/app/teleprompter.js?v=20260710-main-sync"></script>
+</body>
+</html>

@@ -1256,6 +1256,7 @@ function drawGreenscreen(o){
 }
 function drawBody(o){
   if(o.type==='imageParticle')return;
+  if(o.type==='inputManager')return;
   if(o.type==='light'){drawLightPoint(o);return;}
   if(o.type==='screen'||o.type==='visualizer'||o.type==='greenscreen'||o.type==='mandalaVisualizer'){return;}
   const cw=canvas.clientWidth, ch=canvas.clientHeight;
@@ -1985,7 +1986,7 @@ function splitByBackgroundLayer(ordered){
     front: ordered.filter(e=>Number(e.o.layer??1)>=1)
   };
 }
-function renderObject(o){if(o&&o._timelineHidden)return;if(o&&supportsShadow(o))drawObjectShadow(o);if(o.type==='audioSource'){drawAudioSource(o);}if(o.type==='screen'||o.type==='text'){drawScreen(o);}if(o.type==='imageAsset'){drawImageAsset(o);}if(o.type==='waterSurface'||o.type==='waterFlowOverlay'){drawWaterObject(o);}if(o.type==='mandalaVisualizer'){drawMandalaVisualizer(o);}if(o.type==='visualizer'){drawVisualizer(o);}if(o.type==='cloud'&&typeof drawCloud==='function'){drawCloud(o);}if(o.type==='light'){drawLightEmitter(o);}if(o.type==='lightbar'){drawLightbar(o);}if(o.type==='movinghead'){drawMovingHead(o);}if(o.type==='fog'){drawFog(o);drawFogSource(o);}if(o.type==='particle'){drawParticle(o);}if(o.type==='imageParticle'){drawIpm(o);}if(o.type==='greenscreen'){drawGreenscreenShadow(o);drawGreenscreen(o);}if(o.type!=='cloud'&&o.type!=='text'&&o.type!=='lightbar'&&o.type!=='visualizer'&&o.type!=='movinghead'&&o.type!=='imageAsset'&&o.type!=='audioSource'&&o.type!=='waterSurface'&&o.type!=='waterFlowOverlay'&&o.type!=='mandalaVisualizer')drawBody(o);}
+function renderObject(o){if(o&&o._timelineHidden)return;if(o&&supportsShadow(o))drawObjectShadow(o);if(o.type==='audioSource'){drawAudioSource(o);}if(o.type==='screen'||o.type==='text'){drawScreen(o);}if(o.type==='imageAsset'){drawImageAsset(o);}if(o.type==='waterSurface'||o.type==='waterFlowOverlay'){drawWaterObject(o);}if(o.type==='mandalaVisualizer'){drawMandalaVisualizer(o);}if(o.type==='visualizer'){drawVisualizer(o);}if(o.type==='cloud'&&typeof drawCloud==='function'){drawCloud(o);}if(o.type==='light'){drawLightEmitter(o);}if(o.type==='lightbar'){drawLightbar(o);}if(o.type==='movinghead'){drawMovingHead(o);}if(o.type==='fog'){drawFog(o);drawFogSource(o);}if(o.type==='particle'){drawParticle(o);}if(o.type==='imageParticle'){drawIpm(o);}if(o.type==='greenscreen'){drawGreenscreenShadow(o);drawGreenscreen(o);}if(o.type!=='cloud'&&o.type!=='text'&&o.type!=='lightbar'&&o.type!=='visualizer'&&o.type!=='movinghead'&&o.type!=='imageAsset'&&o.type!=='audioSource'&&o.type!=='inputManager'&&o.type!=='waterSurface'&&o.type!=='waterFlowOverlay'&&o.type!=='mandalaVisualizer')drawBody(o);}
 function renderFinalSceneBase(ordered){
   gl.clearColor(.02,.028,.048,1);
   gl.clear(gl.COLOR_BUFFER_BIT);
