@@ -115,7 +115,7 @@ const loc={a:gl.getAttribLocation(shapeProg,'a'),res:gl.getUniformLocation(shape
 const buf=gl.createBuffer();
 
 const VSE_SCREEN_DEPTH_FRAGMENT_SHADER=VSE_SCREEN_FRAGMENT_SHADER
-  .replace('uniform float uRot;','uniform float uRot;\nuniform float uDepthRotation;')
+  .replace('uniform float uRot;','uniform float uRot;\nuniform float uDepthRotation;\nuniform float uCornerWarp;\nuniform vec4 uCornerX;\nuniform vec4 uCornerY;')
   .replace('vec2 halfSize=max(uSizeCss*0.5,vec2(1.0));\n  float d=box(q,halfSize);\n  if(d>8.0){discard;}\n  vec2 uv=q/uSizeCss+0.5;',`vec2 halfSize=max(uSizeCss*0.5,vec2(1.0));
   float depthAngle=clamp(uDepthRotation,-75.0,75.0)*0.01745329252;
   float depthCos=max(0.18,cos(depthAngle));
@@ -128,10 +128,35 @@ const VSE_SCREEN_DEPTH_FRAGMENT_SHADER=VSE_SCREEN_FRAGMENT_SHADER
   float depthScale=1.0+(sourceX/max(halfSize.x,1.0))*depthSin*0.20;
   vec2 perspectiveQ=vec2(sourceX,q.y*depthScale);
   float d=box(perspectiveQ,halfSize);
-  if(d>8.0){discard;}
-  vec2 uv=perspectiveQ/uSizeCss+0.5;`);
+  vec2 uv=perspectiveQ/uSizeCss+0.5;
+  if(uCornerWarp>0.5){
+    vec2 qTL=vec2(-halfSize.x+uCornerX.x,-halfSize.y+uCornerY.x);
+    vec2 qTR=vec2( halfSize.x+uCornerX.y,-halfSize.y+uCornerY.y);
+    vec2 qBR=vec2( halfSize.x+uCornerX.z, halfSize.y+uCornerY.z);
+    vec2 qBL=vec2(-halfSize.x+uCornerX.w, halfSize.y+uCornerY.w);
+    vec2 guess=clamp(uv,0.0,1.0);
+    for(int i=0;i<6;i++){
+      vec2 top=mix(qTL,qTR,guess.x);
+      vec2 bottom=mix(qBL,qBR,guess.x);
+      vec2 f=mix(top,bottom,guess.y)-perspectiveQ;
+      vec2 du=mix(qTR-qTL,qBR-qBL,guess.y);
+      vec2 dv=bottom-top;
+      float det=du.x*dv.y-du.y*dv.x;
+      if(abs(det)>0.0001){
+        vec2 correction=vec2((f.x*dv.y-f.y*dv.x)/det,(du.x*f.y-du.y*f.x)/det);
+        guess=clamp(guess-correction,-0.08,1.08);
+      }
+    }
+    uv=guess;
+    vec2 edgeDist=min(uv,1.0-uv);
+    float outside=max(max(-uv.x,uv.x-1.0),max(-uv.y,uv.y-1.0));
+    if(outside>0.02){discard;}
+    d=outside>0.0?outside*min(uSizeCss.x,uSizeCss.y):-min(edgeDist.x*uSizeCss.x,edgeDist.y*uSizeCss.y);
+    uv=clamp(uv,0.0,1.0);
+  }else if(d>8.0){discard;}`)
+  .replace('if(uUseEngine==0){\n      if(uFlipX==1){sampleUv.x=1.0-sampleUv.x;}\n      if(uFlipY==1){sampleUv.y=1.0-sampleUv.y;}\n    }','if(uFlipX==1){sampleUv.x=1.0-sampleUv.x;}\n    if(uFlipY==1){sampleUv.y=1.0-sampleUv.y;}');
 const screenProg=program(VSE_SCREEN_VERTEX_SHADER,VSE_SCREEN_DEPTH_FRAGMENT_SHADER);
-const screenLoc={pos:gl.getAttribLocation(screenProg,'aPos'),pixelRes:gl.getUniformLocation(screenProg,'uPixelRes'),cssRes:gl.getUniformLocation(screenProg,'uCssRes'),originCss:gl.getUniformLocation(screenProg,'uOriginCss'),sizeCss:gl.getUniformLocation(screenProg,'uSizeCss'),rot:gl.getUniformLocation(screenProg,'uRot'),depthRotation:gl.getUniformLocation(screenProg,'uDepthRotation'),opacity:gl.getUniformLocation(screenProg,'uOpacity'),brightness:gl.getUniformLocation(screenProg,'uBrightness'),scanlines:gl.getUniformLocation(screenProg,'uScanlines'),audioReaction:gl.getUniformLocation(screenProg,'uAudioReaction'),time:gl.getUniformLocation(screenProg,'uTime'),audio:gl.getUniformLocation(screenProg,'uAudio'),color:gl.getUniformLocation(screenProg,'uColor'),altColor:gl.getUniformLocation(screenProg,'uAltColor'),altMix:gl.getUniformLocation(screenProg,'uAltMix'),mode:gl.getUniformLocation(screenProg,'uMode'),selected:gl.getUniformLocation(screenProg,'uSelected'),media:gl.getUniformLocation(screenProg,'uMedia'),useMedia:gl.getUniformLocation(screenProg,'uUseMedia'),mediaAspect:gl.getUniformLocation(screenProg,'uMediaAspect'),mediaFit:gl.getUniformLocation(screenProg,'uMediaFit'),flipX:gl.getUniformLocation(screenProg,'uFlipX'),flipY:gl.getUniformLocation(screenProg,'uFlipY'),frameVisible:gl.getUniformLocation(screenProg,'uFrameVisible'),useEngine:gl.getUniformLocation(screenProg,'uUseEngine'),engineCropCss:gl.getUniformLocation(screenProg,'uEngineCropCss'),dim:gl.getUniformLocation(screenProg,'uDim')};
+const screenLoc={pos:gl.getAttribLocation(screenProg,'aPos'),pixelRes:gl.getUniformLocation(screenProg,'uPixelRes'),cssRes:gl.getUniformLocation(screenProg,'uCssRes'),originCss:gl.getUniformLocation(screenProg,'uOriginCss'),sizeCss:gl.getUniformLocation(screenProg,'uSizeCss'),rot:gl.getUniformLocation(screenProg,'uRot'),depthRotation:gl.getUniformLocation(screenProg,'uDepthRotation'),cornerWarp:gl.getUniformLocation(screenProg,'uCornerWarp'),cornerX:gl.getUniformLocation(screenProg,'uCornerX'),cornerY:gl.getUniformLocation(screenProg,'uCornerY'),opacity:gl.getUniformLocation(screenProg,'uOpacity'),brightness:gl.getUniformLocation(screenProg,'uBrightness'),scanlines:gl.getUniformLocation(screenProg,'uScanlines'),audioReaction:gl.getUniformLocation(screenProg,'uAudioReaction'),time:gl.getUniformLocation(screenProg,'uTime'),audio:gl.getUniformLocation(screenProg,'uAudio'),color:gl.getUniformLocation(screenProg,'uColor'),altColor:gl.getUniformLocation(screenProg,'uAltColor'),altMix:gl.getUniformLocation(screenProg,'uAltMix'),mode:gl.getUniformLocation(screenProg,'uMode'),selected:gl.getUniformLocation(screenProg,'uSelected'),media:gl.getUniformLocation(screenProg,'uMedia'),useMedia:gl.getUniformLocation(screenProg,'uUseMedia'),mediaAspect:gl.getUniformLocation(screenProg,'uMediaAspect'),mediaFit:gl.getUniformLocation(screenProg,'uMediaFit'),flipX:gl.getUniformLocation(screenProg,'uFlipX'),flipY:gl.getUniformLocation(screenProg,'uFlipY'),frameVisible:gl.getUniformLocation(screenProg,'uFrameVisible'),useEngine:gl.getUniformLocation(screenProg,'uUseEngine'),engineCropCss:gl.getUniformLocation(screenProg,'uEngineCropCss'),dim:gl.getUniformLocation(screenProg,'uDim')};
 
 const greenscreenProg=program(VSE_GREENSCREEN_VERTEX_SHADER,VSE_GREENSCREEN_FRAGMENT_SHADER);
 const greenscreenLoc={pos:gl.getAttribLocation(greenscreenProg,'aPos'),pixelRes:gl.getUniformLocation(greenscreenProg,'uPixelRes'),cssRes:gl.getUniformLocation(greenscreenProg,'uCssRes'),originCss:gl.getUniformLocation(greenscreenProg,'uOriginCss'),sizeCss:gl.getUniformLocation(greenscreenProg,'uSizeCss'),rot:gl.getUniformLocation(greenscreenProg,'uRot'),video:gl.getUniformLocation(greenscreenProg,'uVideo'),hasVideo:gl.getUniformLocation(greenscreenProg,'uHasVideo'),chromaKeyEnabled:gl.getUniformLocation(greenscreenProg,'uChromaKeyEnabled'),tolerance:gl.getUniformLocation(greenscreenProg,'uTolerance'),softness:gl.getUniformLocation(greenscreenProg,'uSoftness'),edgeTrim:gl.getUniformLocation(greenscreenProg,'uEdgeTrim'),spillReduction:gl.getUniformLocation(greenscreenProg,'uSpillReduction'),edgeDarken:gl.getUniformLocation(greenscreenProg,'uEdgeDarken'),opacity:gl.getUniformLocation(greenscreenProg,'uOpacity'),keyColor:gl.getUniformLocation(greenscreenProg,'uKeyColor'),selected:gl.getUniformLocation(greenscreenProg,'uSelected'),dim:gl.getUniformLocation(greenscreenProg,'uDim')};

@@ -225,7 +225,7 @@
   function moveObjectSources(panel){
     [
       'pScreenImageFile','pScreenVideoFile','pScreenMediaFolder','pScreenCaptureBtn','screenMediaInfo',
-      'pImageAssetFile','pImageAssetClearBtn','pImageAssetExportPngBtn','imageAssetInfo',
+      'pImageAssetLocked','pImageAssetFile','pImageAssetClearBtn','pImageAssetExportPngBtn','imageAssetInfo',
       'pParticleImageFile','clearParticleImageBtn','particleImageInfo',
       'pGreenscreenVideoFile','pGreenscreenWebcamDevice','pGreenscreenWebcamBtn','pGreenscreenStopBtn','greenscreenInfo',
       'pAudioSourceFile','pAudioSourceUrl','pAudioSourceLoadUrlBtn','audioSourceInfo','pAudioSourcePlayBtn','pAudioSourcePauseBtn'
@@ -238,7 +238,7 @@
 
   function moveObjectDimensions(panel){
     [
-      'pScreenWidth','pScreenHeight','pScreenKeepAspect','pScreenDepthRotation',
+      'pScreenWidth','pScreenHeight','pScreenKeepAspect','pScreenDepthRotation','pScreenCornerPerspective',
       'pLightEmitterShape','pLightRectangleEmission','pLightEmitterLength','pLightEmitterWidth','pLightEmitterHeight','pLightEmitterKeepAspect',
       'pImageAssetWidth','pImageAssetHeight','pImageAssetKeepAspect',
       'pGreenscreenWidth','pGreenscreenHeight','pGreenscreenKeepAspect','pGreenscreenSwapAspect',

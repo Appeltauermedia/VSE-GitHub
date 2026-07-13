@@ -39,7 +39,7 @@ void main(){
   float alive=smoothstep(r1-.10,r1+.06,uLifecycle);
   gl_PointSize=max(2.0,min(uSize.x,uSize.y)*(.105+.115*r3)*detailSize*pixelRatio*(1.0+uAudio*.18)*mix(.45,1.0,alive));
   vShade=.68+.42*r1-.18*local.y;
-  vAlpha=clamp((.055+.055*r2)*uDensity*(1.0+uAudio*.45),.01,.22)*alive;
+  vAlpha=clamp((.072+.072*r2)*uDensity*(1.0+uAudio*.45),.01,.52)*alive;
 }`;
 const VSE_CLOUD_FRAGMENT_SHADER=`
 precision mediump float;

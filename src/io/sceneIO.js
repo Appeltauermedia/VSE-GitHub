@@ -66,7 +66,9 @@ function importProjectData(data,options={}){
   groups=Array.isArray(data.groups)?data.groups.filter(Boolean).map(group=>({...group})):[];
   objects=(data.objects||[]).filter(raw=>raw).map(raw=>ensureTypeDefaults({...raw}));
   const maxId=objects.reduce((m,o)=>Math.max(m,Number(String(o.id||'').replace(/\D/g,''))||0),0); if(maxId>=id)id=maxId+1;
-  objects.forEach(o=>{restoreScreenImage(o);restoreScreenTextBackgroundImage(o);restoreParticleImage(o);if(o.type==='imageAsset')loadImageAssetFromData(o,o.imageAssetData,o.imageAssetName||'importiertes Bild');if(o.type==='greenscreen'&&!o.greenscreenMediaData){o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';}});
+  if(!options.preserveRuntimeMedia){
+    objects.forEach(o=>{restoreScreenImage(o);restoreScreenTextBackgroundImage(o);restoreParticleImage(o);if(o.type==='imageAsset')loadImageAssetFromData(o,o.imageAssetData,o.imageAssetName||'importiertes Bild');if(o.type==='greenscreen'&&!o.greenscreenMediaData){o.greenscreenTexture=null;o.greenscreenMediaElement=null;o.greenscreenMediaUrl='';o.greenscreenStream=null;o.greenscreenMediaType='none';o.greenscreenMediaName='';}});
+  }
   if(typeof restoreEmbeddedProjectMedia==='function')restoreEmbeddedProjectMedia(data);
   select(objects[0]||null); syncLightUI(); updateHud(); updateObjectManager(); const outEl=document.getElementById('out'); if(outEl) outEl.value=JSON.stringify(projectPackage(),null,2);
 }

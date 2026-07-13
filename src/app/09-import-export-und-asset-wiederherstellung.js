@@ -497,6 +497,9 @@ async function restoreEmbeddedProjectMedia(data){
 
 function releaseImageAsset(o){
   if(!o)return;
+  if(o.imageAssetTexture&&typeof gl!=='undefined'){
+    try{gl.deleteTexture(o.imageAssetTexture);}catch(e){}
+  }
   o.imageAssetTexture=null;
   o.imageAssetElement=null;
   o.imageAssetImageType='none';
@@ -507,6 +510,9 @@ function releaseImageAsset(o){
 }
 function loadImageAssetFromData(o,data,name='ImageAsset'){
   if(!o||o.type!=='imageAsset'||!data)return;
+  if(o.imageAssetTexture&&typeof gl!=='undefined'){
+    try{gl.deleteTexture(o.imageAssetTexture);}catch(e){}
+  }
   const tex=initTexture();
   const img=new Image();
   o.imageAssetTexture=tex;
@@ -905,6 +911,13 @@ function ensureTypeDefaults(o){
     const d = particlePresetDefaults(o.particleMode || 'free');
     for(const [k,v] of Object.entries(d)) if(o[k] === undefined || o[k] === null) o[k] = v;
   }
+  if(o.type === 'screen'){
+    o.screenCornerPerspective=!!(o.screenCornerPerspective??false);
+    ['TL','TR','BR','BL'].forEach(key=>{
+      o['screenCorner'+key+'X']=Number(o['screenCorner'+key+'X']??0);
+      o['screenCorner'+key+'Y']=Number(o['screenCorner'+key+'Y']??0);
+    });
+  }
   if(o.type === 'imageParticle'){
     const d = particlePresetDefaults('imageParticles');
     for(const [k,v] of Object.entries(d)) if(o[k] === undefined || o[k] === null) o[k] = v;
@@ -1008,12 +1021,31 @@ if(timelineDock)timelineDock.addEventListener('click',e=>{
   }
 });
 if(timelineWidthInput)timelineWidthInput.addEventListener('input',()=>{timelineState.widthPercent=Number(timelineWidthInput.value)||100;updateTimelineUI();});
-if(timelineDurationInput)timelineDurationInput.addEventListener('input',()=>{timelineState.manualDuration=true;timelineState.duration=Math.max(1,Number(timelineDurationInput.value)||180);updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());});
+function applyTimelineDurationFromInput(commitEmpty=false){
+  if(!timelineDurationInput)return;
+  const raw=String(timelineDurationInput.value||'').trim();
+  if(!raw){
+    if(commitEmpty)timelineDurationInput.value=timelineState.duration;
+    return;
+  }
+  const value=Number(raw.replace(',','.'));
+  if(!Number.isFinite(value)||value<=0)return;
+  timelineState.manualDuration=true;
+  timelineState.duration=Math.max(1,value);
+  updateTimelineUI();
+  setTimelineEventForm(selectedTimelineEvent());
+}
+if(timelineDurationInput&&timelineDurationInput.dataset.manualDurationHandler!=='1'){
+  timelineDurationInput.dataset.manualDurationHandler='1';
+  timelineDurationInput.addEventListener('input',()=>applyTimelineDurationFromInput(false));
+  timelineDurationInput.addEventListener('change',()=>applyTimelineDurationFromInput(true));
+  timelineDurationInput.addEventListener('blur',()=>applyTimelineDurationFromInput(true));
+}
 if(timelineUseMediaDurationBtn)timelineUseMediaDurationBtn.onclick=()=>{const d=getTimelineMediaDuration();timelineState.manualDuration=false;timelineState.duration=Math.max(180,Math.ceil(d||0));updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());};
 if(timelineUseSelectedObjectBtn)timelineUseSelectedObjectBtn.onclick=()=>{const value=timelineCurrentSelectionValue();if(value&&timelineEventObject){updateTimelineObjectOptions();timelineEventObject.value=value;}};
 if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
-[timelineEventTime,timelineEventDuration].forEach(el=>{if(el)el.addEventListener('input',()=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(2)+' s';});});
+[timelineEventTime,timelineEventDuration,timelineEventDurationNumber].forEach(el=>{if(el)el.addEventListener('input',event=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(event&&event.currentTarget!==timelineEventTime&&typeof syncTimelineEventDurationFields==='function')syncTimelineEventDurationFields(readTimelineEventDurationValue(),event.currentTarget);else if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(2)+' s';});});
 if(timelineDropZone){
   timelineDropZone.addEventListener('dragover',e=>{e.preventDefault();timelineDropZone.classList.add('isOver');});
   timelineDropZone.addEventListener('dragleave',()=>timelineDropZone.classList.remove('isOver'));

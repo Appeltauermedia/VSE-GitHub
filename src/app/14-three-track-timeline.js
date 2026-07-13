@@ -341,7 +341,7 @@
     const dur=duration();
     const mediaEvents=(timelineState.events||[]).filter(isScreenMediaEvent);
     const screens=objects.filter(o=>o&&o.type==='screen'&&(o.screenMediaType==='image'||o.screenMediaType==='video'));
-    const signature=JSON.stringify({dur,selected:timelineState.selectedEventId,events:mediaEvents.map(ev=>[ev.id,ev.time,ev.duration,ev.mediaOffset,ev.mediaSourceDuration,ev.fadeInEnabled,ev.fadeInDuration,ev.fadeOutEnabled,ev.fadeOutDuration,ev.action]),screens:screens.map(o=>[o.id,o.name,o.screenMediaType,o.screenMediaName,finiteDuration(o.screenMediaElement&&o.screenMediaElement.duration,0)])});
+    const signature=JSON.stringify({dur,selected:timelineState.selectedEventId,events:mediaEvents.map(ev=>[ev.id,ev.time,ev.duration,ev.mediaOffset,ev.mediaSourceDuration,ev.fadeInEnabled,ev.fadeInDuration,ev.fadeOutEnabled,ev.fadeOutDuration,ev.action]),screens:screens.map(o=>[o.id,o.name,o.screenMediaType,o.screenMediaName,finiteDuration(o.screenMediaElement&&o.screenMediaElement.duration,0),typeof screenPlaylistTotalDuration==='function'?screenPlaylistTotalDuration(o):0])});
     if(signature===lastMediaSignature)return;
     lastMediaSignature=signature;
     clips.innerHTML='';
@@ -356,7 +356,8 @@
       if(clip)clip.onclick=e=>{e.stopPropagation();timelineState.selectedCameraMoveId='';window.vseActiveClipboardScope='timeline';timelineState.selectedAudioClipId=null;timelineState.selectedEventId=ev.id;selectTimeline();setTimelineEventForm(ev);renderTimelineEvents();syncMediaEditPanel();};
     });
     screens.filter(o=>!(timelineState.events||[]).some(ev=>ev&&ev.timelineAssetKind==='screen-media'&&timelineEventTargetId(ev)===o.id)).forEach(o=>{
-      const mediaDuration=o.screenMediaType==='video'&&o.screenMediaElement?finiteDuration(o.screenMediaElement.duration,5):5;
+      const playlistDuration=typeof screenPlaylistTotalDuration==='function'?screenPlaylistTotalDuration(o):0;
+      const mediaDuration=playlistDuration>0?playlistDuration:(o.screenMediaType==='video'&&o.screenMediaElement?finiteDuration(o.screenMediaElement.duration,5):5);
       const clip=addClip(clips,'timelineScreenClip timelineScreenClipPending',0,Math.min(100,mediaDuration/dur*100),(o.name||'Screen')+' · '+(o.screenMediaType==='image'?'Bild':'Video'),(o.screenMediaName||o.name||'Screen-Medium')+' · anklicken zum Bearbeiten');
       if(clip)clip.onclick=event=>{
         event.stopPropagation();

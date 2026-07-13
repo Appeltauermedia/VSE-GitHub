@@ -25,6 +25,7 @@
     if(status)status.textContent=Math.round(state.zoom*100)+'%';
     if(typeof positionRecordingHud==='function')positionRecordingHud();
     if(typeof positionStageHudControls==='function')positionStageHudControls();
+    if(typeof showTransformFrameForSelection==='function')showTransformFrameForSelection();
   }
   function setView(zoom,panX,panY){
     scene.cameraZoom=Math.max(.2,Math.min(10,Number(zoom)||1));
@@ -102,9 +103,6 @@
     if(event.target!==stageWrap&&!viewport.contains(event.target))return;
     if(event.shiftKey||(typeof waterDrawMode!=='undefined'&&waterDrawMode)||(typeof bgCaptureMode!=='undefined'&&bgCaptureMode))return;
     syncStateFromScene();
-    const point=scenePoint(event);
-    const overCanvas=point.x>=0&&point.y>=0&&point.x<=canvas.clientWidth&&point.y<=canvas.clientHeight;
-    if(overCanvas&&typeof hit==='function'&&hit(point.x,point.y))return;
     grab={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,panX:state.panX,panY:state.panY,moved:false};
     stageWrap.classList.add('workspaceGrabbing');stageWrap.setPointerCapture(event.pointerId);
     event.preventDefault();event.stopImmediatePropagation();

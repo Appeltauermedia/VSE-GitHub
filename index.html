@@ -18,15 +18,16 @@ Was wurde bewusst nicht veraendert?
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Virtual Scene Engine</title>
+<title>Sceenee</title>
+<link rel="icon" type="image/svg+xml" href="assets/brand/sceenee.svg?v=20260712-favicon">
 <!-- ===== CSS / Layout und Komponenten ===== -->
-<link rel="stylesheet" href="src/styles/main.css?v=20260710-colorpicker-pro">
+<link rel="stylesheet" href="src/styles/main.css?v=20260712-screen-corners">
 <script src="src/core/stage.js?v=20260624-scene-dot"></script>
 <script src="src/core/webgl.js?v=20260624-scene-dot"></script>
 <script src="src/modules/wind.js?v=20260628-cloud-object"></script>
 <script src="src/render/shaders/particles.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/fog.js?v=20260702-fog-gravity-gap"></script>
-<script src="src/render/shaders/cloud.js?v=20260628-cloud-lifecycle-wind"></script>
+<script src="src/render/shaders/cloud.js?v=20260712-cloud-density-high"></script>
 <script src="src/render/shaders/water.js?v=20260624-scene-dot"></script>
 <script src="src/render/shaders/background.js?v=20260707-background-drag-camera"></script>
 <script src="src/render/shaders/mandala.js?v=20260624-scene-dot"></script>
@@ -219,7 +220,9 @@ Was wurde bewusst nicht veraendert?
       <svg viewBox="0 0 256 256" aria-hidden="true"><rect x="32" y="48" width="192" height="136" rx="16"></rect><line x1="80" y1="88" x2="176" y2="88"></line><line x1="80" y1="120" x2="176" y2="120"></line><line x1="80" y1="152" x2="144" y2="152"></line><line x1="128" y1="184" x2="128" y2="224"></line><line x1="88" y1="224" x2="168" y2="224"></line></svg>
     </button>
 
-    <div class="topbarBrand" aria-label="Virtual Scene Engine 2.0 026">VSE 2.0 026</div>
+    <div class="topbarBrand" aria-label="Sceenee">
+      <img src="assets/brand/sceenee.svg?v=20260712-topbar-logo-transparent" alt="Sceenee">
+    </div>
 
   </aside>
     <!-- Buehne, Objektpalette und Timeline -->
@@ -315,7 +318,7 @@ Was wurde bewusst nicht veraendert?
       <div class="panel">
         <p class="mini">Die Timeline läuft mit einer eigenen Master-Zeit und funktioniert auch ohne Audio. Audio, Screen-Medien und Objekt-Events besitzen getrennte Spuren.</p>
         <label style="display:none">Timeline-Breite: <span id="timelineWidthValue">100%</span></label><input id="timelineWidth" type="range" min="40" max="100" step="1" value="100" style="display:none">
-        <label>Dauer in Sekunden: <span id="timelineDurationValue">03:00</span></label><input id="timelineDuration" type="number" min="1" step="1" value="180">
+        <label>Dauer manuell in Sekunden: <span id="timelineDurationValue">03:00</span></label><input id="timelineDuration" type="number" min="1" step="1" value="180" inputmode="decimal" title="Timeline-Dauer direkt in Sekunden eingeben">
         <button id="timelineUseMediaDurationBtn" type="button">Dauer aus längstem Audio/Video übernehmen</button>
       </div>
       <div class="panel" id="timelineMediaEditPanel" style="display:none">
@@ -334,7 +337,8 @@ Was wurde bewusst nicht veraendert?
         <label>Event-Objekt</label><select id="timelineEventObject"></select>
         <label>Zeitposition: <span id="timelineEventTimeValue">00:00.00</span></label><input id="timelineEventTime" type="range" min="0" max="180" step="0.01" value="0">
         <label>Aktion</label><select id="timelineEventAction"><option value="activate">Aktivieren</option><option value="deactivate">Deaktivieren</option><option value="parameter">Parameter ab hier setzen</option><option value="ipmDestruction">IPM Destruction</option></select>
-        <label>Dauer: <span id="timelineEventDurationValue">0.00 s</span></label><input id="timelineEventDuration" type="range" min="0" max="300" step="0.01" value="0">
+        <label>Dauer: <span id="timelineEventDurationValue">0.00 s</span></label>
+        <div class="row"><div><input id="timelineEventDuration" type="range" min="0" max="300" step="0.01" value="0"></div><div><input id="timelineEventDurationNumber" type="number" min="0" step="0.01" value="0" inputmode="decimal" title="Event-Dauer direkt in Sekunden eingeben"></div></div>
         <label><input id="timelineEventEnabled" type="checkbox" checked> Event aktiv</label>
         <label><input id="timelineEventStartActive" type="checkbox" checked> Objekt ist von Anfang an aktiv</label>
         <button id="timelineCaptureConfigBtn" type="button">Aktuelle Objekt-Konfiguration ins Event übernehmen</button>
@@ -456,6 +460,7 @@ Was wurde bewusst nicht veraendert?
         <div class="mini"><b>Screen</b><br>Screen-Objekte sind Bühnenflächen auf frei definierbaren Layern. Sie können als Farbfläche, Audio-Panel, Pulse-Screen oder als Träger für geladene Bilder und Videos laufen.</div>
       </div>
       <div class="type-screen-only type-text-only row"><div><label>Breite: <span id="screenWidthValue">260</span></label><input id="pScreenWidth" type="range" min="40" max="1920" step="1"></div><div><label>Höhe: <span id="screenHeightValue">120</span></label><input id="pScreenHeight" type="range" min="20" max="1080" step="1"></div></div>
+      <label class="type-screen-only checkrow"><input id="pScreenCornerPerspective" type="checkbox"><span>Screen-Ecken einzeln ziehen</span></label>
       <div class="type-screen-only"><label>Z-Tiefenrotation / Perspektive: <span id="screenDepthRotationValue">0°</span></label><input id="pScreenDepthRotation" type="range" min="-75" max="75" step="1" value="0"></div>
       <div class="type-screen-only type-text-only"><label style="display:flex;align-items:center;gap:8px"><input id="pScreenKeepAspect" type="checkbox" checked> Seitenverhältnis beim Skalieren beibehalten</label></div>
       <div class="type-screen-only"><label>Screen-Modus</label><select id="pScreenMode"><option value="solid">Farbfläche</option><option value="audio">Audio-Balken</option><option value="pulse">Pulse-Screen</option><option value="image">Bild</option><option value="video">Video</option><option value="engine">Engine-Ausschnitt</option><option value="text">Text</option><option value="mp3cover">Aktuelles MP3-Cover</option></select></div>
@@ -493,9 +498,11 @@ Was wurde bewusst nicht veraendert?
         <h3>Screen-Medien</h3>
         <label>Bild auf Screen laden</label><input id="pScreenImageFile" type="file" accept="image/*">
         <label>Video auf Screen laden</label><input id="pScreenVideoFile" type="file" accept="video/*">
-        <label>Medienordner laden</label><input id="pScreenMediaFolder" type="file" accept="image/*,video/*" multiple webkitdirectory directory>
-        <div class="row"><div><label>Haltezeit Medienordner: <span id="screenPlaylistHoldValue">5.0 s</span></label><input id="pScreenPlaylistHold" type="range" min="0.5" max="60" step="0.5" value="5"></div><div><label style="margin-top:28px"><input id="pScreenPlaylistAuto" type="checkbox" checked> Automatisch durchlaufen</label></div></div>
+        <label>Playlist-Ordner laden</label><input id="pScreenMediaFolder" type="file" accept="image/*,video/*" multiple webkitdirectory directory>
+        <label>Medien zur Playlist hinzufügen</label><input id="pScreenPlaylistFiles" type="file" accept="image/*,video/*" multiple>
+        <div class="row"><div><label>Standarddauer neuer Medien: <span id="screenPlaylistHoldValue">5.0 s</span></label><input id="pScreenPlaylistHold" type="range" min="0.5" max="180" step="0.5" value="5"></div><div><label style="margin-top:28px"><input id="pScreenPlaylistAuto" type="checkbox" checked> An Timeline koppeln</label></div></div>
         <button id="pScreenPlaylistNextBtn" type="button">Nächstes Medium ▶</button>
+        <div id="screenPlaylistEditor" class="screenPlaylistEditor"><div class="mini">Keine Playlist-Medien.</div></div>
         <button id="pScreenCaptureBtn" type="button">Browser-/Tabaufnahme starten</button>
         <p class="mini">Geöffnete Browserseiten, Tabs oder Fenster werden per Freigabe als Live-Video auf den Screen gelegt. Videos und Musik werden nicht im .scene-Projekt eingebettet.</p>
         <label>Medien-Anpassung</label><select id="pScreenMediaFit"><option value="cover">Cover</option><option value="contain">Contain</option><option value="stretch">Stretch</option></select>
@@ -592,7 +599,18 @@ Was wurde bewusst nicht veraendert?
       <div class="type-particle-only panel" style="margin-top:12px">
         <div class="mini"><b>Universal-Partikelmodul</b><br>Ein gemeinsamer WebGL-Partikelkern für Pyro, Explosion, Regen, Flitter, Konfetti, Staub, Schnee und abstrakte Audioeffekte.</div>
       </div>
-      <div class="type-particle-only"><label>Partikeleffekt</label><select id="pParticleMode"><option value="free">Frei</option><option value="fireFountain">Feuerfontäne</option><option value="gasJet">Bühnenflammenwerfer · Gas Jet</option><option value="sparkFountain">Funkenfontäne</option><option value="explosion">Explosion</option><option value="glitter">Flitter</option><option value="confetti">Konfetti</option><option value="ash">Asche</option><option value="dust">Staub</option><option value="snow">Schnee</option><option value="rain">Regen</option><option value="shockwave">Schockwelle</option><option value="starflight">Sternenflug</option></select></div>
+      <div class="type-particle-only"><label>Partikeleffekt</label><select id="pParticleMode"><option value="free">Frei</option><option value="pathFlow">Partikel-Pfad</option><option value="lightning">Blitz</option><option value="fireFountain">Feuerfontäne</option><option value="gasJet">Bühnenflammenwerfer · Gas Jet</option><option value="sparkFountain">Funkenfontäne</option><option value="explosion">Explosion</option><option value="glitter">Flitter</option><option value="confetti">Konfetti</option><option value="ash">Asche</option><option value="dust">Staub</option><option value="snow">Schnee</option><option value="rain">Regen</option><option value="shockwave">Schockwelle</option><option value="starflight">Sternenflug</option></select></div>
+      <div class="type-particle-common particle-path-settings panel">
+        <h3>Partikel-Pfad</h3>
+        <label>Pfadform</label><select id="pParticlePathShape"><option value="line">Linie</option><option value="arc">Bogen</option><option value="circle">Kreis</option><option value="rect">Rechteck</option><option value="freehand">Freihand</option></select>
+        <div class="row"><div><label>Pfadbreite: <span id="particlePathWidthValue">360</span></label><input id="pParticlePathWidth" type="range" min="20" max="1600" step="1"></div><div><label>Pfadhöhe: <span id="particlePathHeightValue">180</span></label><input id="pParticlePathHeight" type="range" min="20" max="1000" step="1"></div></div>
+        <label>Bogenwinkel: <span id="particlePathArcValue">180°</span></label><input id="pParticlePathArc" type="range" min="20" max="360" step="1">
+        <label>Flussgeschwindigkeit: <span id="particlePathFlowValue">1.00</span></label><input id="pParticlePathFlow" type="range" min="-5" max="5" step="0.01">
+        <label>Pfadstreuung: <span id="particlePathSpreadValue">18</span></label><input id="pParticlePathSpread" type="range" min="0" max="220" step="1">
+        <label>Drittfarbe</label><input id="pParticleAltColor2" type="color" value="#ff4a18">
+        <div class="row"><button id="pParticlePathDrawBtn" type="button">Freihand zeichnen</button><button id="pParticlePathResetBtn" type="button">Pfad zurücksetzen</button></div>
+        <p class="mini" id="particlePathInfo">Form auswählen oder Freihand direkt auf der Arbeitsfläche zeichnen.</p>
+      </div>
       <div class="type-particle-common"><label>Emitterform</label><select id="pParticleEmitterShape"><option value="point">Punkt</option><option value="line">Linie</option></select></div>
       <div class="type-particle-common"><label>Linienlänge: <span id="particleEmitterLengthValue">120</span></label><input id="pParticleEmitterLength" type="range" min="10" max="900" step="1"></div>
       <div class="type-particle-common"><label>Emitter-Transparenz: <span id="particleEmitterTransparencyValue">0%</span></label><input id="pParticleEmitterTransparency" type="range" min="0" max="1" step="0.01"></div>
@@ -729,6 +747,7 @@ Was wurde bewusst nicht veraendert?
       <div class="type-imageasset-only panel" style="margin-top:12px">
         <div class="mini"><b>ImageAsset</b><br>Lokale Bilddatei als eigenes WebGL-Objekt für Deko, Einrichtung, Bühnenausstattung oder einfache Szenenelemente. PNG-Transparenz bleibt erhalten.</div>
         <h3>ImageAsset</h3>
+        <label><input id="pImageAssetLocked" type="checkbox"> Lock / Unlock</label>
         <label>Bilddatei laden</label><input id="pImageAssetFile" type="file" accept="image/png,image/jpeg,image/jpg,image/webp">
         <button id="pImageAssetClearBtn" type="button">Bild entfernen</button>
         <button id="pImageAssetExportPngBtn" type="button">ImageAsset als PNG exportieren</button>
@@ -921,7 +940,7 @@ Was wurde bewusst nicht veraendert?
 <section id="cloudExpertPanel" class="type-cloud-only cloudExpertPanel" aria-label="Cloud Details">
   <div class="cloudExpertHeader"><div><b>Cloud · Experten</b><small>Prozedurale WebGL-Wolke</small></div></div>
   <label>Wolkentyp</label><select id="pCloudPreset"><option value="cumulus">Cumulus</option><option value="stratus">Stratus</option><option value="fog">Nebelwolke</option><option value="storm">Gewitterwolke</option><option value="smoke">Rauchwolke</option></select>
-  <div class="row"><div><label>Dichte <span data-cloud-value="Density">0.82</span></label><input id="pCloudDensity" type="range" min="0" max="1.5" step="0.01"></div><div><label>Weichheit <span data-cloud-value="Softness">0.72</span></label><input id="pCloudSoftness" type="range" min="0" max="1" step="0.01"></div></div>
+  <div class="row"><div><label>Dichte <span data-cloud-value="Density">1.85</span></label><input id="pCloudDensity" type="range" min="0" max="8" step="0.01"></div><div><label>Weichheit <span data-cloud-value="Softness">0.72</span></label><input id="pCloudSoftness" type="range" min="0" max="1" step="0.01"></div></div>
   <div class="row"><div><label>Farbe</label><input id="pCloudColor" type="color" value="#f4f7ff"></div><div><label>Helligkeit <span data-cloud-value="Brightness">1.08</span></label><input id="pCloudBrightness" type="range" min="0.1" max="2" step="0.01"></div></div>
   <label>Form-Zufall / Seed <span data-cloud-value="Seed">1</span></label><input id="pCloudSeed" type="range" min="0" max="1000" step="1">
   <label>Partikelbewegung</label><select id="pCloudEvolutionMode"><option value="wobble">Wabern</option><option value="build">Aufbau</option><option value="dissolve">Auflösen</option><option value="cycle">Aufbau / Auflösen</option></select>
@@ -941,34 +960,36 @@ Was wurde bewusst nicht veraendert?
 <!-- ===== JavaScript / Applikationslogik ===== -->
 <script src="src/io/sceneIO.js?v=20260706-screen-video-export"></script>
 <script src="src/app/00a-hoisted-functions.js?v=20260624-scene-dot"></script>
-<script src="src/app/00b-menu-structure.js?v=20260707-remove-life-hold"></script>
+<script src="src/app/00b-menu-structure.js?v=20260712-screen-corners"></script>
 <script src="src/app/00-dom-referenzen-und-globaler-zustand.js?v=20260705-background-stage-size"></script>
 <script src="src/app/01-stage-groesse-und-webgl-grundsetup.js?v=20260702-native-stage-resolution"></script>
-<script src="src/app/02-webgl-shaderprogramme.js?v=20260707-background-pan-crop"></script>
+<script src="src/app/02-webgl-shaderprogramme.js?v=20260712-engine-screen-flip"></script>
 <script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260705-stable-play-pause"></script>
-<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260707-background-pan-crop"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260707-remove-life-hold"></script>
+<script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260712-screen-corners"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260712-screen-corners"></script>
 <script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260705-infinite-timeline"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260707-background-drag-camera"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260707-background-pan-crop"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260706-screen-video-export"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260712-screen-corners"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260712-screen-corners"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260712-screen-corners"></script>
 <script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260707-background-pan-crop"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
 <script src="src/app/14-three-track-timeline.js?v=20260710-teleprompter-sync"></script>
-<script src="src/app/15-cloud-object.js?v=20260707-cloud-expert-inline"></script>
+<script src="src/app/15-cloud-object.js?v=20260712-cloud-density-high"></script>
 <script src="src/app/16-object-timeline-menu.js?v=20260704-minimize-restore"></script>
 <script src="src/app/17-topbar-floating-menus.js?v=20260704-minimize-maximize"></script>
 <script src="src/app/18-color-settings-file.js?v=20260703-color-settings-file"></script>
 <script src="src/app/19-workspace-zoom.js?v=20260705-remove-panorama"></script>
-<script src="src/app/20-global-undo-redo.js?v=20260705-timeline-integrity"></script>
+<script src="src/app/20-global-undo-redo.js?v=20260712-colorpicker-restore"></script>
 <script src="src/app/21-global-object-shortcuts.js?v=20260705-delete-selected-timeline-item"></script>
 <script src="src/app/22-camera-timeline.js?v=20260707-background-drag-camera"></script>
 <script src="src/app/23-audiosource-timeline-menu.js?v=20260704-optional-audio-backbone"></script>
 <script src="src/app/24-input-manager.js?v=20260709-input-manager"></script>
 <script src="src/app/25-teleprompter-launcher.js?v=20260709-teleprompter"></script>
-<script src="src/app/26-vse-color-controls.js?v=20260710-colorpicker-pro"></script>
+<script src="src/app/26-vse-color-controls.js?v=20260712-colorpicker-restore"></script>
+<script src="src/app/27-particle-path.js?v=20260711-particle-path"></script>
+<script src="src/app/28-lightning-particle.js?v=20260712-lightning-particle"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>

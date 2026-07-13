@@ -24,6 +24,7 @@ const timelineEventTime=document.getElementById('timelineEventTime');
 const timelineEventTimeValue=document.getElementById('timelineEventTimeValue');
 const timelineEventAction=document.getElementById('timelineEventAction');
 const timelineEventDuration=document.getElementById('timelineEventDuration');
+const timelineEventDurationNumber=document.getElementById('timelineEventDurationNumber');
 const timelineEventDurationValue=document.getElementById('timelineEventDurationValue');
 const timelineEventEnabled=document.getElementById('timelineEventEnabled');
 const timelineEventStartActive=document.getElementById('timelineEventStartActive');

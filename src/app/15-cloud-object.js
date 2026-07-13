@@ -5,12 +5,13 @@
   const cloudLoc={index:gl.getAttribLocation(cloudProg,'aIndex'),pixelRes:U('uPixelRes'),cssRes:U('uCssRes'),origin:U('uOriginCss'),size:U('uSize'),rot:U('uRot'),time:U('uTime'),density:U('uDensity'),softness:U('uSoftness'),brightness:U('uBrightness'),seed:U('uSeed'),motion:U('uMotion'),speed:U('uSpeed'),detail:U('uDetail'),opacity:U('uOpacity'),color:U('uColor'),wind:U('uWind'),audio:U('uAudio'),lifecycle:U('uLifecycle'),preset:U('uPreset')};
   const CLOUD_PARTICLE_MAX=512,cloudParticleBuffer=gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER,cloudParticleBuffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(Array.from({length:CLOUD_PARTICLE_MAX},(_,i)=>i)),gl.STATIC_DRAW);
+  const CLOUD_DENSITY_RENDER_GAIN=2.15;
   const presets={
-    cumulus:{cloudPreset:'cumulus',cloudDensity:.82,cloudSoftness:.72,cloudColor:'#f4f7ff',cloudBrightness:1.08,cloudMotion:.35,cloudSpeed:.24,cloudDetail:.68},
-    stratus:{cloudPreset:'stratus',cloudDensity:.62,cloudSoftness:.88,cloudColor:'#dfe6ee',cloudBrightness:.88,cloudMotion:.22,cloudSpeed:.16,cloudDetail:.38},
-    fog:{cloudPreset:'fog',cloudDensity:.42,cloudSoftness:.96,cloudColor:'#d8e2e5',cloudBrightness:.82,cloudMotion:.55,cloudSpeed:.18,cloudDetail:.28},
-    storm:{cloudPreset:'storm',cloudDensity:1.0,cloudSoftness:.58,cloudColor:'#667080',cloudBrightness:.62,cloudMotion:.55,cloudSpeed:.34,cloudDetail:.86},
-    smoke:{cloudPreset:'smoke',cloudDensity:.78,cloudSoftness:.70,cloudColor:'#6e6965',cloudBrightness:.72,cloudMotion:.95,cloudSpeed:.48,cloudDetail:.78}
+    cumulus:{cloudPreset:'cumulus',cloudDensity:1.85,cloudSoftness:.72,cloudColor:'#f4f7ff',cloudBrightness:1.08,cloudMotion:.35,cloudSpeed:.24,cloudDetail:.68},
+    stratus:{cloudPreset:'stratus',cloudDensity:1.45,cloudSoftness:.88,cloudColor:'#dfe6ee',cloudBrightness:.88,cloudMotion:.22,cloudSpeed:.16,cloudDetail:.38},
+    fog:{cloudPreset:'fog',cloudDensity:1.20,cloudSoftness:.96,cloudColor:'#d8e2e5',cloudBrightness:.82,cloudMotion:.55,cloudSpeed:.18,cloudDetail:.28},
+    storm:{cloudPreset:'storm',cloudDensity:2.30,cloudSoftness:.58,cloudColor:'#667080',cloudBrightness:.62,cloudMotion:.55,cloudSpeed:.34,cloudDetail:.86},
+    smoke:{cloudPreset:'smoke',cloudDensity:1.80,cloudSoftness:.70,cloudColor:'#6e6965',cloudBrightness:.72,cloudMotion:.95,cloudSpeed:.48,cloudDetail:.78}
   };
   function cloudDefaults(o){
     const d=presets.cumulus;
@@ -45,13 +46,14 @@
     const audio=typeof objectAudio==='function'?objectAudio(o):{level:0};const av=clamp01(Number(audio.level||0)*Number(o.cloudAudioAmount||0));
     let density=o.cloudDensity,brightness=o.cloudBrightness,opacity=o.cloudOpacity;
     if(o.cloudAudioMode==='density')density*=1+av;if(o.cloudAudioMode==='brightness')brightness*=1+av;if(o.cloudAudioMode==='opacity')opacity*=1+av*.75;
+    const renderDensity=Math.max(0,Number(density||0)*CLOUD_DENSITY_RENDER_GAIN);
     const now=performance.now()/1000;const wind=typeof windForObject==='function'?windForObject(o,'cloud'):{cssX:0,cssY:0};updateCloudWindDrift(o,wind,now);
     gl.useProgram(cloudProg);gl.bindBuffer(gl.ARRAY_BUFFER,cloudParticleBuffer);gl.enableVertexAttribArray(cloudLoc.index);gl.vertexAttribPointer(cloudLoc.index,1,gl.FLOAT,false,0,0);
     gl.uniform2f(cloudLoc.pixelRes,canvas.width,canvas.height);gl.uniform2f(cloudLoc.cssRes,cw,ch);gl.uniform2f(cloudLoc.origin,objCssX(o),objCssY(o));
     gl.uniform2f(cloudLoc.size,su(o.cloudWidth||360),su(o.cloudHeight||220));gl.uniform1f(cloudLoc.rot,Number(o.rotation||0)*Math.PI/180);gl.uniform1f(cloudLoc.time,now);
-    gl.uniform1f(cloudLoc.density,density);gl.uniform1f(cloudLoc.softness,o.cloudSoftness);gl.uniform1f(cloudLoc.brightness,brightness);gl.uniform1f(cloudLoc.seed,o.cloudSeed);gl.uniform1f(cloudLoc.motion,o.cloudMotion);gl.uniform1f(cloudLoc.speed,o.cloudSpeed);gl.uniform1f(cloudLoc.detail,o.cloudDetail);gl.uniform1f(cloudLoc.opacity,opacity*Number(o.intensity??1));
+    gl.uniform1f(cloudLoc.density,renderDensity);gl.uniform1f(cloudLoc.softness,o.cloudSoftness);gl.uniform1f(cloudLoc.brightness,brightness);gl.uniform1f(cloudLoc.seed,o.cloudSeed);gl.uniform1f(cloudLoc.motion,o.cloudMotion);gl.uniform1f(cloudLoc.speed,o.cloudSpeed);gl.uniform1f(cloudLoc.detail,o.cloudDetail);gl.uniform1f(cloudLoc.opacity,opacity*Number(o.intensity??1));
     const col=hex(o.cloudColor);gl.uniform3f(cloudLoc.color,col[0],col[1],col[2]);gl.uniform2f(cloudLoc.wind,Number(wind.cssX||0),Number(wind.cssY||0));gl.uniform1f(cloudLoc.audio,av);gl.uniform1f(cloudLoc.lifecycle,cloudLifecycle(o,now));gl.uniform1i(cloudLoc.preset,presetIndex(o.cloudPreset));
-    const particleCount=Math.max(112,Math.min(CLOUD_PARTICLE_MAX,Math.round(144+Number(o.cloudDetail||0)*288+Number(density||0)*48)));
+    const particleCount=Math.max(112,Math.min(CLOUD_PARTICLE_MAX,Math.round(144+Number(o.cloudDetail||0)*288+renderDensity*56)));
     gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.drawArrays(gl.POINTS,0,particleCount);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   }
   window.drawCloud=drawCloud;
@@ -63,7 +65,7 @@
     controls.forEach(k=>{const el=document.getElementById('pCloud'+k);if(!el)return;const v=o[prop[k]];if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
     document.querySelectorAll('[data-cloud-value]').forEach(el=>{const k=el.dataset.cloudValue;const v=o[prop[k]];el.textContent=typeof v==='number'?v.toFixed(k==='Seed'?0:2):v;});
   }
-  controls.forEach(k=>{const el=document.getElementById('pCloud'+k);if(!el)return;el.addEventListener('input',()=>{if(!selected||selected.type!=='cloud')return;let v=el.type==='checkbox'?el.checked:el.value;if(el.type==='range'||el.type==='number')v=Number(v);selected[prop[k]]=v;if(k==='Color')selected.color=v;if(k==='Opacity')selected.opacity=v;if(k==='WindInfluence'){selected.windInfluence=v;selected.windAffected=v>0;}if(k==='AudioFrequency')selected.audioFreq=v;if(k==='AudioThreshold')selected.music=v;if(k==='EvolutionMode')selected._cloudEvolutionStartedAt=performance.now()/1000;propagateSelectedProperty(prop[k],selected);syncCloudUI(selected);});});
+  controls.forEach(k=>{const el=document.getElementById('pCloud'+k);if(!el)return;el.addEventListener('input',()=>{if(!selected||selected.type!=='cloud')return;let v=el.type==='checkbox'?el.checked:el.value;if(el.type==='range'||el.type==='number')v=Number(v);selected[prop[k]]=v;if(k==='Color')selected.color=v;if(k==='Opacity')selected.opacity=v;if(k==='WindInfluence'){selected.windInfluence=v;selected.windAffected=v>0;}if(k==='AudioFrequency')selected.audioFreq=v;if(k==='AudioThreshold')selected.music=v;if(k==='EvolutionMode')selected._cloudEvolutionStartedAt=performance.now()/1000;propagateSelectedProperty(prop[k],selected);if(k==='Color')propagateSelectedProperty('color',selected);if(k==='Opacity')propagateSelectedProperty('opacity',selected);syncCloudUI(selected);});});
   const presetEl=document.getElementById('pCloudPreset');if(presetEl)presetEl.addEventListener('change',()=>{if(selected&&selected.type==='cloud')applyCloudPreset(selected,presetEl.value);});
   const sizeEl=document.getElementById('pSize');if(sizeEl)sizeEl.addEventListener('input',()=>{if(!selected||selected.type!=='cloud')return;const next=Number(selected.size||sizeEl.value||180),prev=Math.max(1,Number(selected._cloudUiSize||180)),ratio=next/prev;selected.cloudWidth=Math.max(40,Number(selected.cloudWidth||360)*ratio);selected.cloudHeight=Math.max(30,Number(selected.cloudHeight||220)*ratio);selected._cloudUiSize=next;syncCloudUI(selected);});
   const panel=document.getElementById('cloudExpertPanel');

@@ -15,6 +15,7 @@
     '#581c87','#6b21a8','#7e22ce','#9333ea','#a855f7','#c084fc','#e9d5ff','#d946ef',
     '#831843','#9d174d','#be185d','#db2777','#ec4899','#f472b6','#fbcfe8','#ff6fb1'
   ];
+  const renderers=new WeakMap();
 
   function clamp(value,min,max){
     return Math.min(max,Math.max(min,value));
@@ -81,7 +82,11 @@
 
   function closeAll(except){
     document.querySelectorAll('.vseColorControl.isOpen').forEach(control=>{
-      if(control!==except) control.classList.remove('isOpen');
+      if(control!==except){
+        control.classList.remove('isOpen');
+        const panel=control.querySelector('.vseColorPalette');
+        if(panel)panel.removeAttribute('style');
+      }
     });
   }
 
@@ -177,6 +182,28 @@
     control.append(toggle,hex,panel);
     input.insertAdjacentElement('afterend',control);
 
+    function positionPalette(){
+      if(!control.classList.contains('isOpen'))return;
+      const gap=6,pad=8;
+      const rect=control.getBoundingClientRect();
+      const width=Math.min(312,Math.max(220,window.innerWidth-pad*2));
+      panel.style.position='fixed';
+      panel.style.zIndex='220';
+      panel.style.width=width+'px';
+      panel.style.left=clamp(rect.left,pad,window.innerWidth-width-pad)+'px';
+      panel.style.top=(rect.bottom+gap)+'px';
+      panel.style.maxHeight='none';
+      const height=panel.offsetHeight||360;
+      const below=window.innerHeight-(rect.bottom+gap)-pad;
+      const above=rect.top-gap-pad;
+      if(height>below&&above>below){
+        panel.style.top=Math.max(pad,rect.top-gap-height)+'px';
+      }
+      const top=panel.getBoundingClientRect().top;
+      panel.style.maxHeight=Math.max(180,window.innerHeight-top-pad)+'px';
+      panel.style.overflow='auto';
+    }
+
     function render(value){
       const color=normalizeColor(value,input.value);
       const rgb=hexToRgb(color);
@@ -195,6 +222,7 @@
         option.classList.toggle('isSelected',option.title.toLowerCase()===color);
       });
     }
+    renderers.set(input,render);
 
     function setValue(value,commit){
       const color=normalizeColor(value,input.value);
@@ -238,6 +266,8 @@
       const nextOpen=!control.classList.contains('isOpen');
       closeAll(control);
       control.classList.toggle('isOpen',nextOpen);
+      if(nextOpen)requestAnimationFrame(positionPalette);
+      else panel.removeAttribute('style');
     });
 
     picker.addEventListener('pointerdown',event=>{
@@ -280,6 +310,8 @@
 
     input.addEventListener('input',()=>render(input.value));
     input.addEventListener('change',()=>render(input.value));
+    window.addEventListener('resize',positionPalette);
+    document.addEventListener('scroll',positionPalette,true);
     render(initial);
   }
 
@@ -297,5 +329,12 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installAll,{once:true});
   else installAll();
 
-  window.vseRefreshColorControls=installAll;
+  window.vseCloseColorControls=()=>closeAll();
+  window.vseRefreshColorControls=()=>{
+    installAll();
+    document.querySelectorAll('input[type="color"]').forEach(input=>{
+      const render=renderers.get(input);
+      if(render) render(input.value);
+    });
+  };
 })();

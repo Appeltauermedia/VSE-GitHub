@@ -262,6 +262,7 @@ function clearScreenPlaylist(o){
   o.screenPlaylist=[];
   o.screenPlaylistIndex=-1;
   o.screenPlaylistLastSwitch=0;
+  o.screenPlaylistTimelineStart=0;
 }
 function screenFileType(file){
   const t=(file&&file.type||'').toLowerCase();
@@ -270,20 +271,71 @@ function screenFileType(file){
   if(t.startsWith('image/')||/\.(png|jpe?g|webp|gif)$/i.test(n))return 'image';
   return null;
 }
+function screenPlaylistEntryFile(entry){return entry&&entry.file?entry.file:entry;}
+function screenPlaylistEntryName(entry){
+  const file=screenPlaylistEntryFile(entry);
+  return (entry&&entry.name)||(file&&((file.webkitRelativePath||file.name)))||'Medium';
+}
+function defaultScreenPlaylistDuration(o,file){
+  return Math.max(.1,Math.min(180,Number((o&&o.screenPlaylistHold)??5)||5));
+}
+function normalizeScreenPlaylist(o){
+  if(!o||o.type!=='screen')return [];
+  const items=Array.isArray(o.screenPlaylist)?o.screenPlaylist:[];
+  let cursor=0;
+  o.screenPlaylist=items.map(item=>{
+    const file=screenPlaylistEntryFile(item);
+    const duration=Math.max(.1,Number(item&&item.duration)||defaultScreenPlaylistDuration(o,file));
+    const start=Number.isFinite(Number(item&&item.start))?Math.max(0,Number(item.start)):cursor;
+    cursor=Math.max(cursor,start+duration);
+    return {file,name:screenPlaylistEntryName(item),type:screenFileType(file),start,duration};
+  }).filter(item=>item.file&&item.type).sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
+  if(o.screenPlaylistIndex>=o.screenPlaylist.length)o.screenPlaylistIndex=o.screenPlaylist.length-1;
+  return o.screenPlaylist;
+}
+function screenPlaylistTotalDuration(o){
+  return normalizeScreenPlaylist(o).reduce((max,item)=>Math.max(max,(Number(item.start)||0)+Math.max(.1,Number(item.duration)||0)),0);
+}
+function appendScreenPlaylistFiles(o,files,replace=false){
+  if(!o||o.type!=='screen')return false;
+  const arr=Array.from(files||[]).filter(f=>!!screenFileType(f)).sort((a,b)=>(a.webkitRelativePath||a.name).localeCompare(b.webkitRelativePath||b.name,undefined,{numeric:true}));
+  if(!arr.length){alert('Keine unterstuetzten Bilder oder Videos gefunden.');return false;}
+  if(replace)clearScreenPlaylist(o);
+  const list=normalizeScreenPlaylist(o);
+  let cursor=screenPlaylistTotalDuration(o);
+  for(const file of arr){
+    const duration=defaultScreenPlaylistDuration(o,file);
+    list.push({file,name:file.webkitRelativePath||file.name,type:screenFileType(file),start:cursor,duration});
+    cursor+=duration;
+  }
+  o.screenPlaylist=list.sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
+  if(o.screenPlaylistIndex<0)o.screenPlaylistIndex=0;
+  o.screenPlaylistAuto=o.screenPlaylistAuto!==false;
+  loadScreenPlaylistItem(o,o.screenPlaylistIndex,true);
+  return true;
+}
 function loadScreenPlaylistItem(o,index,manual=false){
   if(!o||o.type!=='screen'||!o.screenPlaylist||!o.screenPlaylist.length)return;
-  const len=o.screenPlaylist.length;
+  const list=normalizeScreenPlaylist(o);
+  const len=list.length;
   o.screenPlaylistIndex=((Number(index)||0)%len+len)%len;
-  const file=o.screenPlaylist[o.screenPlaylistIndex];
+  const entry=list[o.screenPlaylistIndex];
+  const file=screenPlaylistEntryFile(entry);
   const type=screenFileType(file);
   if(!type)return;
   loadScreenMedia(o,file,type,true);
   o.screenMode=type;
   o.screenPlaylistLastSwitch=performance.now();
-  if(selected===o){fields.ScreenMode.value=o.screenMode;select(o);}
+  if(selected===o){
+    if(fields.ScreenMode)fields.ScreenMode.value=o.screenMode;
+    if(screenMediaInfo)screenMediaInfo.textContent='Playlist: '+list.length+' Medien · gesamt: '+(typeof screenPlaylistTotalDuration==='function'?screenPlaylistTotalDuration(o).toFixed(2):'0.00')+' s · aktuell: '+(o.screenMediaName||'—');
+    if(typeof renderScreenPlaylistEditor==='function')renderScreenPlaylistEditor(o);
+  }
 }
 function loadScreenMediaFolder(o,files){
   if(!o||o.type!=='screen')return;
+  appendScreenPlaylistFiles(o,files,true);
+  return;
   const arr=Array.from(files||[]).filter(f=>!!screenFileType(f)).sort((a,b)=>(a.webkitRelativePath||a.name).localeCompare(b.webkitRelativePath||b.name,undefined,{numeric:true}));
   if(!arr.length){alert('Keine unterstützten Bilder oder Videos im Ordner gefunden.');return;}
   clearScreenPlaylist(o);
@@ -293,24 +345,60 @@ function loadScreenMediaFolder(o,files){
   o.screenPlaylistAuto=o.screenPlaylistAuto!==false;
   loadScreenPlaylistItem(o,0,true);
 }
-function screenPlaylistNext(o){
+function screenPlaylistNext(o,manual=true){
   if(!o||!o.screenPlaylist||o.screenPlaylist.length<1)return;
-  loadScreenPlaylistItem(o,(Number(o.screenPlaylistIndex)||0)+1,true);
+  loadScreenPlaylistItem(o,(Number(o.screenPlaylistIndex)||0)+1,manual);
+}
+function screenPlaylistEventLocalTime(o){
+  if(typeof currentTimelineTime!=='function'||!timelineState)return null;
+  const t=currentTimelineTime();
+  const event=(timelineState.events||[]).filter(ev=>ev&&ev.timelineAssetKind==='screen-media'&&timelineEventTargetId(ev)===o.id&&ev.enabled!==false)
+    .sort((a,b)=>(Number(b.time)||0)-(Number(a.time)||0))
+    .find(ev=>t>=Number(ev.time||0)-.001&&(Number(ev.duration||0)<=0||t<=Number(ev.time||0)+Number(ev.duration||0)+.001));
+  if(event)return Math.max(0,t-Number(event.time||0));
+  return timelineState.playing?Math.max(0,t):null;
+}
+function screenPlaylistIndexAtTime(o,localTime){
+  const list=normalizeScreenPlaylist(o);
+  if(!list.length)return -1;
+  const total=screenPlaylistTotalDuration(o);
+  const t=total>0?Math.max(0,localTime)%total:0;
+  let fallback=0;
+  for(let i=0;i<list.length;i++){
+    const item=list[i],start=Number(item.start)||0,duration=Math.max(.1,Number(item.duration)||0);
+    if(t>=start&&t<start+duration)return i;
+    if(start<=t)fallback=i;
+  }
+  return fallback;
 }
 function updateScreenPlaylists(){
   const now=performance.now();
   for(const o of objects){
     if(!o||o.type!=='screen'||!o.screenPlaylist||o.screenPlaylist.length<2||o.screenPlaylistAuto===false)continue;
-    const cur=o.screenPlaylist[o.screenPlaylistIndex||0];
-    const type=screenFileType(cur);
+    const localTime=screenPlaylistEventLocalTime(o);
+    if(localTime!==null){
+      const nextIndex=screenPlaylistIndexAtTime(o,localTime);
+      if(nextIndex>=0&&nextIndex!==(Number(o.screenPlaylistIndex)||0))loadScreenPlaylistItem(o,nextIndex,false);
+      const item=normalizeScreenPlaylist(o)[o.screenPlaylistIndex||0];
+      if(item&&item.type==='video'&&o.screenMediaElement&&Number.isFinite(o.screenMediaElement.duration)){
+        const target=Math.max(0,Math.min(o.screenMediaElement.duration||0,localTime-(Number(item.start)||0)));
+        if(Math.abs((o.screenMediaElement.currentTime||0)-target)>.25){
+          try{o.screenMediaElement.currentTime=target;}catch(e){}
+        }
+      }
+      continue;
+    }
+    const list=normalizeScreenPlaylist(o);
+    const cur=list[o.screenPlaylistIndex||0];
+    const type=screenFileType(screenPlaylistEntryFile(cur));
     let should=false;
     if(type==='video'&&o.screenMediaElement){
       if(o.screenMediaElement.ended)should=true;
     }else{
-      const hold=Math.max(.5,Number(o.screenPlaylistHold??5))*1000;
+      const hold=Math.max(.1,Number(cur&&cur.duration)||defaultScreenPlaylistDuration(o))*1000;
       if(now-(o.screenPlaylistLastSwitch||0)>=hold)should=true;
     }
-    if(should)screenPlaylistNext(o);
+    if(should)screenPlaylistNext(o,false);
   }
 }
 function loadScreenMedia(o,file,type,fromPlaylist=false){
@@ -373,7 +461,7 @@ function loadScreenMedia(o,file,type,fromPlaylist=false){
     o.screenMediaElement=v;
     o.screenMode='video';
   }
-  select(o);
+  if(!fromPlaylist)select(o);
 }
 async function startScreenCaptureForScreen(o){
   if(!o||o.type!=='screen')return;
@@ -1140,6 +1228,9 @@ function drawScreen(o){
   gl.uniform2f(screenLoc.sizeCss,su(o.screenWidth||260),su(o.screenHeight||120));
   gl.uniform1f(screenLoc.rot,Number(o.rotation||0)*Math.PI/180);
   gl.uniform1f(screenLoc.depthRotation,Math.max(-75,Math.min(75,Number(o.screenDepthRotation)||0)));
+  gl.uniform1f(screenLoc.cornerWarp,o.screenCornerPerspective?1:0);
+  gl.uniform4f(screenLoc.cornerX,su(o.screenCornerTLX||0),su(o.screenCornerTRX||0),su(o.screenCornerBRX||0),su(o.screenCornerBLX||0));
+  gl.uniform4f(screenLoc.cornerY,su(o.screenCornerTLY||0),su(o.screenCornerTRY||0),su(o.screenCornerBRY||0),su(o.screenCornerBLY||0));
   gl.uniform1f(screenLoc.opacity,Number(o.screenOpacity??1));
   gl.uniform1f(screenLoc.dim,sceneDimmingForTarget('screen',o));
   gl.uniform1f(screenLoc.brightness,Number(o.screenBrightness??1)*(Number(o.intensity??1))*Math.max(0,Math.min(1,Number(o._timelineFade??1))));

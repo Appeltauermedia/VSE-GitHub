@@ -26,6 +26,7 @@
   .vseColorHex{height:30px;margin:0;text-transform:lowercase;font-family:Consolas,monospace}
   .vseColorPalette{display:none;position:absolute;z-index:90;left:0;top:calc(100% + 5px);width:min(312px,calc(100vw - 28px));gap:8px;padding:9px;border:1px solid #30445f;border-radius:8px;background:#101823;box-shadow:0 12px 24px rgba(0,0,0,.36)}
   .vseColorControl.isOpen .vseColorPalette{display:grid}
+  details.fold:has(.vseColorControl.isOpen),details.menuTier:has(.vseColorControl.isOpen),details.menuTier:has(.vseColorControl.isOpen) .menuTierBody{overflow:visible}
   .vseColorPickerMap{--vse-picker-hue:hsl(0 100% 50%);position:relative;height:136px;border:1px solid #43536a;border-radius:7px;background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,transparent),var(--vse-picker-hue);cursor:crosshair;touch-action:none;overflow:hidden}
   .vseColorPickerCursor{position:absolute;width:13px;height:13px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #000,0 2px 5px rgba(0,0,0,.45);transform:translate(-50%,-50%);pointer-events:none}
   .vseHueSlider{height:18px;margin:0;padding:0;border:0;border-radius:8px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);accent-color:#ffffff}
@@ -419,6 +420,27 @@ body.audioDockCollapsed #right{
 #stageWrap.workspaceGrabbing,#stageWrap.workspaceGrabbing *{cursor:grabbing!important;user-select:none}
 #workspaceZoomStatus{position:absolute;z-index:24;left:12px;top:12px;width:auto;min-width:46px;margin:0;padding:4px 7px;border:1px solid #3a4046;border-radius:5px;background:rgba(17,20,23,.88);color:var(--object-icon-color);font-size:10px;font-variant-numeric:tabular-nums;text-align:center;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.25)}
 #workspaceZoomStatus:hover{background:#22262a;border-color:#59616a}
+#selectionBox .selectionHandle{display:none}
+#selectionBox.isTransformFrame{background:rgba(48,172,255,.06);border-style:solid;pointer-events:none}
+#selectionBox.isTransformFrame .selectionHandle{display:block;position:absolute;width:11px;height:11px;padding:0;margin:0;border:1px solid rgba(5,10,18,.85);border-radius:2px;background:#75dfff;box-shadow:0 0 0 1px rgba(117,223,255,.35),0 2px 7px rgba(0,0,0,.35);pointer-events:auto}
+#selectionBox.isTransformFrame .selectionHandle-nw{left:-6px;top:-6px;cursor:nwse-resize}
+#selectionBox.isTransformFrame .selectionHandle-n{left:50%;top:-6px;transform:translateX(-50%);cursor:ns-resize}
+#selectionBox.isTransformFrame .selectionHandle-ne{right:-6px;top:-6px;cursor:nesw-resize}
+#selectionBox.isTransformFrame .selectionHandle-e{right:-6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
+#selectionBox.isTransformFrame .selectionHandle-se{right:-6px;bottom:-6px;cursor:nwse-resize}
+#selectionBox.isTransformFrame .selectionHandle-s{left:50%;bottom:-6px;transform:translateX(-50%);cursor:ns-resize}
+#selectionBox.isTransformFrame .selectionHandle-sw{left:-6px;bottom:-6px;cursor:nesw-resize}
+#selectionBox.isTransformFrame .selectionHandle-w{left:-6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
+#selectionBox.isTransformFrame.isLinearTransformFrame .selectionHandle{display:none}
+#selectionBox.isTransformFrame.isLinearTransformFrame .selectionHandle-n,
+#selectionBox.isTransformFrame.isLinearTransformFrame .selectionHandle-s{display:block;cursor:ew-resize}
+#selectionBox.isTransformFrame.isScreenCornerTransformFrame{background:transparent;border-color:rgba(117,223,255,.45);border-style:dashed}
+#selectionBox.isTransformFrame.isScreenCornerTransformFrame .selectionHandle{display:none;transform:translate(-50%,-50%)}
+#selectionBox.isTransformFrame.isScreenCornerTransformFrame .selectionHandle-nw,
+#selectionBox.isTransformFrame.isScreenCornerTransformFrame .selectionHandle-ne,
+#selectionBox.isTransformFrame.isScreenCornerTransformFrame .selectionHandle-se,
+#selectionBox.isTransformFrame.isScreenCornerTransformFrame .selectionHandle-sw{display:block;cursor:move}
+#selectionBox.isTransforming{box-shadow:0 0 0 1px rgba(117,223,255,.55),0 0 18px rgba(117,223,255,.28)}
 #objectPalette{
   position:fixed;
   left:0;
@@ -740,7 +762,8 @@ input[type=range],
 }
 .topbarIconButton:hover,.topbarIconButton[aria-expanded="true"]{background:#22262a;border-color:#3a4047}
 .topbarIconButton svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:24;stroke-linecap:round;stroke-linejoin:round}
-.topbarBrand{margin-left:auto;align-self:center;padding:0 12px;color:var(--object-icon-color);font-size:13px;font-weight:700;letter-spacing:.14em;white-space:nowrap;user-select:none}
+.topbarBrand{margin-left:auto;align-self:center;display:flex;align-items:center;justify-content:flex-end;height:38px;padding:0 12px;white-space:nowrap;user-select:none}
+.topbarBrand img{display:block;width:auto;height:32px;max-width:180px;object-fit:contain}
 .topbarFloatingPanel{
   position:fixed;z-index:87;top:calc(var(--chrome-top) + 8px);left:12px;width:min(390px,calc(100vw - 24px));max-height:calc(100dvh - var(--chrome-top) - 20px);overflow:auto;
   color:var(--text);background:rgba(13,17,22,.98);border:1px solid var(--line);border-radius:10px;box-shadow:0 20px 54px rgba(0,0,0,.48)
@@ -892,3 +915,14 @@ body.menuless #timelineDock{
   display:none;
 }
 body.menuless #stageWrap{inset:0}
+.particle-path-settings{display:none}
+body.particlePathDrawMode #stageWrap,
+body.particlePathDrawMode #gl{cursor:crosshair}
+#particlePathInfo{color:var(--muted)}
+.screenPlaylistEditor{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.screenPlaylistRow{display:grid;grid-template-columns:minmax(0,1fr) 72px 72px 72px;gap:6px;align-items:end;padding:6px;border:1px solid rgba(148,163,184,.22);border-radius:6px;background:rgba(15,23,42,.28)}
+.screenPlaylistRow.isActive{border-color:rgba(96,165,250,.65);background:rgba(37,99,235,.16)}
+.screenPlaylistName{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#d7e5ff}
+.screenPlaylistRow label{margin:0;font-size:10px;color:#93a6c0}
+.screenPlaylistRow input{width:100%;box-sizing:border-box}
+.screenPlaylistRow button{min-height:28px;padding:4px 6px}

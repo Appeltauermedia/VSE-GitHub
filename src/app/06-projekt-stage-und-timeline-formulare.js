@@ -102,13 +102,53 @@ if(timelineDock)timelineDock.addEventListener('click',e=>{
   }
 });
 if(timelineWidthInput)timelineWidthInput.addEventListener('input',()=>{timelineState.widthPercent=Number(timelineWidthInput.value)||100;updateTimelineUI();});
-if(timelineDurationInput)timelineDurationInput.addEventListener('input',()=>{timelineState.manualDuration=true;timelineState.duration=Math.max(1,Number(timelineDurationInput.value)||180);updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());});
+function applyTimelineDurationFromInput(commitEmpty=false){
+  if(!timelineDurationInput)return;
+  const raw=String(timelineDurationInput.value||'').trim();
+  if(!raw){
+    if(commitEmpty)timelineDurationInput.value=timelineState.duration;
+    return;
+  }
+  const value=Number(raw.replace(',','.'));
+  if(!Number.isFinite(value)||value<=0)return;
+  timelineState.manualDuration=true;
+  timelineState.duration=Math.max(1,value);
+  updateTimelineUI();
+  setTimelineEventForm(selectedTimelineEvent());
+}
+if(timelineDurationInput&&timelineDurationInput.dataset.manualDurationHandler!=='1'){
+  timelineDurationInput.dataset.manualDurationHandler='1';
+  timelineDurationInput.addEventListener('input',()=>applyTimelineDurationFromInput(false));
+  timelineDurationInput.addEventListener('change',()=>applyTimelineDurationFromInput(true));
+  timelineDurationInput.addEventListener('blur',()=>applyTimelineDurationFromInput(true));
+}
+function parseTimelineNumberInput(el,fallback=0){
+  const value=Number(String(el&&el.value||'').replace(',','.'));
+  return Number.isFinite(value)?value:fallback;
+}
+function readTimelineEventDurationValue(){
+  const active=document.activeElement;
+  const source=active===timelineEventDurationNumber?timelineEventDurationNumber:timelineEventDuration;
+  return Math.max(0,parseTimelineNumberInput(source,0));
+}
+function syncTimelineEventDurationFields(value,source=null){
+  const next=Math.max(0,Number(value)||0);
+  if(timelineEventDuration){
+    timelineEventDuration.max=Math.max(300,timelineState.duration,next);
+    if(source!==timelineEventDuration)timelineEventDuration.value=next;
+  }
+  if(timelineEventDurationNumber&&source!==timelineEventDurationNumber){
+    timelineEventDurationNumber.max=Math.max(300,timelineState.duration,next);
+    timelineEventDurationNumber.value=Number(next).toFixed(2).replace(/\.00$/,'');
+  }
+  if(timelineEventDurationValue)timelineEventDurationValue.textContent=next.toFixed(2)+' s';
+}
 if(timelineUseMediaDurationBtn)timelineUseMediaDurationBtn.onclick=()=>{const d=getTimelineMediaDuration();timelineState.manualDuration=false;timelineState.duration=Math.max(180,Math.ceil(d||0));updateTimelineUI();setTimelineEventForm(selectedTimelineEvent());};
 if(timelineUseSelectedObjectBtn)timelineUseSelectedObjectBtn.onclick=()=>{const value=timelineCurrentSelectionValue();if(value&&timelineEventObject){updateTimelineObjectOptions();timelineEventObject.value=value;}};
 if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineCopyEventBtn)timelineCopyEventBtn.onclick=copyTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
-[timelineEventTime,timelineEventDuration].forEach(el=>{if(el)el.addEventListener('input',()=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration.value||0).toFixed(2)+' s';});});
+[timelineEventTime,timelineEventDuration,timelineEventDurationNumber].forEach(el=>{if(el)el.addEventListener('input',event=>{if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime.value)||0);if(event&&event.currentTarget!==timelineEventTime)syncTimelineEventDurationFields(readTimelineEventDurationValue(),event.currentTarget);});});
 if(timelineDropZone){
   timelineDropZone.addEventListener('dragover',e=>{e.preventDefault();timelineDropZone.classList.add('isOver');});
   timelineDropZone.addEventListener('dragleave',()=>timelineDropZone.classList.remove('isOver'));
@@ -304,7 +344,7 @@ if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineCopyEventBtn)timelineCopyEventBtn.onclick=copyTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
 if(timelineCaptureConfigBtn)timelineCaptureConfigBtn.onclick=captureTimelineEventConfig;
-[timelineEventTime,timelineEventDuration,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('input',()=>{const ev=selectedTimelineEvent();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=Number(timelineEventDuration?.value||0);ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';updateTimelineUI();});});
+[timelineEventTime,timelineEventDuration,timelineEventDurationNumber,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('input',event=>{const ev=selectedTimelineEvent();const duration=readTimelineEventDurationValue();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=duration;ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);syncTimelineEventDurationFields(duration,event&&event.currentTarget);updateTimelineUI();});});
 
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&vrState.active){e.preventDefault();endVrViewer();return;}

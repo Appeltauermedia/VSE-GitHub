@@ -31,6 +31,7 @@ const TIMELINE_SCREEN_KEYS=[
   'screenAmbilight','screenAmbilightStrength','screenEngineX','screenEngineY','screenEngineW','screenEngineH'
 ];
 function timelineCloneSafe(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
+const TIMELINE_SNAPSHOT_MEDIA_KEYS=new Set(['imageData','particleImageData','imageAssetData','greenscreenMediaData','audioSourceData','audioData','data']);
 function timelineSnapshotObject(o){
   if(!o)return null;
   const snap={type:o.type,id:o.id};
@@ -43,6 +44,7 @@ function timelineSnapshotObject(o){
   const raw=(typeof cleanObjectForObjectExport==='function')?cleanObjectForObjectExport(o):o;
   for(const [k,v] of Object.entries(raw)){
     if(k==='id'||k==='type'||k==='name'||k==='groupId'||k==='groupName'||k.startsWith('_')||typeof v==='function')continue;
+    if(TIMELINE_SNAPSHOT_MEDIA_KEYS.has(k)||TIMELINE_SNAPSHOT_MEDIA_KEYS.has(k.replace(/Ref$/,'')))continue;
     if(k.endsWith('Element')||k.endsWith('Texture')||k.endsWith('Url')||k.endsWith('Stream')||k.endsWith('Node')||k.endsWith('Gain')||k.endsWith('Pan'))continue;
     snap[k]=timelineCloneSafe(v);
   }
@@ -137,7 +139,8 @@ function setTimelineEventForm(ev){
   if(!ev){
     if(timelineEventTime){timelineEventTime.max=timelineState.duration;timelineEventTime.value=timelineState.lastClickTime||0;}
     if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(timelineState.lastClickTime||0);
-    if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';
+    if(typeof syncTimelineEventDurationFields==='function')syncTimelineEventDurationFields(typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||0));
+    else if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';
     if(timelineEventEnabled)timelineEventEnabled.checked=true;
     if(timelineEventStartActive)timelineEventStartActive.checked=true;
     if(timelineEventInfo)timelineEventInfo.textContent='Noch kein Timeline-Event ausgewählt.';
@@ -146,7 +149,8 @@ function setTimelineEventForm(ev){
   if(timelineEventObject)timelineEventObject.value=timelineEventTargetId(ev)||'';
   if(timelineEventTime){timelineEventTime.max=timelineState.duration;timelineEventTime.value=ev.time||0;}
   if(timelineEventAction)timelineEventAction.value=ev.action||'activate';
-  if(timelineEventDuration){timelineEventDuration.max=Math.max(300,timelineState.duration);timelineEventDuration.value=ev.duration||0;}
+  if(typeof syncTimelineEventDurationFields==='function')syncTimelineEventDurationFields(ev.duration||0);
+  else if(timelineEventDuration){timelineEventDuration.max=Math.max(300,timelineState.duration);timelineEventDuration.value=ev.duration||0;}
   if(timelineEventEnabled)timelineEventEnabled.checked=ev.enabled!==false;
   if(timelineEventStartActive)timelineEventStartActive.checked=ev.startActive!==false;
   if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(ev.time||0);
@@ -167,7 +171,7 @@ function addOrUpdateTimelineEvent(){
     groupId:kind==='group'?oid:undefined,
     time:Number(timelineEventTime?.value||timelineState.lastClickTime||0),
     action:timelineEventAction?.value||'activate',
-    duration:Number(timelineEventDuration?.value||0),
+    duration:typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||0),
     enabled:timelineEventEnabled?timelineEventEnabled.checked:true,
     startActive:timelineEventStartActive?timelineEventStartActive.checked:true,
     snapshot:timelineSnapshotTarget(kind,oid)
@@ -200,12 +204,12 @@ function captureTimelineEventConfig(){
   const oid=(timelineEventObject&&timelineEventObject.value)||(ev&&ev.objectId);
   const kind=timelineTargetKindFromValue(oid);
   if(!kind){alert('Kein gültiges Objekt oder keine gültige Gruppe für dieses Event.');return;}
-  const target=ev||{id:'tl_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*999999),objectId:oid,time:Number(timelineEventTime?.value||timelineState.lastClickTime||0),action:timelineEventAction?.value||'parameter',duration:Number(timelineEventDuration?.value||0),enabled:true,startActive:timelineEventStartActive?timelineEventStartActive.checked:true};
+  const target=ev||{id:'tl_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*999999),objectId:oid,time:Number(timelineEventTime?.value||timelineState.lastClickTime||0),action:timelineEventAction?.value||'parameter',duration:typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||0),enabled:true,startActive:timelineEventStartActive?timelineEventStartActive.checked:true};
   target.objectId=oid;
   if(kind==='group'){target.targetType='group';target.groupId=oid;}else{delete target.targetType;delete target.groupId;}
   target.time=Number(timelineEventTime?.value||target.time||0);
   target.action=timelineEventAction?.value||target.action||'parameter';
-  target.duration=Number(timelineEventDuration?.value||target.duration||0);
+  target.duration=typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||target.duration||0);
   target.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;
   target.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;
   target.snapshot=timelineSnapshotTarget(kind,oid);
@@ -218,15 +222,16 @@ function updateTimelineUI(){
   if(timelineDock)timelineDock.style.width='';
   if(timelineWidthInput){timelineWidthInput.value=100;timelineWidthInput.disabled=true;}
   if(timelineWidthValue)timelineWidthValue.textContent='100%';
-  if(timelineDurationInput)timelineDurationInput.value=timelineState.duration;
+  if(timelineDurationInput&&document.activeElement!==timelineDurationInput)timelineDurationInput.value=timelineState.duration;
   if(timelineDurationValue)timelineDurationValue.textContent=formatTimelineTime(timelineState.duration);
   if(timelineTotalTimeEl)timelineTotalTimeEl.textContent=formatTimelineTime(timelineState.duration);
   if(timelineEventTime)timelineEventTime.max=timelineState.duration;
   if(timelineEventDuration)timelineEventDuration.max=Math.max(300,timelineState.duration);
+  if(timelineEventDurationNumber)timelineEventDurationNumber.max=Math.max(300,timelineState.duration,Number(timelineEventDurationNumber.value)||0);
   updateTimelineObjectOptions();renderTimelineEvents();updateTimelineEventList();
 }
 if(timelineAddEventBtn){timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;timelineAddEventBtn.title='Legt ein neues Timeline-Event mit aktueller Objekt-Konfiguration an.';}
 if(timelineCopyEventBtn){timelineCopyEventBtn.onclick=copyTimelineEvent;timelineCopyEventBtn.title='Kopiert das ausgewählte Timeline-Event mit Ziel, Aktion, Dauer und gespeicherter Konfiguration.';}
 if(timelineCaptureConfigBtn){timelineCaptureConfigBtn.onclick=captureTimelineEventConfig;}
-[timelineEventTime,timelineEventDuration,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('change',()=>{const ev=selectedTimelineEvent();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=Number(timelineEventDuration?.value||0);ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(timelineEventDurationValue)timelineEventDurationValue.textContent=Number(timelineEventDuration?.value||0).toFixed(2)+' s';updateTimelineUI();});});
+[timelineEventTime,timelineEventDuration,timelineEventDurationNumber,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('change',event=>{const ev=selectedTimelineEvent();const duration=typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||0);if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=duration;ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(typeof syncTimelineEventDurationFields==='function')syncTimelineEventDurationFields(duration,event&&event.currentTarget);else if(timelineEventDurationValue)timelineEventDurationValue.textContent=duration.toFixed(2)+' s';updateTimelineUI();});});
 if(typeof updateTimelineUI==='function')updateTimelineUI();
