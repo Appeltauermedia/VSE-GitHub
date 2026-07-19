@@ -190,7 +190,29 @@ function selectRect(cssRect,additive=false){
   if(groupNameInput&&selected)groupNameInput.value=selected.groupName||'';
   updateHud();updateObjectManager();
 }
-function groupCenter(arr=getSelectedObjects()){let sx=0,sy=0;if(!arr.length)return {x:50,y:50};for(const o of arr){sx+=Number(o.x||0);sy+=Number(o.y||0);}return {x:sx/arr.length,y:sy/arr.length};}
+function groupTransformArea(o){
+  if(!o)return 1;
+  const stageW=Math.max(1,Number((typeof stageState!=='undefined'&&stageState.w)||scene.stageWidth||1920));
+  const stageH=Math.max(1,Number((typeof stageState!=='undefined'&&stageState.h)||scene.stageHeight||1080));
+  let w=Number(o.size||44),h=Number(o.size||44);
+  if(o.type==='screen'||o.type==='text'){w=Number(o.screenWidth||(o.type==='text'?520:260));h=Number(o.screenHeight||(o.type==='text'?180:120));}
+  else if(o.type==='imageAsset'){
+    if(typeof imageAssetRenderSize==='function'){const ps=imageAssetRenderSize(o);w=Number(ps.w||o.imageAssetWidth||240);h=Number(ps.h||o.imageAssetHeight||160);}
+    else{w=Number(o.imageAssetWidth||240);h=Number(o.imageAssetHeight||160);}
+  }else if(o.type==='greenscreen'){
+    if(typeof getGreenscreenRenderSize==='function'){const gs=getGreenscreenRenderSize(o);const sc=Math.max(0.0001,typeof stageScale==='function'?stageScale():1);w=Number(gs.w||0)/sc||Number(o.greenscreenWidth||480);h=Number(gs.h||0)/sc||Number(o.greenscreenHeight||270);}
+    else{w=Number(o.greenscreenWidth||480);h=Number(o.greenscreenHeight||270);}
+  }else if(isWaterObject(o)){w=Number(o.waterWidth||420);h=Number(o.waterHeight||180);}
+  else if(o.type==='mandalaVisualizer'){w=Number(o.mandalaObjWidth||420);h=Number(o.mandalaObjHeight||420);}
+  else if(o.type==='visualizer'){w=Number(o.visualizerWidth||520);h=Number(o.visualizerHeight||180);}
+  else if(o.type==='cloud'){w=Number(o.cloudWidth||360);h=Number(o.cloudHeight||220);}
+  else if(o.type==='lightbar'){w=Number(o.lightbarLength||320);h=Math.max(12,Number(o.size||56)*0.18);}
+  else if(o.type==='particle'&&(o.particleEmitterShape||'point')==='line'){w=Math.max(12,Number(o.size||72)*0.12);h=Number(o.particleEmitterLength||120);}
+  else if(o.type==='light'&&(o.lightEmitterShape||'point')==='line'){w=Math.max(12,Number(o.size||44)*0.24);h=Number(o.lightEmitterLength||240);}
+  const pw=Math.max(0.001,w/stageW*100),ph=Math.max(0.001,h/stageH*100);
+  return pw*ph;
+}
+function groupCenter(arr=getSelectedObjects()){let sx=0,sy=0,sa=0;if(!arr.length)return {x:50,y:50};for(const o of arr){const a=groupTransformArea(o);sx+=Number(o.x||0)*a;sy+=Number(o.y||0)*a;sa+=a;}if(sa>0)return {x:sx/sa,y:sy/sa};for(const o of arr){sx+=Number(o.x||0);sy+=Number(o.y||0);}return {x:sx/arr.length,y:sy/arr.length};}
 function createGroup(){const arr=getSelectedObjects();if(arr.length<2){alert('Bitte mindestens zwei Objekte auswählen.');return;}const gid='grp_'+Date.now().toString(36)+'_'+Math.floor(Math.random()*9999).toString(36);const name=(groupNameInput&&groupNameInput.value.trim())||'Gruppe '+(groups.length+1);groups.push({id:gid,name});arr.forEach(o=>{o.groupId=gid;o.groupName=name;});selected=arr[0];selectSingleCore(selected);updateHud();updateObjectManager();}
 function selectGroup(){const gid=selected&&selected.groupId;if(!gid)return;selectedIds.clear();objects.filter(o=>o.groupId===gid).forEach(o=>selectedIds.add(o.id));selected=objects.find(o=>o.groupId===gid)||selected;selectSingleCore(selected);updateHud();updateObjectManager();}
 function dissolveGroup(){const arr=getSelectedObjects();const gids=new Set(arr.map(o=>o.groupId).filter(Boolean));if(selected&&selected.groupId)gids.add(selected.groupId);objects.forEach(o=>{if(gids.has(o.groupId)){delete o.groupId;delete o.groupName;}});groups=groups.filter(g=>!gids.has(g.id));if(selected)selectSingleCore(selected);updateHud();updateObjectManager();}

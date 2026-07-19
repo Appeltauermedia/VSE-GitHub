@@ -176,6 +176,7 @@ function addOrUpdateTimelineEvent(){
     startActive:timelineEventStartActive?timelineEventStartActive.checked:true,
     snapshot:timelineSnapshotTarget(kind,oid)
   };
+  if(typeof timelineCoercePathEventDuration==='function')timelineCoercePathEventDuration(ev);
   if(kind!=='group'){delete ev.targetType;delete ev.groupId;}
   timelineState.events.push(ev);
   timelineState.selectedEventId=ev.id;
@@ -213,6 +214,7 @@ function captureTimelineEventConfig(){
   target.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;
   target.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;
   target.snapshot=timelineSnapshotTarget(kind,oid);
+  if(typeof timelineCoercePathEventDuration==='function')timelineCoercePathEventDuration(target);
   if(!timelineState.events.includes(target)){timelineState.events.push(target);timelineState.selectedEventId=target.id;}
   resetTimelineBaseSnapshotFor(oid);
   updateTimelineUI();setTimelineEventForm(target);updateTimelineEventList();
@@ -233,5 +235,5 @@ function updateTimelineUI(){
 if(timelineAddEventBtn){timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;timelineAddEventBtn.title='Legt ein neues Timeline-Event mit aktueller Objekt-Konfiguration an.';}
 if(timelineCopyEventBtn){timelineCopyEventBtn.onclick=copyTimelineEvent;timelineCopyEventBtn.title='Kopiert das ausgewählte Timeline-Event mit Ziel, Aktion, Dauer und gespeicherter Konfiguration.';}
 if(timelineCaptureConfigBtn){timelineCaptureConfigBtn.onclick=captureTimelineEventConfig;}
-[timelineEventTime,timelineEventDuration,timelineEventDurationNumber,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('change',event=>{const ev=selectedTimelineEvent();const duration=typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||0);if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=duration;ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(typeof syncTimelineEventDurationFields==='function')syncTimelineEventDurationFields(duration,event&&event.currentTarget);else if(timelineEventDurationValue)timelineEventDurationValue.textContent=duration.toFixed(2)+' s';updateTimelineUI();});});
+[timelineEventTime,timelineEventDuration,timelineEventDurationNumber,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('change',event=>{const ev=selectedTimelineEvent();const duration=typeof readTimelineEventDurationValue==='function'?readTimelineEventDurationValue():Number(timelineEventDuration?.value||0);let nextDuration=duration;if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=duration;ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);nextDuration=Number(ev.duration)||duration;}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);if(typeof syncTimelineEventDurationFields==='function')syncTimelineEventDurationFields(nextDuration,event&&event.currentTarget);else if(timelineEventDurationValue)timelineEventDurationValue.textContent=nextDuration.toFixed(2)+' s';updateTimelineUI();});});
 if(typeof updateTimelineUI==='function')updateTimelineUI();

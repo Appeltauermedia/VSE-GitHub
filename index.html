@@ -598,6 +598,7 @@ Was wurde bewusst nicht veraendert?
 
       <div class="type-particle-only panel" style="margin-top:12px">
         <div class="mini"><b>Universal-Partikelmodul</b><br>Ein gemeinsamer WebGL-Partikelkern für Pyro, Explosion, Regen, Flitter, Konfetti, Staub, Schnee und abstrakte Audioeffekte.</div>
+        <label>Transparenz: <span id="particleEmitterTransparencyValue">0%</span></label><input id="pParticleEmitterTransparency" type="range" min="0" max="1" step="0.01">
       </div>
       <div class="type-particle-only"><label>Partikeleffekt</label><select id="pParticleMode"><option value="free">Frei</option><option value="pathFlow">Partikel-Pfad</option><option value="lightning">Blitz</option><option value="fireFountain">Feuerfontäne</option><option value="gasJet">Bühnenflammenwerfer · Gas Jet</option><option value="sparkFountain">Funkenfontäne</option><option value="explosion">Explosion</option><option value="glitter">Flitter</option><option value="confetti">Konfetti</option><option value="ash">Asche</option><option value="dust">Staub</option><option value="snow">Schnee</option><option value="rain">Regen</option><option value="shockwave">Schockwelle</option><option value="starflight">Sternenflug</option></select></div>
       <div class="type-particle-common particle-path-settings panel">
@@ -613,7 +614,6 @@ Was wurde bewusst nicht veraendert?
       </div>
       <div class="type-particle-common"><label>Emitterform</label><select id="pParticleEmitterShape"><option value="point">Punkt</option><option value="line">Linie</option></select></div>
       <div class="type-particle-common"><label>Linienlänge: <span id="particleEmitterLengthValue">120</span></label><input id="pParticleEmitterLength" type="range" min="10" max="900" step="1"></div>
-      <div class="type-particle-common"><label>Emitter-Transparenz: <span id="particleEmitterTransparencyValue">0%</span></label><input id="pParticleEmitterTransparency" type="range" min="0" max="1" step="0.01"></div>
       <div class="type-particle-common"><label>Partikelmenge: <span id="particleAmountValue">0.70</span></label><input id="pParticleAmount" type="range" min="0" max="6" step="0.01"></div>
       <div class="type-particle-common"><label>Dynamik / Energie: <span id="particleSpeedValue">1.00</span></label><input id="pParticleSpeed" type="range" min="0" max="10" step="0.01"></div>
       <div class="type-particle-common"><label>Ausstoßwinkel: <span id="particleSpreadValue">70°</span></label><input id="pParticleSpread" type="range" min="1" max="360" step="1"></div>
@@ -745,10 +745,10 @@ Was wurde bewusst nicht veraendert?
       <p class="mini">Logarithmisch 20 Hz–20 kHz. Das Objekt reagiert auf ein Frequenzband um diesen Wert, nicht mehr pauschal auf das gesamte Signal.</p>
       </div>
       <div class="type-imageasset-only panel" style="margin-top:12px">
-        <div class="mini"><b>ImageAsset</b><br>Lokale Bilddatei als eigenes WebGL-Objekt für Deko, Einrichtung, Bühnenausstattung oder einfache Szenenelemente. PNG-Transparenz bleibt erhalten.</div>
+        <div class="mini"><b>ImageAsset</b><br>Lokale Bilddatei als eigenes WebGL-Objekt für Deko, Einrichtung, Bühnenausstattung oder einfache Szenenelemente. PNG-Transparenz bleibt erhalten, GIFs werden animiert.</div>
         <h3>ImageAsset</h3>
         <label><input id="pImageAssetLocked" type="checkbox"> Lock / Unlock</label>
-        <label>Bilddatei laden</label><input id="pImageAssetFile" type="file" accept="image/png,image/jpeg,image/jpg,image/webp">
+        <label>Bilddatei laden</label><input id="pImageAssetFile" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
         <button id="pImageAssetClearBtn" type="button">Bild entfernen</button>
         <button id="pImageAssetExportPngBtn" type="button">ImageAsset als PNG exportieren</button>
         <p class="mini" id="imageAssetInfo">Kein Bild geladen.</p>
@@ -966,16 +966,16 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/02-webgl-shaderprogramme.js?v=20260712-engine-screen-flip"></script>
 <script src="src/app/03-timeline-mediensteuerung-und-auswahl.js?v=20260705-stable-play-pause"></script>
 <script src="src/app/04-ui-referenzen-und-objektparameter.js?v=20260712-screen-corners"></script>
-<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260712-screen-corners"></script>
-<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260705-infinite-timeline"></script>
+<script src="src/app/05-objektmodell-auswahl-und-eigenschaften.js?v=20260718-particle-marker-transparency"></script>
+<script src="src/app/06-projekt-stage-und-timeline-formulare.js?v=20260718-ipm-destruction-timeline"></script>
 <script src="src/app/07-audio-playlist-und-analyzer.js?v=20260703-analyzer-drag-controls"></script>
-<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260712-screen-corners"></script>
-<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260712-screen-corners"></script>
-<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260712-screen-corners"></script>
-<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260707-background-pan-crop"></script>
+<script src="src/app/08-auswahl-gruppen-und-objektverwaltung.js?v=20260718-group-area-centroid"></script>
+<script src="src/app/09-import-export-und-asset-wiederherstellung.js?v=20260718-path-timeline-bind"></script>
+<script src="src/app/10-rendering-hilfsformen-und-objekttypen.js?v=20260718-path-motion-slot"></script>
+<script src="src/app/11-hauptloop-und-finale-timeline-funktionen.js?v=20260718-path-timeline-bind"></script>
 <script src="src/app/12-audio-dock-toggle.js?v=20260703-audio-analyzer-only"></script>
 <script src="src/app/13-right-panel-toggle.js?v=20260627-panel-stage-resize"></script>
-<script src="src/app/14-three-track-timeline.js?v=20260710-teleprompter-sync"></script>
+<script src="src/app/14-three-track-timeline.js?v=20260718-path-timeline-bind"></script>
 <script src="src/app/15-cloud-object.js?v=20260712-cloud-density-high"></script>
 <script src="src/app/16-object-timeline-menu.js?v=20260704-minimize-restore"></script>
 <script src="src/app/17-topbar-floating-menus.js?v=20260704-minimize-maximize"></script>
@@ -989,7 +989,7 @@ Was wurde bewusst nicht veraendert?
 <script src="src/app/25-teleprompter-launcher.js?v=20260709-teleprompter"></script>
 <script src="src/app/26-vse-color-controls.js?v=20260712-colorpicker-restore"></script>
 <script src="src/app/27-particle-path.js?v=20260711-particle-path"></script>
-<script src="src/app/28-lightning-particle.js?v=20260712-lightning-particle"></script>
+<script src="src/app/28-lightning-particle.js?v=20260718-path-timeline-loader"></script>
 <script src="src/main.js?v=20260624-scene-dot"></script>
 </body>
 </html>

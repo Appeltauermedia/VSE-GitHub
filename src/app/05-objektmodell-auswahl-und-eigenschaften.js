@@ -402,7 +402,7 @@ function selectSingleCore(o){
   if(fields.AudioSourceDirection)fields.AudioSourceDirection.value=o.audioSourceDirection??0;
   if(audioSourceUrl)audioSourceUrl.value=o.audioSourceUrl||'';
   if(audioSourceInfo)audioSourceInfo.textContent=o.audioSourceName?('Quelle: '+o.audioSourceName+(o.audioSourceUrl?' · Stream/URL':' · lokale Datei')):'Keine Audioquelle geladen.';
-  if(imageAssetInfo)imageAssetInfo.textContent=o.imageAssetName?('Geladen: '+o.imageAssetName+' · eingebettet'):'Kein Bild geladen.';
+  if(imageAssetInfo)imageAssetInfo.textContent=o.imageAssetName?('Geladen: '+o.imageAssetName+' · '+(o.imageAssetAnimated?'animiertes GIF':'eingebettet')):'Kein Bild geladen.';
 
   if(fields.GreenscreenWidth)fields.GreenscreenWidth.value=o.greenscreenWidth??480;
   if(fields.GreenscreenHeight)fields.GreenscreenHeight.value=o.greenscreenHeight??270;
@@ -1055,6 +1055,28 @@ function applyParticlePresetToBulk(mode, source){
   }
 }
 function getBulkTypeTargets(type){return getBulkEditTargets().filter(o=>o&&o.type===type);}
+function applySelectedGroupRotationFromField(nextRotation){
+  if(!selected||!selected.groupId)return false;
+  const targets=getBulkEditTargets().filter(o=>o&&o.groupId===selected.groupId);
+  if(targets.length<=1)return false;
+  const previous=Number(selected.rotation||0);
+  const delta=(((Number(nextRotation)||0)-previous+540)%360)-180;
+  if(Math.abs(delta)<0.0001)return true;
+  const center=(typeof groupCenter==='function')?groupCenter(targets):targets.reduce((acc,o)=>({x:acc.x+Number(o.x||0)/targets.length,y:acc.y+Number(o.y||0)/targets.length}),{x:0,y:0});
+  const stageW=Math.max(1,Number((typeof stageState!=='undefined'&&stageState.w)||scene.stageWidth||1920));
+  const stageH=Math.max(1,Number((typeof stageState!=='undefined'&&stageState.h)||scene.stageHeight||1080));
+  const a=delta*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a);
+  for(const o of targets){
+    const dx=(Number(o.x||0)-center.x)/100*stageW;
+    const dy=(Number(o.y||0)-center.y)/100*stageH;
+    const nx=dx*ca-dy*sa;
+    const ny=dx*sa+dy*ca;
+    o.x=center.x+nx/stageW*100;
+    o.y=center.y+ny/stageH*100;
+    o.rotation=((Number(o.rotation||0)+delta)%360+360)%360;
+  }
+  return true;
+}
 if(screenLedSimulationInput)screenLedSimulationInput.addEventListener('input',()=>{
   if(!selected)return;
   selected.screenLedSimulation=screenLedSimulationInput.checked;
@@ -1088,6 +1110,13 @@ Object.entries(fields).forEach(([k,el])=>el&&el.addEventListener('input',()=>{
   if(map[k]==='screenWidth')v=Math.max(1,Math.min(Number(scene.stageWidth||stageState.w||1920),Number(v)||1));
   if(map[k]==='screenHeight')v=Math.max(1,Math.min(Number(scene.stageHeight||stageState.h||1080),Number(v)||1));
   const oldType=selected.type;
+  if(map[k]==='rotation'&&applySelectedGroupRotationFromField(v)){
+    syncTypeUI();
+    updateHud();
+    updateObjectManager();
+    if(typeof showTransformFrameForSelection==='function')requestAnimationFrame(showTransformFrameForSelection);
+    return;
+  }
   selected[map[k]]=v;
   if(['mandalaObjKeepAspect','imageAssetKeepAspect','greenscreenKeepAspect'].includes(map[k])){
     selected.objectKeepAspect=v!==false;

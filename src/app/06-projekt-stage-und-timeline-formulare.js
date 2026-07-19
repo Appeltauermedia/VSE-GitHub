@@ -182,6 +182,39 @@ function timelineObjectsForTarget(kind,id){
   return o?[o]:[];
 }
 function timelineObjectsForEvent(ev){return timelineObjectsForTarget(timelineEventTargetKind(ev),timelineEventTargetId(ev));}
+function timelinePathDurationForTarget(kind,id,fallback=0){
+  if(kind!=='object')return Math.max(0,Number(fallback)||0);
+  const o=objects.find(x=>x&&x.id===id);
+  return o&&o.type==='path'?Math.max(0.05,Number(o.pathDuration)||8):Math.max(0,Number(fallback)||0);
+}
+function timelineCoercePathEventDuration(ev){
+  if(!ev||ev.action&&ev.action!=='activate')return ev;
+  const kind=timelineEventTargetKind(ev),targetId=timelineEventTargetId(ev);
+  const duration=timelinePathDurationForTarget(kind,targetId,ev.duration);
+  if(duration>0&&kind==='object'){
+    const target=objects.find(o=>o&&o.id===targetId);
+    if(target&&target.type==='path')ev.duration=duration;
+  }
+  return ev;
+}
+function timelineIpmDestructionOptions(o){
+  return {
+    mode:o.ipmDestructionMode,
+    reverse:o.ipmDestructionReverse,
+    strength:o.ipmDestructionStrength,
+    directionX:o.ipmDestructionDirX,
+    directionY:o.ipmDestructionDirY,
+    spread:o.ipmDestructionSpread,
+    gravity:o.ipmDestructionGravity,
+    duration:o.ipmDestructionDuration,
+    returnEnabled:o.ipmDestructionReturnEnabled,
+    returnSpeed:o.ipmDestructionReturnSpeed,
+    randomness:o.ipmDestructionRandomness,
+    clusterSize:o.ipmDestructionClusterSize,
+    particleFade:o.ipmDestructionParticleFade,
+    fadeTime:o.ipmDestructionFadeTime
+  };
+}
 function timelineTargetLabel(kind,id){
   if(kind==='group'){
     const g=timelineGroupById(id),arr=timelineGroupMembers(id);
@@ -237,7 +270,7 @@ function resetTimelineBaseSnapshotFor(oid){
 let timelineParticleTriggerLastTime=null;
 function resetTimelineParticleTriggers(){
   for(const ev of (timelineState.events||[])){
-    if(ev)ev._particleTimelineFired=false;
+    if(ev){ev._particleTimelineFired=false;ev._ipmDestructionFired=false;}
   }
 }
 function applyTimelineEvents(){
@@ -273,12 +306,20 @@ function applyTimelineEvents(){
     const targetId=timelineEventTargetId(ev);
     const targets=timelineObjectsForEvent(ev).filter(o=>o.id!==timelineObjectBeingEdited);
     if(!targets.length)continue;
+    timelineCoercePathEventDuration(ev);
     const start=Number(ev.time)||0;
     const dur=Number(ev.duration)||0;
     const inWindow=t>=start&&(dur<=0||t<=start+dur);
     const after=t>=start;
-    if(!after){ev._particleTimelineFired=false;continue;}
     const action=ev.action||'activate';
+    if(!after){
+      if(action==='activate'&&typeof window.vseApplyPathTimelineState==='function'){
+        targets.filter(o=>o&&o.type==='path').forEach(o=>window.vseApplyPathTimelineState(o,{active:false,eventId:ev.id,completed:false}));
+      }
+      ev._particleTimelineFired=false;
+      ev._ipmDestructionFired=false;
+      continue;
+    }
     if(action==='deactivate'){
       for(const o of targets){
         if(dur>0){if(inWindow)o._timelineHidden=true;}
@@ -288,6 +329,15 @@ function applyTimelineEvents(){
     }
     if(action==='activate'){
       for(const o of targets){
+        if(o.type==='path'&&typeof window.vseApplyPathTimelineState==='function'){
+          const pathDuration=Math.max(0.05,Number(ev.duration)||Number(o.pathDuration)||8);
+          const localTime=Math.max(0,Math.min(pathDuration,t-start));
+          if(t<start)window.vseApplyPathTimelineState(o,{active:false,eventId:ev.id,completed:false});
+          else if(inWindow)window.vseApplyPathTimelineState(o,{active:true,eventId:ev.id,localTime});
+          else window.vseApplyPathTimelineState(o,{active:false,eventId:ev.id,completed:true});
+          o._timelineHidden=false;
+          continue;
+        }
         if(dur>0){o._timelineHidden=!inWindow;}else{o._timelineHidden=false;}
         if(inWindow&&ev.timelineAssetKind==='screen-media'&&o.type==='screen'){
           const local=Math.max(0,t-start),remaining=Math.max(0,start+dur-t);
@@ -297,6 +347,7 @@ function applyTimelineEvents(){
           o._timelineFade=Math.max(0,Math.min(1,fade));
         }
       }
+      if(targets.some(o=>o&&o.type==='path'))continue;
       if((dur<=0||inWindow)&&ev.snapshot&&ev.timelineAssetKind!=='screen-media'&&ev.timelineAssetKind!=='scene')applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);
       const particleActivationActive=dur<=0||inWindow;
       if(particleActivationActive&&timelineState.playing&&!ev._particleTimelineFired){
@@ -313,29 +364,17 @@ function applyTimelineEvents(){
     }else if(action==='parameter'){
       if(dur<=0||inWindow){if(ev.snapshot)applyTimelineTargetSnapshot(kind,targetId,ev.snapshot);}
     }else if(action==='ipmDestruction'){
-      if(!ev._ipmDestructionFired && (dur<=0?inWindow:inWindow)){
-        const snap=ev.snapshot||{};
+      const destructionActive=dur<=0||inWindow;
+      if(!ev._ipmDestructionFired&&destructionActive&&timelineState.playing){
+        let fired=false;
         for(const o of targets){
-          if(o&&o.type==='imageParticle')triggerIpmDestruction(o.id,{
-            mode:snap.ipmDestructionMode,
-            reverse:snap.ipmDestructionReverse,
-            strength:snap.ipmDestructionStrength,
-            directionX:snap.ipmDestructionDirX,
-            directionY:snap.ipmDestructionDirY,
-            spread:snap.ipmDestructionSpread,
-            gravity:snap.ipmDestructionGravity,
-            duration:snap.ipmDestructionDuration,
-            returnEnabled:snap.ipmDestructionReturnEnabled,
-            returnSpeed:snap.ipmDestructionReturnSpeed,
-            randomness:snap.ipmDestructionRandomness,
-            clusterSize:snap.ipmDestructionClusterSize,
-            particleFade:snap.ipmDestructionParticleFade,
-            fadeTime:snap.ipmDestructionFadeTime
-          });
+          if(o&&o.type==='imageParticle'&&typeof triggerIpmDestruction==='function'){
+            fired=triggerIpmDestruction(o.id,timelineIpmDestructionOptions(o))||fired;
+          }
         }
-        ev._ipmDestructionFired=true;
+        if(fired)ev._ipmDestructionFired=true;
       }
-      if(!inWindow)ev._ipmDestructionFired=false;
+      if(!destructionActive)ev._ipmDestructionFired=false;
     }
   }
   if(selected&&selected._timelineHidden){/* Auswahl bleibt intern erhalten, nur Rendering ist aus. */}
@@ -344,7 +383,7 @@ if(timelineAddEventBtn)timelineAddEventBtn.onclick=addOrUpdateTimelineEvent;
 if(timelineCopyEventBtn)timelineCopyEventBtn.onclick=copyTimelineEvent;
 if(timelineDeleteEventBtn)timelineDeleteEventBtn.onclick=deleteTimelineEvent;
 if(timelineCaptureConfigBtn)timelineCaptureConfigBtn.onclick=captureTimelineEventConfig;
-[timelineEventTime,timelineEventDuration,timelineEventDurationNumber,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('input',event=>{const ev=selectedTimelineEvent();const duration=readTimelineEventDurationValue();if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=duration;ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);syncTimelineEventDurationFields(duration,event&&event.currentTarget);updateTimelineUI();});});
+[timelineEventTime,timelineEventDuration,timelineEventDurationNumber,timelineEventEnabled,timelineEventStartActive,timelineEventAction,timelineEventObject].forEach(el=>{if(el)el.addEventListener('input',event=>{const ev=selectedTimelineEvent();const duration=readTimelineEventDurationValue();let nextDuration=duration;if(ev){ev.time=Number(timelineEventTime?.value||0);ev.duration=duration;ev.enabled=timelineEventEnabled?timelineEventEnabled.checked:true;ev.startActive=timelineEventStartActive?timelineEventStartActive.checked:true;ev.action=timelineEventAction?.value||ev.action;syncTimelineEventTargetFromForm(ev);nextDuration=Number(ev.duration)||duration;}if(timelineEventTimeValue)timelineEventTimeValue.textContent=formatTimelineTime(Number(timelineEventTime?.value)||0);syncTimelineEventDurationFields(nextDuration,event&&event.currentTarget);updateTimelineUI();});});
 
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'&&vrState.active){e.preventDefault();endVrViewer();return;}

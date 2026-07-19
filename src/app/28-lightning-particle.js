@@ -280,3 +280,13 @@
   document.addEventListener('DOMContentLoaded',syncPanel);
   installPanel();syncPanel();
 })();
+(function loadPathObjectModule(){
+  if(window.__vsePathObjectLoaderInstalled)return;
+  window.__vsePathObjectLoaderInstalled=true;
+  const script=document.createElement('script');
+  script.src='src/app/29-path-object.js?v=20260718-path-timeline-bind';
+  script.async=false;
+  const current=document.currentScript;
+  if(current&&current.parentNode)current.parentNode.insertBefore(script,current.nextSibling);
+  else document.head.appendChild(script);
+})();

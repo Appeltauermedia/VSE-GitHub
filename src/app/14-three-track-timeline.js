@@ -464,7 +464,9 @@
       if(!object)return;
       const rect=timelineBar.getBoundingClientRect();
       const start=clampTime((event.clientX-rect.left)/Math.max(1,rect.width)*duration());
-      const timelineEvent=createActivationEvent(object,start,0,'object','object');
+      const timelineEvent=createActivationEvent(object,start,object.type==='path'?Math.max(0.05,Number(object.pathDuration)||8):0,'object','object');
+      if(typeof timelineCoercePathEventDuration==='function')timelineCoercePathEventDuration(timelineEvent);
+      if(object.type==='path'&&start+Number(timelineEvent.duration||0)>duration())timelineState.duration=Math.ceil(start+Number(timelineEvent.duration||0));
       timelineState.selectedAudioClipId=null;
       timelineState.selectedEventId=timelineEvent.id;
       timelineState.lastClickTime=start;

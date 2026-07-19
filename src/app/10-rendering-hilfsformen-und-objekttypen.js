@@ -1357,6 +1357,10 @@ function drawBody(o){
   if(o.type==='particle' && (o.particleEmitterShape||'point')==='line'){const len=su(o.particleEmitterLength??120), th=Math.max(3*stageScale(),su(o.size||72)*0.08); pts=[-th/2,-len/2, th/2,-len/2, th/2,len/2, -th/2,len/2]; gl.uniform1f(loc.scale,1);}else{gl.uniform1f(loc.scale,(o.type==='light'?Math.max(12*stageScale(),su(o.size)*.24):su(o.size)));}
   gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(pts),gl.STATIC_DRAW);
   let bodyAlpha=isSelected(o)?1:.88;
+  if(o.type==='path'){
+    bodyAlpha=Math.max(0,Math.min(1,Number(o.pathMarkerOpacity??o.opacity??0.35)));
+    if(bodyAlpha<=0.001)return;
+  }
   if(o.type==='particle') bodyAlpha=Math.max(0,1-Number(o.particleEmitterTransparency??0));
   if(o.type==='fog'){
     // Nebelemitter-Transparenz muss auch den geometrischen Emitterkörper steuern.
@@ -1818,6 +1822,12 @@ function drawObjectShadow(o){
 }
 function drawImageAsset(o){
   if(!o||o.type!=='imageAsset')return;
+  if(o.imageAssetAnimated&&typeof uploadImageAssetFrame==='function'){
+    const now=performance.now();
+    if(!Number.isFinite(Number(o._imageAssetLastFrameUpload))||now-Number(o._imageAssetLastFrameUpload)>30){
+      if(uploadImageAssetFrame(o))o._imageAssetLastFrameUpload=now;
+    }
+  }
   const x=objCssX(o), y=objCssY(o), sc=stageScale();
   const ps=imageAssetRenderSize(o);
   gl.useProgram(imageAssetProg);
@@ -2098,6 +2108,14 @@ function drawSelectedReferenceMarkers(){
   for(const o of objects){
     if(!o||!isSelected(o))continue;
     const pos=[objCssX(o),objCssY(o)];
+    if(o.type==='path'){
+      const markerAlpha=Math.max(0,Math.min(1,Number(o.pathMarkerOpacity??o.opacity??0.35)));
+      if(markerAlpha<=0.001)continue;
+      drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.015,0.025,0.045,0.96*markerAlpha],pos,0,7);
+      drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.20,0.72,1.00,markerAlpha],pos,0,4.5);
+      drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.96,0.99,1.00,markerAlpha],pos,0,1.65);
+      continue;
+    }
     // Dunkle Außenkante und heller Mittelpunkt bleiben auf jedem Hintergrund
     // sowie bei vollständig transparenten Objekten eindeutig sichtbar.
     drawPrimitive(markerPoints,gl.TRIANGLE_FAN,[0.015,0.025,0.045,0.96],pos,0,7);
@@ -2290,11 +2308,13 @@ function updateVseFrame(){
   updateScreenPlaylists();
   updateTimelinePlayhead();
   if(typeof applyTimelineEvents==='function')applyTimelineEvents();
+  if(typeof updatePathObjectMotion==='function')updatePathObjectMotion();
   updateAmbilightState();
   const ordered=objects.map((o,i)=>({o,i})).sort((a,b)=>((a.o.layer??1)-(b.o.layer??1))||(a.i-b.i));
   renderEngineSceneTexture(ordered);
   return ordered;
 }
+updateVseFrame.__pathMotionIntegrated=true;
 function renderSceneViewSource(ordered){
   const target=ensureSceneViewSourceTarget();
   if(scene.mandalaEnabled){

@@ -245,7 +245,11 @@ function collectDirectSceneMediaFiles(data){
   return files;
 }
 async function writeSceneFile(directory,name,content){
-  const handle=await directory.getFileHandle(name,{create:true}),writer=await handle.createWritable();
+  const parts=String(name||'').replace(/\\/g,'/').split('/').filter(Boolean);
+  if(!parts.length)throw new Error('Ungültiger Dateiname.');
+  let dir=directory;
+  for(let i=0;i<parts.length-1;i++)dir=await dir.getDirectoryHandle(parts[i],{create:true});
+  const handle=await dir.getFileHandle(parts[parts.length-1],{create:true}),writer=await handle.createWritable();
   await writer.write(content);await writer.close();
 }
 async function writeSceneProjectToDirectory(projectDir){
@@ -352,7 +356,20 @@ async function fileFromSceneDirectory(directory,relPath){
   const handle=await dir.getFileHandle(parts[parts.length-1]);
   return handle.getFile();
 }
+async function sceneDirectoryHasSceneFile(directory){
+  try{await directory.getFileHandle('scene.scene');return true;}catch(_){return false;}
+}
+async function resolveSceneProjectDirectoryHandle(directory){
+  if(await sceneDirectoryHasSceneFile(directory))return directory;
+  if(directory&&typeof directory.entries==='function'){
+    for await (const [,handle] of directory.entries()){
+      if(handle&&handle.kind==='directory'&&await sceneDirectoryHasSceneFile(handle))return handle;
+    }
+  }
+  throw new Error('Im ausgewählten Ordner wurde keine scene.scene gefunden. Bitte den Scene-Projektordner selbst oder den übergeordneten Exportordner auswählen.');
+}
 async function importSceneProjectDirectoryHandle(directory){
+  directory=await resolveSceneProjectDirectoryHandle(directory);
   const sceneFile=await (await directory.getFileHandle('scene.scene')).getFile();
   const data=JSON.parse(await sceneFile.text());
   const mediaDataCache=new Map();
@@ -397,7 +414,13 @@ async function importSceneProjectFiles(fileList){
   const files=Array.from(fileList||[]),sceneFile=files.find(file=>/(^|\/)scene\.scene$/i.test(file.webkitRelativePath||file.name))||files.find(file=>/\.scene$/i.test(file.name));
   if(!sceneFile)throw new Error('Im Projektordner wurde keine scene.scene gefunden.');
   const data=JSON.parse(await sceneFile.text());
-  const byRelativePath=new Map(files.map(file=>{const rel=String(file.webkitRelativePath||file.name).replace(/\\/g,'/');return [rel.replace(/^[^/]+\//,''),file];}));
+  const sceneRelPath=String(sceneFile.webkitRelativePath||sceneFile.name).replace(/\\/g,'/');
+  const scenePrefix=/(^|\/)scene\.scene$/i.test(sceneRelPath)?sceneRelPath.replace(/scene\.scene$/i,''):'';
+  const byRelativePath=new Map(files.map(file=>{
+    const rel=String(file.webkitRelativePath||file.name).replace(/\\/g,'/');
+    const key=scenePrefix&&rel.startsWith(scenePrefix)?rel.slice(scenePrefix.length):rel.replace(/^[^/]+\//,'');
+    return [key,file];
+  }));
   const mediaDataCache=new Map();
   const externalVideoRestores=[];
   for(const entry of Array.isArray(data.mediaFiles)?data.mediaFiles:[]){
@@ -497,6 +520,16 @@ async function restoreEmbeddedProjectMedia(data){
 
 function releaseImageAsset(o){
   if(!o)return;
+  if(o._imageAssetDomElement&&o._imageAssetDomElement.parentNode){
+    try{o._imageAssetDomElement.parentNode.removeChild(o._imageAssetDomElement);}catch(e){}
+  }
+  if(Array.isArray(o._imageAssetGifFrames)){
+    for(const frame of o._imageAssetGifFrames){
+      if(frame&&frame.source&&typeof frame.source.close==='function'){
+        try{frame.source.close();}catch(e){}
+      }
+    }
+  }
   if(o.imageAssetTexture&&typeof gl!=='undefined'){
     try{gl.deleteTexture(o.imageAssetTexture);}catch(e){}
   }
@@ -507,6 +540,104 @@ function releaseImageAsset(o){
   o.imageAssetData=null;
   o.imageAssetEmbedded=false;
   o.imageAssetAspect=1;
+  o.imageAssetAnimated=false;
+  o._imageAssetLastFrameUpload=0;
+  o._imageAssetDomElement=null;
+  o._imageAssetFrameCanvas=null;
+  o._imageAssetGifFrames=null;
+  o._imageAssetGifStart=0;
+  o._imageAssetGifTotalDuration=0;
+}
+function isImageAssetGifSource(data,name=''){
+  const n=String(name||'').toLowerCase();
+  const d=String(data||'').slice(0,64).toLowerCase();
+  return n.endsWith('.gif')||d.startsWith('data:image/gif');
+}
+function uploadImageAssetFrame(o){
+  if(!o||!o.imageAssetTexture||!o.imageAssetElement||typeof gl==='undefined')return false;
+  if(o.imageAssetAnimated&&Array.isArray(o._imageAssetGifFrames)&&o._imageAssetGifFrames.length){
+    const now=performance.now();
+    if(!Number.isFinite(Number(o._imageAssetGifStart))||!o._imageAssetGifStart)o._imageAssetGifStart=now;
+    const total=Math.max(1,Number(o._imageAssetGifTotalDuration)||o._imageAssetGifFrames.reduce((sum,frame)=>sum+Math.max(20,Number(frame.duration)||100),0));
+    let t=(now-o._imageAssetGifStart)%total;
+    let frame=o._imageAssetGifFrames[0];
+    for(const candidate of o._imageAssetGifFrames){
+      frame=candidate;
+      t-=Math.max(20,Number(candidate.duration)||100);
+      if(t<=0)break;
+    }
+    if(frame&&frame.source){
+      gl.bindTexture(gl.TEXTURE_2D,o.imageAssetTexture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+      try{
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,frame.source);
+        return true;
+      }catch(e){}
+    }
+  }
+  const img=o.imageAssetElement;
+  const w=img.naturalWidth||img.width||0;
+  const h=img.naturalHeight||img.height||0;
+  if(!w||!h)return false;
+  let source=img;
+  if(o.imageAssetAnimated){
+    const c=o._imageAssetFrameCanvas||(o._imageAssetFrameCanvas=document.createElement('canvas'));
+    if(c.width!==w)c.width=w;
+    if(c.height!==h)c.height=h;
+    const ctx=c.getContext('2d',{willReadFrequently:false});
+    if(!ctx)return false;
+    ctx.clearRect(0,0,w,h);
+    try{ctx.drawImage(img,0,0,w,h);}catch(e){return false;}
+    source=c;
+  }
+  gl.bindTexture(gl.TEXTURE_2D,o.imageAssetTexture);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  try{
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+async function prepareImageAssetGifFrames(o,data){
+  if(!o||!o.imageAssetAnimated||typeof ImageDecoder==='undefined'||typeof fetch!=='function')return false;
+  try{
+    const blob=await (await fetch(data)).blob();
+    const decoder=new ImageDecoder({data:blob.stream?blob.stream():await blob.arrayBuffer(),type:'image/gif'});
+    if(decoder.tracks&&decoder.tracks.ready)await decoder.tracks.ready;
+    const track=decoder.tracks&&decoder.tracks.selectedTrack;
+    const frameCount=Math.max(0,Number(track&&track.frameCount)||0);
+    if(!frameCount)return false;
+    const frames=[];
+    let total=0;
+    const maxFrames=Math.min(frameCount,600);
+    for(let i=0;i<maxFrames;i++){
+      const decoded=await decoder.decode({frameIndex:i});
+      const image=decoded&&decoded.image;
+      if(!image)continue;
+      const bitmap=await createImageBitmap(image);
+      const duration=Math.max(20,Number(image.duration||decoded.duration||100000)/1000);
+      if(typeof image.close==='function')image.close();
+      frames.push({source:bitmap,duration});
+      total+=duration;
+    }
+    if(!frames.length)return false;
+    if(Array.isArray(o._imageAssetGifFrames)){
+      for(const frame of o._imageAssetGifFrames){
+        if(frame&&frame.source&&typeof frame.source.close==='function'){
+          try{frame.source.close();}catch(e){}
+        }
+      }
+    }
+    o._imageAssetGifFrames=frames;
+    o._imageAssetGifTotalDuration=total;
+    o._imageAssetGifStart=performance.now();
+    uploadImageAssetFrame(o);
+    return true;
+  }catch(err){
+    console.warn('GIF-Frames konnten nicht dekodiert werden.',err);
+    return false;
+  }
 }
 function loadImageAssetFromData(o,data,name='ImageAsset'){
   if(!o||o.type!=='imageAsset'||!data)return;
@@ -515,19 +646,33 @@ function loadImageAssetFromData(o,data,name='ImageAsset'){
   }
   const tex=initTexture();
   const img=new Image();
+  const isGif=isImageAssetGifSource(data,name);
   o.imageAssetTexture=tex;
   o.imageAssetElement=img;
   o.imageAssetData=data;
   o.imageAssetEmbedded=true;
-  o.imageAssetImageType='image';
+  o.imageAssetImageType=isGif?'gif':'image';
+  o.imageAssetAnimated=isGif;
+  o._imageAssetLastFrameUpload=0;
   o.imageAssetName=name;
+  if(isGif){
+    img.style.position='fixed';
+    img.style.left='-10000px';
+    img.style.top='-10000px';
+    img.style.width='1px';
+    img.style.height='1px';
+    img.style.opacity='0';
+    img.style.pointerEvents='none';
+    img.alt='';
+    document.body.appendChild(img);
+    o._imageAssetDomElement=img;
+  }
   img.onload=()=>{
     const aspect=(img.naturalWidth||1)/Math.max(1,(img.naturalHeight||1));
     o.imageAssetAspect=aspect;
     if(!o._imageAssetSized){o.imageAssetWidth=o.imageAssetWidth||240;o.imageAssetHeight=o.imageAssetWidth/aspect;o._imageAssetSized=true;}
-    gl.bindTexture(gl.TEXTURE_2D,tex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
-    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+    uploadImageAssetFrame(o);
+    if(isGif)prepareImageAssetGifFrames(o,data);
     if(selected===o)selectSingleCore(o);
   };
   img.src=data;
@@ -980,6 +1125,7 @@ function syncTimelineEventTargetFromForm(ev){
   ev.objectId=id;
   if(kind==='group'){ev.targetType='group';ev.groupId=id;}
   else{delete ev.targetType;delete ev.groupId;}
+  if(typeof timelineCoercePathEventDuration==='function')timelineCoercePathEventDuration(ev);
 }
 function selectedTimelineEvent(){return timelineState.events.find(e=>e.id===timelineState.selectedEventId)||null;}
 function renderTimelineEvents(){
